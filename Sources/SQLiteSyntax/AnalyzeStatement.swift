@@ -1,0 +1,16 @@
+//
+//  File.swift
+//  SQLiteSyntax
+//
+//  Created by Dave DeLong on 4/20/25.
+//
+
+import Foundation
+
+public enum AnalyzeStatement: Syntax {
+    
+    case schema(SchemaName)
+    case index(SchemaName?, IndexName)
+    case table(SchemaName?, TableName)
+    
+}
