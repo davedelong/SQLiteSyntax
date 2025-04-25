@@ -19,4 +19,10 @@ public struct DropViewStatement: Syntax {
         self.viewName = viewName
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("DROP", "VIEW")
+        if ifExists { builder.add("IF", "EXISTS") }
+        try builder.add(name: schemaName, viewName)
+    }
+    
 }

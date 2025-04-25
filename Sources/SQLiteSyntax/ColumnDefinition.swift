@@ -18,4 +18,12 @@ public struct ColumnDefinition: Syntax {
         self.typeName = typeName
         self.constraints = constraints
     }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(name)
+        try builder.add(typeName)
+        for constraint in constraints {
+            try builder.add(constraint)
+        }
+    }
 }

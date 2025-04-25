@@ -24,4 +24,18 @@ public struct CreateVirtualTableStatement: Syntax {
         self.moduleArguments = moduleArguments
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("CREATE", "VIRTUAL", "TABLE")
+        if ifNotExists { builder.add("IF", "NOT", "EXISTS") }
+        try builder.add(name: schemaName, tableName)
+        builder.add("USING")
+        try builder.add(moduleName)
+        
+        if moduleArguments.count > 0 {
+            builder.add("(")
+            try builder.addList(moduleArguments, delimiter: ",")
+            builder.add(")")
+        }
+    }
+    
 }

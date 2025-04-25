@@ -14,4 +14,15 @@ public enum ConflictClause: Syntax {
     case fail
     case ignore
     case replace
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        switch self {
+            case .none: break
+            case .rollback: builder.add("ON", "CONFLICT", "ROLLBACK")
+            case .abort: builder.add("ON", "CONFLICT", "ABORT")
+            case .fail: builder.add("ON", "CONFLICT", "FAIL")
+            case .ignore: builder.add("ON", "CONFLICT", "IGNORE")
+            case .replace: builder.add("ON", "CONFLICT", "REPLACE")
+        }
+    }
 }

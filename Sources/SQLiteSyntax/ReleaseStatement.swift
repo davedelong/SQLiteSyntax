@@ -16,4 +16,10 @@ public struct ReleaseStatement: Syntax {
         self.savepoint = savepoint
         self.savepointName = savepointName
     }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("RELEASE")
+        if savepoint { builder.add("SAVEPOINT") }
+        try builder.add(savepointName)
+    }
 }

@@ -14,4 +14,22 @@ public enum RaiseFunction: Syntax {
     case abort(Expression)
     case fail(Expression)
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("RAISE", "(")
+        switch self {
+            case .ignore:
+                builder.add("IGNORE")
+            case .rollback(let e):
+                builder.add("ROLLBACK", ",")
+                try builder.add(e)
+            case .abort(let e):
+                builder.add("ABORT", ",")
+                try builder.add(e)
+            case .fail(let e):
+                builder.add("FAIL", ",")
+                try builder.add(e)
+        }
+        builder.add(")")
+    }
+    
 }

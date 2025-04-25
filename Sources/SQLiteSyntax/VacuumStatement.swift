@@ -18,4 +18,12 @@ public struct VacuumStatement: Syntax {
         self.filename = filename
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("VACUUM")
+        try builder.add(schemaName)
+        if let filename {
+            builder.add("INTO", filename)
+        }
+    }
+    
 }

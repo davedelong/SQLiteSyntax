@@ -19,4 +19,10 @@ public struct DropTableStatement: Syntax {
         self.tableName = tableName
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("DROP", "TABLE")
+        if ifExists { builder.add("IF", "EXISTS") }
+        try builder.add(name: schemaName, tableName)
+    }
+    
 }

@@ -14,5 +14,14 @@ public enum BindParameter: Syntax {
     case named(String)
     case atNamed(String)
     case tcl(String)
-    
+ 
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        switch self {
+            case .next: builder.add("?")
+            case .nth(let i): builder.add("?\(i)")
+            case .named(let s): builder.add(":\(s)")
+            case .atNamed(let s): builder.add("@\(s)")
+            case .tcl(let s): builder.add("$\(s)")
+        }
+    }
 }

@@ -11,27 +11,43 @@ public struct CommonTableExpression: Syntax {
     
     public struct TableName: Syntax {
         public var tableName: SQLiteSyntax.TableName
-        public var columnNames: Array<ColumnName>
+        public var columnNames: ColumnNameList?
         
-        public init(tableName: SQLiteSyntax.TableName, columnNames: Array<ColumnName>) {
+        public init(tableName: SQLiteSyntax.TableName, columnNames: ColumnNameList?) {
             self.tableName = tableName
             self.columnNames = columnNames
+        }
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.add(tableName)
+            if let columnNames {
+                builder.add("(")
+                try builder.add(columnNames)
+                builder.add(")")
+            }
         }
     }
     
     public var tableName: TableName
-    public var columnNames: Array<ColumnName>
     
     public var not: Bool
     public var materialized: Bool
     public var selectStatement: SelectStatement
     
-    public init(tableName: TableName, columnNames: Array<ColumnName> = [], not: Bool, materialized: Bool, selectStatement: SelectStatement) {
+    public init(tableName: TableName, not: Bool, materialized: Bool, selectStatement: SelectStatement) {
         self.tableName = tableName
-        self.columnNames = columnNames
         self.not = not
         self.materialized = materialized
         self.selectStatement = selectStatement
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(tableName)
+        builder.add("AS")
+        if not { builder.add("NOT") }
+        if materialized { builder.add("MATERIALIZED") }
+        builder.add("(")
+        try builder.add(selectStatement)
+        builder.add(")")
+    }
 }

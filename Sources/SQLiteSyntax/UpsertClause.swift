@@ -9,16 +9,26 @@ import Foundation
 
 public struct UpsertClause: Syntax {
     
-    public enum Target: Syntax {
-        case any
-        case columns(Array<IndexedColumn>, where: Expression?)
+    public struct Target: Syntax {
+        var columns: Array<IndexedColumn>
+        var `where`: Expression?
+        
+        public init(columns: Array<IndexedColumn>, `where`: Expression?) {
+            self.columns = columns
+            self.where = `where`
+        }
         
         public func validate() throws(SyntaxError) {
-            switch self {
-                case .columns(let columns, _):
-                    try require(columns.count > 0, reason: "Conflict that target columns require at least one column name")
-                default:
-                    break
+            try require(columns.count > 0, reason: "Conflict that target columns require at least one column name")
+        }
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            builder.add("(")
+            try builder.addList(columns, delimiter: ",")
+            builder.add(")")
+            if let `where` {
+                builder.add("WHERE")
+                try builder.add(`where`)
             }
         }
     }
@@ -26,11 +36,25 @@ public struct UpsertClause: Syntax {
     public enum Action: Syntax {
         case nothing
         case update(UpdateStatement.Values, where: Expression?)
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .nothing:
+                    builder.add("NOTHING")
+                case .update(let values, where: let expr):
+                    builder.add("UPDATE", "SET")
+                    try builder.add(values)
+                    if let expr {
+                        builder.add("WHERE")
+                        try builder.add(expr)
+                    }
+            }
+        }
     }
     
-    public var conflicts: Array<(Target, Action)>
+    public var conflicts: Array<(Target?, Action)>
     
-    public init(conflicts: Array<(Target, Action)>) {
+    public init(conflicts: Array<(Target?, Action)>) {
         self.conflicts = conflicts
     }
     
@@ -38,4 +62,12 @@ public struct UpsertClause: Syntax {
         try require(conflicts.count > 0, reason: "Upsert clauses require at least one conflict target")
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        for (target, action) in conflicts {
+            builder.add("ON", "CONFLICT")
+            try builder.add(target)
+            builder.add("DO")
+            try builder.add(action)
+        }
+    }
 }

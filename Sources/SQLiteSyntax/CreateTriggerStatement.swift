@@ -13,17 +13,48 @@ public struct CreateTriggerStatement: Syntax {
         case before
         case after
         case insteadOf
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .before: builder.add("BEFORE")
+                case .after: builder.add("AFTER")
+                case .insteadOf: builder.add("INSTEAD", "OF")
+            }
+        }
     }
     
     public enum Trigger: Syntax {
         case delete
         case insert
-        case update(Array<ColumnName>)
+        case update(ColumnNameList?)
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .delete: builder.add("DELETE")
+                case .insert: builder.add("INSERT")
+                case .update(let list):
+                    builder.add("UPDATE")
+                    if let list {
+                        builder.add("OF")
+                        try builder.add(list)
+                    }
+            }
+        }
     }
     
     public enum Condition: Syntax {
         case forEachRow
         case when(Expression)
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .forEachRow:
+                    builder.add("FOR", "EACH", "ROW")
+                case .when(let e):
+                    builder.add("WHEN")
+                    try builder.add(e)
+            }
+        }
     }
     
     public enum Action: Syntax {
@@ -31,6 +62,15 @@ public struct CreateTriggerStatement: Syntax {
         case insert(InsertStatement)
         case delete(DeleteStatement)
         case select(SelectStatement)
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .update(let u): try builder.add(u)
+                case .insert(let i): try builder.add(i)
+                case .delete(let d): try builder.add(d)
+                case .select(let s): try builder.add(s)
+            }
+        }
     }
     
     public var temporary: Bool
@@ -61,5 +101,25 @@ public struct CreateTriggerStatement: Syntax {
     
     public func validate() throws(SyntaxError) {
         try require(actions.count > 0, reason: "\(Self.self) must have at least one action")
+    }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("CREATE")
+        if temporary { builder.add("TEMPORARY") }
+        builder.add("TRIGGER")
+        if ifNotExists { builder.add("IF", "NOT", "EXISTS") }
+        try builder.add(name: schemaName, triggerName)
+        try builder.add(timing)
+        try builder.add(trigger)
+        builder.add("ON")
+        try builder.add(on)
+        try builder.add(condition)
+        builder.add("BEGIN")
+        
+        for action in actions {
+            try builder.add(action)
+            builder.add(";")
+        }
+        builder.add("END")
     }
 }

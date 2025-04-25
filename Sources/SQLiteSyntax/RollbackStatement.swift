@@ -18,4 +18,12 @@ public struct RollbackStatement: Syntax {
         self.savepointName = savepointName
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("ROLLBACK")
+        if transaction { builder.add("TRANSACTION") }
+        if let savepointName {
+            builder.add("TO", "SAVEPOINT")
+            try builder.add(savepointName)
+        }
+    }
 }

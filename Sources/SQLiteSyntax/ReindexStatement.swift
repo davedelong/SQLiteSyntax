@@ -12,4 +12,18 @@ public enum ReindexStatement: Syntax {
     case collation(CollationName)
     case tableName(SchemaName?, TableName)
     case indexName(SchemaName?, IndexName)
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("REINDEX")
+        switch self {
+            case .normal:
+                break
+            case .collation(let n):
+                try builder.add(n)
+            case .tableName(let schema, let table):
+                try builder.add(name: schema, table)
+            case .indexName(let schema, let index):
+                try builder.add(name: schema, index)
+        }
+    }
 }

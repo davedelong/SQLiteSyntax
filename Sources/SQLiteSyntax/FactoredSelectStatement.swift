@@ -27,4 +27,15 @@ public struct FactoredSelectStatement: Syntax {
         self.limit = limit
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(with)
+        try builder.add(select)
+        for (op, select) in additionalSelects {
+            try builder.add(op)
+            try builder.add(select)
+        }
+        try builder.add(orderBy)
+        try builder.add(limit)
+    }
+    
 }

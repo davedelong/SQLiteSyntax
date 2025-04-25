@@ -15,4 +15,9 @@ public struct SavepointStatement: Syntax {
         self.savepointName = savepointName
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("SAVEPOINT")
+        try builder.add(savepointName)
+    }
+    
 }

@@ -17,4 +17,9 @@ public struct AttachStatement: Syntax {
         self.asSchemaName = asSchemaName
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("ATTACH", "DATABASE")
+        try builder.add(expression)
+        try builder.addAlias(asSchemaName)
+    }
 }

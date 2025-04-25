@@ -10,4 +10,11 @@ import Foundation
 public enum SortDirection: Syntax {
     case ascending
     case descending
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        switch self {
+            case .ascending: builder.add("ASC")
+            case .descending: builder.add("DESC")
+        }
+    }
 }

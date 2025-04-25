@@ -12,6 +12,16 @@ public struct QualifiedTableName: Syntax {
     public enum Index: Syntax {
         case notIndexed
         case indexed(by: IndexName)
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .notIndexed:
+                    builder.add("NOT", "INDEXED")
+                case .indexed(by: let i):
+                    builder.add("INDEXED", "BY")
+                    try builder.add(i)
+            }
+        }
     }
     
     public var schemaName: SchemaName?
@@ -23,6 +33,12 @@ public struct QualifiedTableName: Syntax {
         self.schemaName = schemaName
         self.tableName = tableName
         self.index = index
+    }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(name: schemaName, tableName)
+        try builder.addAlias(`as`)
+        try builder.add(index)
     }
     
 }

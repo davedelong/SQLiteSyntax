@@ -19,4 +19,10 @@ public struct With: Syntax {
     public func validate() throws(SyntaxError) {
         try require(commonTableExpressions.count > 0, reason: "'With' clauses must specify at least one CommonTableExpression")
     }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("WITH")
+        if recursive { builder.add("RECURSIVE") }
+        try builder.addList(commonTableExpressions, delimiter: ",")
+    }
 }

@@ -19,4 +19,10 @@ public struct DropTriggerStatement: Syntax {
         self.triggerName = triggerName
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("DROP", "TRIGGER")
+        if ifExists { builder.add("IF", "EXISTS") }
+        try builder.add(name: schemaName, triggerName)
+    }
+    
 }

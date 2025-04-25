@@ -21,4 +21,14 @@ public struct RecursiveCompoundTableExpression: Syntax {
         self.recursiveSelect = recursiveSelect
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(tableName)
+        builder.add("AS", "(")
+        try builder.add(initialSelect)
+        builder.add("UNION")
+        if unionAll { builder.add("ALL") }
+        try builder.add(recursiveSelect)
+        builder.add(")")
+    }
+    
 }

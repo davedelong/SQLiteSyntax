@@ -15,4 +15,10 @@ public struct FilterClause: Syntax {
         self.where = `where`
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("FILTER", "(")
+        try builder.add(`where`)
+        builder.add(")")
+    }
+    
 }

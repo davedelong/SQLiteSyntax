@@ -19,4 +19,9 @@ public struct OrderBy: Syntax {
         try require(terms.count > 0, reason: "ORDER BY statements must have at least one ordering term")
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("ORDER", "BY")
+        try builder.addList(terms, delimiter: ",")
+    }
+    
 }

@@ -10,4 +10,14 @@ import Foundation
 public enum ResultColumn: Syntax {
     case expression(Expression, alias: ColumnName?)
     case wildcard(TableName?)
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        switch self {
+            case .expression(let e, alias: let alias):
+                try builder.add(e)
+                try builder.addAlias(alias)
+            case .wildcard(let table):
+                try builder.add(name: table, .init())
+        }
+    }
 }

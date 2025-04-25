@@ -13,6 +13,14 @@ public struct BeginStatement: Syntax {
         case deferred
         case immediate
         case exclusive
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .deferred: builder.add("DEFERRED")
+                case .immediate: builder.add("IMMEDIATE")
+                case .exclusive: builder.add("EXCLUSIVE")
+            }
+        }
     }
     
     public var behavior: Behavior?
@@ -23,4 +31,9 @@ public struct BeginStatement: Syntax {
         self.transaction = transaction
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("BEGIN")
+        try builder.add(behavior)
+        if transaction { builder.add("TRANSACTION") }
+    }
 }

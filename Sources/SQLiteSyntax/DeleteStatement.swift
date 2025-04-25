@@ -29,4 +29,13 @@ public struct DeleteStatement: Syntax {
         self.limit = limit
     }
     
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(with)
+        builder.add("DELETE", "FROM")
+        try builder.add(qualifiedTableName)
+        try builder.add(`where`)
+        try builder.add(returning)
+        try builder.add(orderBy)
+        try builder.add(limit)
+    }
 }

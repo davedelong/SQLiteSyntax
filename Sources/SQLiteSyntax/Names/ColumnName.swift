@@ -14,4 +14,8 @@ public struct ColumnName: Syntax {
     public init(value: String) {
         self.value = value
     }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add(value)
+    }
 }

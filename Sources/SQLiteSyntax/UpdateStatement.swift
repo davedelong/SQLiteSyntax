@@ -15,23 +15,40 @@ public struct UpdateStatement: Syntax {
         case ignore
         case replace
         case rollback
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            builder.add("OR")
+            switch self {
+                case .abort: builder.add("ABORT")
+                case .fail: builder.add("FAIL")
+                case .ignore: builder.add("IGNORE")
+                case .replace: builder.add("REPLACE")
+                case .rollback: builder.add("ROLLBACK")
+            }
+        }
     }
     
     public struct Values: Syntax {
         
-        public enum Set: Syntax {
-            case columnName(ColumnName)
-            case columnNameList(ColumnNameList)
-        }
+        public var values: Array<(ColumnNameList, Expression)>
         
-        public var values: Array<(Set, Expression)>
-        
-        public init(values: Array<(Set, Expression)>) {
+        public init(values: Array<(ColumnNameList, Expression)>) {
             self.values = values
         }
         
         public func validate() throws(SyntaxError) {
             try require(values.count > 0, reason: "Updating values requires at least one value to set")
+        }
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            var needsComma = false
+            for (name, expr) in values {
+                if needsComma { builder.add(",") }
+                try builder.add(name)
+                builder.add("=")
+                try builder.add(expr)
+                needsComma = true
+            }
         }
         
     }
@@ -46,6 +63,16 @@ public struct UpdateStatement: Syntax {
                     try require(values.count > 0, reason: "Updating a table or subquery requires at least one of them")
                 default:
                     break
+            }
+        }
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            builder.add("FROM")
+            switch self {
+                case .tableOrSubquery(let list):
+                    try builder.addList(list, delimiter: ",")
+                case .join(let join):
+                    try builder.add(join)
             }
         }
     }
@@ -72,5 +99,22 @@ public struct UpdateStatement: Syntax {
         self.from = from
         self.where = `where`
         self.returning = returning
+    }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(with)
+        builder.add("UPDATE")
+        try builder.add(or)
+        try builder.add(tableName)
+        builder.add("SET")
+        try builder.add(`set`)
+        try builder.add(from)
+        if let `where` {
+            builder.add("WHERE")
+            try builder.add(`where`)
+        }
+        try builder.add(returning)
+        try builder.add(orderBy)
+        try builder.add(limit)
     }
 }

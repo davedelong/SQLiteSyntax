@@ -10,8 +10,15 @@ import Foundation
 public struct SimpleFunctionInvocation: Syntax {
     
     public enum Arguments: Syntax {
-        case expressions(Array<Expression>)
+        case expressions(ExpressionList)
         case wildcard
+        
+        public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            switch self {
+                case .expressions(let list): try builder.add(list)
+                case .wildcard: try builder.add(Wildcard())
+            }
+        }
     }
     
     public var name: Name
@@ -21,5 +28,12 @@ public struct SimpleFunctionInvocation: Syntax {
     public init(name: Name, arguments: Arguments) {
         self.name = name
         self.arguments = arguments
+    }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.add(name)
+        builder.add("(")
+        try builder.add(arguments)
+        builder.add(")")
     }
 }

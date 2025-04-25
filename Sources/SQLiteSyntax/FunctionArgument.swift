@@ -7,18 +7,37 @@
 
 import Foundation
 
-public enum FunctionArgument: Syntax {
+public struct FunctionArgumentList: Syntax {
     
-    case expression(distinct: Bool, Array<Expression>, OrderBy?)
-    case wildcard(Wildcard?)
+    public var arguments: Array<FunctionArgument>
     
-    public func validate() throws(SyntaxError) {
-        switch self {
-            case .expression(distinct: _, let expressions, _):
-                try require(expressions.count > 0, reason: "A function argument must specify at least one expression")
-            default:
-                break
-        }
+    public init(arguments: Array<FunctionArgument>) {
+        self.arguments = arguments
     }
     
+    public func validate() throws(SyntaxError) {
+        try require(arguments.count > 0, reason: "An argument list must specify at least one argument")
+    }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.addList(arguments, delimiter: ",")
+    }
+    
+}
+
+public enum FunctionArgument: Syntax {
+    
+    case expression(distinct: Bool, ExpressionList, OrderBy?)
+    case wildcard(Wildcard?)
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        switch self {
+            case .expression(distinct: let distinct, let list, let order):
+                if distinct { builder.add("DISTINCT") }
+                try builder.add(list)
+                try builder.add(order)
+            case .wildcard(let w):
+                try builder.add(w)
+        }
+    }
 }

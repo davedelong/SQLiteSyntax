@@ -7,4 +7,8 @@
 
 public struct Wildcard: Syntax {
     public init() { }
+    
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("*")
+    }
 }
