@@ -21,17 +21,26 @@ public enum LiteralValue: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
-            case .number(let d): builder.add(d.description)
-            case .string(let s): builder.add(s)
+            case .number(let d):
+                builder.add(d.description)
+            case .string(let s):
+                let escaped = s.replacingOccurrences(of: #"""#, with: #"\""#)
+                builder.add(#""\#(escaped)""#)
             case .blob(let d):
                 let hex = d.map { String($0, radix: 16, uppercase: true) }.joined()
                 builder.add("X'\(hex)'")
-            case .null: builder.add("NULL")
-            case .true: builder.add("TRUE")
-            case .false: builder.add("FALSE")
-            case .currentTime: builder.add("CURRENT_TIME")
-            case .currentDate: builder.add("CURRENT_DATE")
-            case .currentTimestamp: builder.add("CURRENT_TIMESTAMP")
+            case .null:
+                builder.add("NULL")
+            case .true:
+                builder.add("TRUE")
+            case .false:
+                builder.add("FALSE")
+            case .currentTime:
+                builder.add("CURRENT_TIME")
+            case .currentDate:
+                builder.add("CURRENT_DATE")
+            case .currentTimestamp:
+                builder.add("CURRENT_TIMESTAMP")
         }
     }
     
