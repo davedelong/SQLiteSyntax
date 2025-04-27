@@ -7,29 +7,16 @@
 
 import Foundation
 
-public struct List<Element: Syntax>: Syntax, ExpressibleByArrayLiteral {
-    
+public struct List<Element: Syntax>: Syntax {
     
     public var items: Array<Element>
     public var delimiter = ","
     public var includeLeadingDelimeter = false
     
-    public init() {
-        self.items = []
-    }
-    
     public init(items: Array<Element>, delimeter: String, includeLeadingDelimeter: Bool) {
         self.items = items
         self.delimiter = delimeter
         self.includeLeadingDelimeter = includeLeadingDelimeter
-    }
-    
-    public init<S>(_ elements: S) where S : Sequence, Element == S.Element {
-        self.items = Array(elements)
-    }
-    
-    public init(arrayLiteral elements: Element...) {
-        self.init(elements)
     }
     
     public func validate() throws(SyntaxError) {
@@ -46,11 +33,22 @@ public struct List<Element: Syntax>: Syntax, ExpressibleByArrayLiteral {
  List conforms to various collection protocols to make interacting with it a bit easier
  
  Instead of having to do:
+ statement.columns = List()
  statement.columns.items.append(...)
  
  You can do:
+ statement.columns = []
  statement.columns.append(...)
  */
+
+extension List: ExpressibleByArrayLiteral {
+    
+    public init(arrayLiteral elements: Element...) {
+        self.init(elements)
+    }
+    
+}
+
 extension List: RangeReplaceableCollection, BidirectionalCollection, MutableCollection, RandomAccessCollection {
     
     public typealias SubSequence = List<Element>
@@ -72,6 +70,14 @@ extension List: RangeReplaceableCollection, BidirectionalCollection, MutableColl
                    delimeter: delimiter,
                    includeLeadingDelimeter: includeLeadingDelimeter) }
         set { items[bounds] = newValue.items[...] }
+    }
+    
+    public init() {
+        self.items = []
+    }
+    
+    public init<S>(_ elements: S) where S : Sequence, Element == S.Element {
+        self.items = Array(elements)
     }
     
     public mutating func replaceSubrange<C>(_ subrange: Range<Index>, with newElements: C) where C : Collection, Element == C.Element {
