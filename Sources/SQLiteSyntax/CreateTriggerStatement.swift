@@ -26,7 +26,7 @@ public struct CreateTriggerStatement: Syntax {
     public enum Trigger: Syntax {
         case delete
         case insert
-        case update(ColumnNameList?)
+        case update(List<Name<Column>>?)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
@@ -76,18 +76,18 @@ public struct CreateTriggerStatement: Syntax {
     public var temporary: Bool
     public var ifNotExists: Bool
     
-    public var schemaName: SchemaName?
-    public var triggerName: TriggerName
+    public var schemaName: Name<Schema>?
+    public var triggerName: Name<Trigger>
     
     public var timing: Timing?
     public var trigger: Trigger
     
-    public var on: TableName
+    public var on: Name<Table>
     public var condition: Condition?
     
-    public var actions: Array<Action>
+    public var actions: List<Action>
     
-    public init(temporary: Bool, ifNotExists: Bool, schemaName: SchemaName? = nil, triggerName: TriggerName, timing: Timing? = nil, trigger: Trigger, on: TableName, condition: Condition? = nil, actions: Array<Action>) {
+    public init(temporary: Bool, ifNotExists: Bool, schemaName: Name<Schema>? = nil, triggerName: Name<Trigger>, timing: Timing? = nil, trigger: Trigger, on: Name<Table>, condition: Condition? = nil, actions: List<Action>) {
         self.temporary = temporary
         self.ifNotExists = ifNotExists
         self.schemaName = schemaName
@@ -97,10 +97,6 @@ public struct CreateTriggerStatement: Syntax {
         self.on = on
         self.condition = condition
         self.actions = actions
-    }
-    
-    public func validate() throws(SyntaxError) {
-        try require(actions.count > 0, reason: "\(Self.self) must have at least one action")
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
@@ -116,10 +112,10 @@ public struct CreateTriggerStatement: Syntax {
         try builder.add(condition)
         builder.add("BEGIN")
         
-        for action in actions {
-            try builder.add(action)
-            builder.add(";")
-        }
+        var actions = self.actions
+        actions.delimiter = ";"
+        try builder.add(actions)
+        
         builder.add("END")
     }
 }

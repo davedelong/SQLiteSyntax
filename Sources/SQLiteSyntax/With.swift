@@ -9,20 +9,16 @@ import Foundation
 
 public struct With: Syntax {
     public var recursive: Bool
-    public var commonTableExpressions: Array<CommonTableExpression>
+    public var commonTableExpressions: List<CommonTableExpression>
     
-    public init(recursive: Bool, commonTableExpressions: Array<CommonTableExpression>) {
+    public init(recursive: Bool, commonTableExpressions: List<CommonTableExpression>) {
         self.recursive = recursive
         self.commonTableExpressions = commonTableExpressions
-    }
-    
-    public func validate() throws(SyntaxError) {
-        try require(commonTableExpressions.count > 0, reason: "'With' clauses must specify at least one CommonTableExpression")
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("WITH")
         if recursive { builder.add("RECURSIVE") }
-        try builder.addList(commonTableExpressions, delimiter: ",")
+        try builder.add(commonTableExpressions)
     }
 }

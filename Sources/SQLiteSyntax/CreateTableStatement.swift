@@ -11,20 +11,22 @@ public struct CreateTableStatement: Syntax {
     
     public enum Contents: Syntax {
         case select(SelectStatement)
-        case columns(Array<ColumnDefinition>, Array<TableConstraint>, TableOptions?)
+        case columns(List<ColumnDefinition>, List<TableConstraint>?, List<TableOption>?)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
                 case .select(let s):
                     try builder.addAlias(s)
-                case .columns(let def, let con, let opt):
+                case .columns(let list, let con, let opt):
                     builder.add("(")
-                    try builder.addList(def, delimiter: ",")
+                    try builder.add(list)
                     
-                    for constraint in con {
-                        builder.add(",")
-                        try builder.add(constraint)
-                    }
+                    // because there's a list of columns before this,
+                    // the conditions are preceded by the delimiter
+                    var conditions = con
+                    conditions?.includeLeadingDelimeter = true
+                    try builder.add(conditions)
+                    
                     builder.add(")")
                     try builder.add(opt)
             }
@@ -34,12 +36,12 @@ public struct CreateTableStatement: Syntax {
     public var temporary: Bool
     public var ifNotExists: Bool
     
-    public var schemaName: SchemaName?
-    public var tableName: TableName
+    public var schemaName: Name<Schema>?
+    public var tableName: Name<Table>
     
     public var contents: Contents
     
-    public init(temporary: Bool, ifNotExists: Bool, schemaName: SchemaName? = nil, tableName: TableName, contents: Contents) {
+    public init(temporary: Bool, ifNotExists: Bool, schemaName: Name<Schema>? = nil, tableName: Name<Table>, contents: Contents) {
         self.temporary = temporary
         self.ifNotExists = ifNotExists
         self.schemaName = schemaName

@@ -9,15 +9,15 @@ import Foundation
 
 public struct WindowDefinition: Syntax {
     
-    public var baseWindowName: WindowName?
+    public var baseWindowName: Name<Window>?
     
-    public var partitionBy: ExpressionList?
+    public var partitionBy: List<Expression>?
     
     public var orderBy: OrderBy?
     
     public var frameSpec: FrameSpec?
     
-    public init(baseWindowName: WindowName? = nil, partitionBy: ExpressionList? = nil, orderBy: OrderBy? = nil, frameSpec: FrameSpec? = nil) {
+    public init(baseWindowName: Name<Window>? = nil, partitionBy: List<Expression>? = nil, orderBy: OrderBy? = nil, frameSpec: FrameSpec? = nil) {
         self.baseWindowName = baseWindowName
         self.partitionBy = partitionBy
         self.orderBy = orderBy

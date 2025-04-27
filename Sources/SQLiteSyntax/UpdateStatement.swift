@@ -30,9 +30,9 @@ public struct UpdateStatement: Syntax {
     
     public struct Values: Syntax {
         
-        public var values: Array<(ColumnNameList, Expression)>
+        public var values: Array<(List<Name<Column>>, Expression)>
         
-        public init(values: Array<(ColumnNameList, Expression)>) {
+        public init(values: Array<(List<Name<Column>>, Expression)>) {
             self.values = values
         }
         

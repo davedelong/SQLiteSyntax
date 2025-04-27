@@ -9,12 +9,12 @@ import Foundation
 
 public struct PragmaStatement: Syntax {
     
-    public var schemaName: SchemaName?
-    public var pragmaName: Name
+    public var schemaName: Name<Schema>?
+    public var pragmaName: Name<Any>
     
     public var value: PragmaValue?
     
-    public init(schemaName: SchemaName? = nil, pragmaName: Name, value: PragmaValue? = nil) {
+    public init(schemaName: Name<Schema>? = nil, pragmaName: Name<Any>, value: PragmaValue? = nil) {
         self.schemaName = schemaName
         self.pragmaName = pragmaName
         self.value = value
@@ -33,7 +33,7 @@ public struct PragmaStatement: Syntax {
 
 public enum PragmaValue: Syntax {
     case number(Decimal)
-    case name(Name)
+    case name(Name<Any>)
     case literal(String)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

@@ -7,16 +7,16 @@
 
 public struct AlterTableStatement: Syntax {
     
-    public var schemaName: SchemaName?
-    public var tableName: TableName
+    public var schemaName: Name<Schema>?
+    public var tableName: Name<Table>
     
     public var action: Action
     
     public enum Action: Syntax {
-        case rename(TableName)
-        case renameColumn(from: ColumnName, to: ColumnName)
+        case rename(Name<Table>)
+        case renameColumn(from: Name<Column>, to: Name<Column>)
         case addColumn(ColumnDefinition)
-        case dropColumn(ColumnName)
+        case dropColumn(Name<Column>)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
@@ -38,7 +38,7 @@ public struct AlterTableStatement: Syntax {
         }
     }
     
-    public init(schemaName: SchemaName? = nil, tableName: TableName, action: Action) {
+    public init(schemaName: Name<Schema>? = nil, tableName: Name<Table>, action: Action) {
         self.schemaName = schemaName
         self.tableName = tableName
         self.action = action

@@ -11,7 +11,7 @@ public struct QualifiedTableName: Syntax {
     
     public enum Index: Syntax {
         case notIndexed
-        case indexed(by: IndexName)
+        case indexed(by: Name<Index>)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
@@ -24,12 +24,12 @@ public struct QualifiedTableName: Syntax {
         }
     }
     
-    public var schemaName: SchemaName?
-    public var tableName: TableName
-    public var `as`: TableName?
+    public var schemaName: Name<Schema>?
+    public var tableName: Name<Table>
+    public var `as`: Name<Table>?
     public var index: Index?
     
-    public init(schemaName: SchemaName? = nil, tableName: TableName, index: Index? = nil) {
+    public init(schemaName: Name<Schema>? = nil, tableName: Name<Table>, index: Index? = nil) {
         self.schemaName = schemaName
         self.tableName = tableName
         self.index = index

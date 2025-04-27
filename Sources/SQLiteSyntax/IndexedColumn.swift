@@ -10,7 +10,7 @@ import Foundation
 public struct IndexedColumn: Syntax {
     
     public enum Name: Syntax {
-        case columnName(ColumnName)
+        case columnName(SQLiteSyntax.Name<Column>)
         case expression(Expression)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
@@ -25,11 +25,11 @@ public struct IndexedColumn: Syntax {
     
     public var name: Name
     
-    public var collationName: CollationName?
+    public var collationName: SQLiteSyntax.Name<Collation>?
     
     public var sortOrder: SortDirection?
     
-    public init(name: Name, collationName: CollationName? = nil, sortOrder: SortDirection? = nil) {
+    public init(name: Name, collationName: SQLiteSyntax.Name<Collation>? = nil, sortOrder: SortDirection? = nil) {
         self.name = name
         self.collationName = collationName
         self.sortOrder = sortOrder

@@ -9,9 +9,9 @@ import Foundation
 
 public enum ReindexStatement: Syntax {
     case normal
-    case collation(CollationName)
-    case tableName(SchemaName?, TableName)
-    case indexName(SchemaName?, IndexName)
+    case collation(Name<Collation>)
+    case tableName(Name<Schema>?, Name<Table>)
+    case indexName(Name<Schema>?, Name<Index>)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("REINDEX")

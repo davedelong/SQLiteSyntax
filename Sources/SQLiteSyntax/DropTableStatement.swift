@@ -10,10 +10,10 @@ import Foundation
 public struct DropTableStatement: Syntax {
     
     public var ifExists: Bool
-    public var schemaName: SchemaName?
-    public var tableName: TableName
+    public var schemaName: Name<Schema>?
+    public var tableName: Name<Table>
     
-    public init(ifExists: Bool, schemaName: SchemaName? = nil, tableName: TableName) {
+    public init(ifExists: Bool, schemaName: Name<Schema>? = nil, tableName: Name<Table>) {
         self.ifExists = ifExists
         self.schemaName = schemaName
         self.tableName = tableName

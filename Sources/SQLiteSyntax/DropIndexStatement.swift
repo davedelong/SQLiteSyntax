@@ -11,11 +11,11 @@ public struct DropIndexStatement: Syntax {
     
     public var ifExists: Bool
     
-    public var schemaName: SchemaName?
+    public var schemaName: Name<Schema>?
     
-    public var indexName: IndexName
+    public var indexName: Name<Index>
     
-    public init(ifExists: Bool, schemaName: SchemaName? = nil, indexName: IndexName) {
+    public init(ifExists: Bool, schemaName: Name<Schema>? = nil, indexName: Name<Index>) {
         self.ifExists = ifExists
         self.schemaName = schemaName
         self.indexName = indexName

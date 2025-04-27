@@ -10,10 +10,10 @@ import Foundation
 public struct DropViewStatement: Syntax {
     
     public var ifExists: Bool
-    public var schemaName: SchemaName?
-    public var viewName: ViewName
+    public var schemaName: Name<Schema>?
+    public var viewName: Name<View>
     
-    public init(ifExists: Bool, schemaName: SchemaName? = nil, viewName: ViewName) {
+    public init(ifExists: Bool, schemaName: Name<Schema>? = nil, viewName: Name<View>) {
         self.ifExists = ifExists
         self.schemaName = schemaName
         self.viewName = viewName

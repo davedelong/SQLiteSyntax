@@ -10,7 +10,7 @@ public struct ForeignKeyClause: Syntax {
     public enum Condition: Syntax {
         case onDelete(Action)
         case onUpdate(Action)
-        case match(Name)
+        case match(Name<Any>)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
@@ -75,15 +75,15 @@ public struct ForeignKeyClause: Syntax {
         }
     }
     
-    public var references: TableName
+    public var references: Name<Table>
     
-    public var referencedColumns: ColumnNameList?
+    public var referencedColumns: List<Name<Column>>?
     
-    public var conditions: Array<Condition>
+    public var conditions: List<Condition>?
     
     public var deferral: Deferral?
     
-    public init(references: TableName, referencedColumns: ColumnNameList, conditions: Array<Condition>, deferral: Deferral? = nil) {
+    public init(references: Name<Table>, referencedColumns: List<Name<Column>>?, conditions: List<Condition>?, deferral: Deferral? = nil) {
         self.references = references
         self.referencedColumns = referencedColumns
         self.conditions = conditions
@@ -93,14 +93,8 @@ public struct ForeignKeyClause: Syntax {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("REFERENCES")
         try builder.add(references)
-        if let referencedColumns {
-            builder.add("(")
-            try builder.add(referencedColumns)
-            builder.add(")")
-        }
-        for condition in conditions {
-            try builder.add(condition)
-        }
+        try builder.add(group: referencedColumns)
+        try builder.add(conditions)
         try builder.add(deferral)
     }
     

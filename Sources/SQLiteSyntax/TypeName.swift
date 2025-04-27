@@ -23,21 +23,17 @@ public struct TypeName: Syntax {
         }
     }
     
-    public var names: Array<Name>
+    public var names: List<Name<Any>>
     
     public var arguments: Arguments?
     
-    public init(names: Array<Name>, arguments: Arguments? = nil) {
+    public init(names: List<Name<Any>>, arguments: Arguments? = nil) {
         self.names = names
         self.arguments = arguments
     }
     
-    public func validate() throws(SyntaxError) {
-        try require(names.count > 0, reason: "A type name must have at least one name")
-    }
-    
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.addList(names)
+        try builder.add(names)
         try builder.add(arguments)
     }
 }

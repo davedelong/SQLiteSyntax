@@ -11,9 +11,9 @@ public struct RollbackStatement: Syntax {
     
     public var transaction: Bool
     
-    public var savepointName: SavepointName?
+    public var savepointName: Name<Savepoint>?
     
-    public init(transaction: Bool, savepointName: SavepointName? = nil) {
+    public init(transaction: Bool, savepointName: Name<Savepoint>? = nil) {
         self.transaction = transaction
         self.savepointName = savepointName
     }

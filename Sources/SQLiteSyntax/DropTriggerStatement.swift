@@ -10,10 +10,10 @@ import Foundation
 public struct DropTriggerStatement: Syntax {
     
     public var ifExists: Bool
-    public var schemaName: SchemaName?
-    public var triggerName: TriggerName
+    public var schemaName: Name<Schema>?
+    public var triggerName: Name<Trigger>
     
-    public init(ifExists: Bool, schemaName: SchemaName? = nil, triggerName: TriggerName) {
+    public init(ifExists: Bool, schemaName: Name<Schema>? = nil, triggerName: Name<Trigger>) {
         self.ifExists = ifExists
         self.schemaName = schemaName
         self.triggerName = triggerName

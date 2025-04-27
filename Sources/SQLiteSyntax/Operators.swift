@@ -11,8 +11,8 @@ public enum UnaryOperator: Syntax {
     case bitwiseNot
     case plus
     case negate
-    case collate(CollationName)
-    case escape(Name)
+    case collate(Name<Collation>)
+    case escape(Name<Any>)
     case isNull
     case notNull
     case not

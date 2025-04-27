@@ -24,23 +24,14 @@ public enum SelectCore: Syntax {
         }
         
         public enum From: Syntax {
-            case tableOrSubquery(Array<TableOrSubquery>)
+            case tableOrSubquery(List<TableOrSubquery>)
             case join(JoinClause)
-            
-            public func validate() throws(SyntaxError) {
-                switch self {
-                    case .tableOrSubquery(let values):
-                        try require(values.count > 0, reason: "Selecting from a table or subquery requires at least one of them")
-                    default:
-                        break
-                }
-            }
             
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
                 builder.add("FROM")
                 switch self {
                     case .tableOrSubquery(let list):
-                        try builder.addList(list, delimiter: ",")
+                        try builder.add(list)
                     case .join(let join):
                         try builder.add(join)
                 }
@@ -49,14 +40,14 @@ public enum SelectCore: Syntax {
         
         public var selection: Selection?
         
-        public var columns: Array<ResultColumn>
+        public var columns: List<ResultColumn>
         public var from: From?
         public var `where`: Expression?
         public var groupBy: Array<Expression>
         public var having: Expression?
-        public var window: Array<(WindowName, WindowDefinition)>
+        public var window: Array<(Name<Window>, WindowDefinition)>
         
-        public init(selection: Selection? = nil, columns: Array<ResultColumn>, from: From? = nil, `where`: Expression? = nil, groupBy: Array<Expression>, having: Expression? = nil, window: Array<(WindowName, WindowDefinition)>) {
+        public init(selection: Selection? = nil, columns: List<ResultColumn>, from: From? = nil, `where`: Expression? = nil, groupBy: Array<Expression>, having: Expression? = nil, window: Array<(Name<Window>, WindowDefinition)>) {
             self.selection = selection
             self.columns = columns
             self.from = from
@@ -66,14 +57,10 @@ public enum SelectCore: Syntax {
             self.window = window
         }
         
-        public func validate() throws(SyntaxError) {
-            try require(columns.count > 0, reason: "Selecting values requires at least one column")
-        }
-        
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             builder.add("SELECT")
             try builder.add(selection)
-            try builder.addList(columns, delimiter: ",")
+            try builder.add(columns)
             try builder.add(from)
             try builder.add(`where`)
             if groupBy.count > 0 {
@@ -98,7 +85,7 @@ public enum SelectCore: Syntax {
     }
     
     case select(Core)
-    case values(ExpressionList)
+    case values(List<Expression>)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {

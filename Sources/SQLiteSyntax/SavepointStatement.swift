@@ -9,9 +9,9 @@ import Foundation
 
 public struct SavepointStatement: Syntax {
     
-    public var savepointName: SavepointName
+    public var savepointName: Name<Savepoint>
     
-    public init(savepointName: SavepointName) {
+    public init(savepointName: Name<Savepoint>) {
         self.savepointName = savepointName
     }
     

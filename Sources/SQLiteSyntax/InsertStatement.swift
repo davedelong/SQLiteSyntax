@@ -45,16 +45,14 @@ public struct InsertStatement: Syntax {
     }
     
     public enum Values: Syntax {
-        case values(ExpressionList, UpsertClause?)
+        case values(List<Expression>, UpsertClause?)
         case select(SelectStatement, UpsertClause?)
         case defaultValues
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
                 case .values(let list, let upsert):
-                    builder.add("(")
-                    try builder.add(list)
-                    builder.add(")")
+                    try builder.add(group: list)
                     try builder.add(upsert)
                 case .select(let select, let upsert):
                     try builder.add(select)
@@ -69,19 +67,19 @@ public struct InsertStatement: Syntax {
     
     public var action: Action
     
-    public var schemaName: SchemaName?
+    public var schemaName: Name<Schema>?
     
-    public var tableName: TableName
+    public var tableName: Name<Table>
     
-    public var `as`: TableName?
+    public var `as`: Name<Table>?
     
-    public var columns: ColumnNameList?
+    public var columns: List<Name<Column>>?
     
     public var values: Values
     
     public var returning: ReturningClause?
     
-    public init(with: With? = nil, action: Action, schemaName: SchemaName? = nil, tableName: TableName, columns: ColumnNameList? = nil, values: Values, returning: ReturningClause? = nil) {
+    public init(with: With? = nil, action: Action, schemaName: Name<Schema>? = nil, tableName: Name<Table>, columns: List<Name<Column>>? = nil, values: Values, returning: ReturningClause? = nil) {
         self.with = with
         self.action = action
         self.schemaName = schemaName
@@ -97,11 +95,7 @@ public struct InsertStatement: Syntax {
         builder.add("INTO")
         try builder.add(name: schemaName, tableName)
         try builder.addAlias(`as`)
-        if let columns {
-            builder.add("(")
-            try builder.add(columns)
-            builder.add(")")
-        }
+        try builder.add(group: columns)
         try builder.add(values)
         try builder.add(returning)
     }

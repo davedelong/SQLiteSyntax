@@ -9,19 +9,15 @@ import Foundation
 
 public struct OrderBy: Syntax {
     
-    public var terms: Array<OrderingTerm>
+    public var terms: List<OrderingTerm>
     
-    public init(terms: Array<OrderingTerm>) {
+    public init(terms: List<OrderingTerm>) {
         self.terms = terms
-    }
-    
-    public func validate() throws(SyntaxError) {
-        try require(terms.count > 0, reason: "ORDER BY statements must have at least one ordering term")
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("ORDER", "BY")
-        try builder.addList(terms, delimiter: ",")
+        try builder.add(terms)
     }
     
 }

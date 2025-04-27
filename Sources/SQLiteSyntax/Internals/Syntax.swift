@@ -9,6 +9,9 @@ import Foundation
 
 public protocol Syntax: Sendable {
     
+    /// Validate that the syntax is correct and has everything it needs.
+    ///
+    /// This is called automatically as part of building.
     func validate() throws(SyntaxError)
     func build(using builder: inout SyntaxBuilder) throws(SyntaxError)
     
@@ -28,22 +31,42 @@ public struct SyntaxBuilder {
         }
     }
     
-    mutating func addAlias(name: SchemaName? = nil, _ part: (any Syntax)?) throws(SyntaxError) {
+    mutating func addAlias(name: Name<Schema>? = nil, _ part: (any Syntax)?) throws(SyntaxError) {
         if let part {
             add("AS")
             try add(first: name, second: part)
         }
     }
     
-    mutating func add(name: SchemaName? = nil, _ part: (any Syntax)?) throws(SyntaxError) {
+    @_disfavoredOverload
+    mutating func add(name: Name<Schema>? = nil, _ part: (any Syntax)?) throws(SyntaxError) {
         try add(first: name, second: part)
     }
     
-    mutating func add(name: TableName? = nil, _ wildcard: Wildcard) throws(SyntaxError) {
+    mutating func add<T: Syntax>(group: T?) throws(SyntaxError) {
+        guard let group else { return }
+        add("(")
+        try add(group)
+        add(")")
+    }
+    
+    mutating func add(name: Name<Table>? = nil, _ wildcard: Wildcard) throws(SyntaxError) {
         try add(first: name, second: wildcard)
     }
     
+    mutating func add<T: Syntax>(_ list: List<T>?) throws(SyntaxError) {
+        if let list, list.items.isEmpty { return }
+        try add(name: nil, list)
+    }
+    
+    mutating func add<T: Syntax>(_ list: List<T>) throws(SyntaxError) {
+        try add(name: nil, list)
+    }
+    
     private mutating func add(first: (any Syntax)?, second: (any Syntax)?) throws(SyntaxError) {
+        try first?.validate()
+        try second?.validate()
+        
         if let first, let second {
             var inner = SyntaxBuilder()
             try first.build(using: &inner)

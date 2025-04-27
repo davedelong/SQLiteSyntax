@@ -9,7 +9,7 @@ import Foundation
 
 public struct AggregateFunctionInvocation: Syntax {
     
-    public var functionName: FunctionName
+    public var functionName: Name<Function>
     public var definition: Definition
     public var filterClause: FilterClause?
     
@@ -27,10 +27,10 @@ public struct AggregateFunctionInvocation: Syntax {
     
     public struct Expression: Syntax {
         public var distinct: Bool
-        public var expressions: ExpressionList
+        public var expressions: List<Expression>
         public var orderBy: OrderBy?
         
-        public init(distinct: Bool, expressions: ExpressionList, orderBy: OrderBy? = nil) {
+        public init(distinct: Bool, expressions: List<Expression>, orderBy: OrderBy? = nil) {
             self.distinct = distinct
             self.expressions = expressions
             self.orderBy = orderBy
@@ -43,7 +43,7 @@ public struct AggregateFunctionInvocation: Syntax {
         }
     }
     
-    public init(functionName: FunctionName, definition: Definition, filterClause: FilterClause?) {
+    public init(functionName: Name<Function>, definition: Definition, filterClause: FilterClause?) {
         self.functionName = functionName
         self.definition = definition
         self.filterClause = filterClause
@@ -51,9 +51,7 @@ public struct AggregateFunctionInvocation: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.add(functionName)
-        builder.add("(")
-        try builder.add(definition)
-        builder.add(")")
+        try builder.add(group: definition)
         try builder.add(filterClause)
     }
 }

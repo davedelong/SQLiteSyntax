@@ -10,16 +10,16 @@ import Foundation
 public struct AttachStatement: Syntax {
     
     public var expression: Expression
-    public var asSchemaName: SchemaName
+    public var `as`: Name<Schema>
     
-    public init(expression: Expression, asSchemaName: SchemaName) {
+    public init(expression: Expression, `as`: Name<Schema>) {
         self.expression = expression
-        self.asSchemaName = asSchemaName
+        self.as = `as`
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("ATTACH", "DATABASE")
         try builder.add(expression)
-        try builder.addAlias(asSchemaName)
+        try builder.addAlias(`as`)
     }
 }

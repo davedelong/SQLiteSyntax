@@ -9,12 +9,12 @@ import Foundation
 
 public struct RecursiveCompoundTableExpression: Syntax {
     
-    public var tableName: CommonTableExpression.TableName
+    public var tableName: CommonTableExpression.Name<Table>
     public var initialSelect: SelectStatement
     public var unionAll: Bool
     public var recursiveSelect: CompoundSelectStatement
     
-    public init(tableName: CommonTableExpression.TableName, initialSelect: SelectStatement, unionAll: Bool, recursiveSelect: CompoundSelectStatement) {
+    public init(tableName: CommonTableExpression.Name<Table>, initialSelect: SelectStatement, unionAll: Bool, recursiveSelect: CompoundSelectStatement) {
         self.tableName = tableName
         self.initialSelect = initialSelect
         self.unionAll = unionAll

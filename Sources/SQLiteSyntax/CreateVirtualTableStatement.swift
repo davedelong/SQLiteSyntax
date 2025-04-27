@@ -10,13 +10,13 @@ import Foundation
 public struct CreateVirtualTableStatement: Syntax {
     
     public var ifNotExists: Bool
-    public var schemaName: SchemaName?
-    public var tableName: TableName
+    public var schemaName: Name<Schema>?
+    public var tableName: Name<Table>
     
-    public var moduleName: ModuleName
-    public var moduleArguments: Array<String>
+    public var moduleName: Name<Module>
+    public var moduleArguments: List<Name<Any>>?
     
-    public init(ifNotExists: Bool, schemaName: SchemaName? = nil, tableName: TableName, moduleName: ModuleName, moduleArguments: Array<String>) {
+    public init(ifNotExists: Bool, schemaName: Name<Schema>? = nil, tableName: Name<Table>, moduleName: Name<Module>, moduleArguments: List<Name<Any>>? = nil) {
         self.ifNotExists = ifNotExists
         self.schemaName = schemaName
         self.tableName = tableName
@@ -30,12 +30,7 @@ public struct CreateVirtualTableStatement: Syntax {
         try builder.add(name: schemaName, tableName)
         builder.add("USING")
         try builder.add(moduleName)
-        
-        if moduleArguments.count > 0 {
-            builder.add("(")
-            try builder.addList(moduleArguments, delimiter: ",")
-            builder.add(")")
-        }
+        try builder.add(group: moduleArguments)
     }
     
 }

@@ -16,7 +16,7 @@ public struct ColumnConstraint: Syntax {
         case unique(ConflictClause)
         case check(Expression)
         case `default`(DefaultValue)
-        case collate(CollationName)
+        case collate(Name<Collation>)
         case foreignKey(ForeignKeyClause)
         case generated(always: Bool, as: Expression, storage: GeneratedStorage?)
         
@@ -65,9 +65,7 @@ public struct ColumnConstraint: Syntax {
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
                 case .expression(let e):
-                    builder.add("(")
-                    try builder.add(e)
-                    builder.add(")")
+                    try builder.add(group: e)
                 case .literalValue(let s):
                     builder.add(s)
                 case .signedNumber(let n):
@@ -88,10 +86,10 @@ public struct ColumnConstraint: Syntax {
         }
     }
     
-    public var name: Name?
+    public var name: Name<Any>?
     public var constraint: Constraint
     
-    public init(name: Name?, constraint: Constraint) {
+    public init(name: Name<Any>?, constraint: Constraint) {
         self.name = name
         self.constraint = constraint
     }

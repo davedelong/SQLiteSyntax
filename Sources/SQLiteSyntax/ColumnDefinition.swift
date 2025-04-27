@@ -9,11 +9,11 @@ import Foundation
 
 public struct ColumnDefinition: Syntax {
     
-    public var name: ColumnName
+    public var name: Name<Column>
     public var typeName: TypeName?
-    public var constraints: Array<ColumnConstraint>
+    public var constraints: List<ColumnConstraint>?
     
-    public init(name: ColumnName, typeName: TypeName? = nil, constraints: Array<ColumnConstraint>) {
+    public init(name: Name<Column>, typeName: TypeName? = nil, constraints: List<ColumnConstraint>?) {
         self.name = name
         self.typeName = typeName
         self.constraints = constraints
@@ -22,8 +22,6 @@ public struct ColumnDefinition: Syntax {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.add(name)
         try builder.add(typeName)
-        for constraint in constraints {
-            try builder.add(constraint)
-        }
+        try builder.add(constraints)
     }
 }

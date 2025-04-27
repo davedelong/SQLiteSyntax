@@ -9,11 +9,11 @@ import Foundation
 
 public struct VacuumStatement: Syntax {
     
-    public var schemaName: SchemaName?
+    public var schemaName: Name<Schema>?
     
     public var filename: String?
     
-    public init(schemaName: SchemaName? = nil, filename: String? = nil) {
+    public init(schemaName: Name<Schema>? = nil, filename: String? = nil) {
         self.schemaName = schemaName
         self.filename = filename
     }

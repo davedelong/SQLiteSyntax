@@ -8,8 +8,8 @@
 import Foundation
 
 public enum ResultColumn: Syntax {
-    case expression(Expression, alias: ColumnName?)
-    case wildcard(TableName?)
+    case expression(Expression, alias: Name<Column>?)
+    case wildcard(Name<Table>?)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {

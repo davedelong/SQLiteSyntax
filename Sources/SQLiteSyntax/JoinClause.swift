@@ -31,7 +31,7 @@ public struct JoinClause: Syntax {
 
 public enum JoinConstraint: Syntax {
     case on(Expression)
-    case using(ColumnNameList)
+    case using(List<Name<Column>>)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {

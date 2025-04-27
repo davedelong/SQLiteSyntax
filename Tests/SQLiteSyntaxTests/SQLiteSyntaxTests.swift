@@ -1,13 +1,13 @@
 import Testing
 @testable import SQLiteSyntax
 
-@Test func example() async throws {
+@Test func createTable() async throws {
     // Write your test here and use APIs like `#expect(...)` to check expected conditions.
     let create = CreateTableStatement(temporary: false,
                                       ifNotExists: true,
-                                      tableName: .init(value: "Test"),
+                                      tableName: "Test",
                                       contents: .columns([
-                                        .init(name: .init(value: "id"),
+                                        .init(name: "id",
                                               typeName: .init(names: [.init(value: "INT")]),
                                               constraints: [
                                                 .init(name: nil, constraint: .primaryKey(nil, .abort, autoincrement: true))
@@ -16,4 +16,13 @@ import Testing
     
     let sql = try create.build()
     #expect(sql == "CREATE TABLE IF NOT EXISTS Test ( id INT PRIMARY KEY ON CONFLICT ABORT AUTOINCREMENT )")
+}
+
+@Test func invalidTable() async throws {
+    let create = CreateTableStatement(temporary: false,
+                                      ifNotExists: false,
+                                      tableName: "Test",
+                                      contents: .columns([], [], nil))
+    
+    #expect(throws: SyntaxError.self, performing: { try create.build() })
 }

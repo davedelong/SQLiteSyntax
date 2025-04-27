@@ -25,7 +25,7 @@ public struct WindowFunctionInvocation: Syntax {
     
     public enum Over: Syntax {
         case windowDefinition(WindowDefinition)
-        case windowName(WindowName)
+        case windowName(Name<Window>)
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             builder.add("OVER")
@@ -36,7 +36,7 @@ public struct WindowFunctionInvocation: Syntax {
         }
     }
     
-    public var name: Name
+    public var name: Name<Function>
     
     public var arguments: Arguments
     
@@ -44,7 +44,7 @@ public struct WindowFunctionInvocation: Syntax {
     
     public var over: Over
     
-    public init(name: Name, arguments: Arguments, filterClause: FilterClause? = nil, over: Over) {
+    public init(name: Name<Function>, arguments: Arguments, filterClause: FilterClause? = nil, over: Over) {
         self.name = name
         self.arguments = arguments
         self.filterClause = filterClause
@@ -53,8 +53,7 @@ public struct WindowFunctionInvocation: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.add(name)
-        builder.add("(")
-        try builder.add(arguments)
+        try builder.add(group: arguments)
         try builder.add(filterClause)
         try builder.add(over)
     }

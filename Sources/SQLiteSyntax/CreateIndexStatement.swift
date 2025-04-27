@@ -12,25 +12,21 @@ public struct CreateIndexStatement: Syntax {
     public var unique: Bool
     public var ifNotExists: Bool
     
-    public var schemaName: SchemaName?
-    public var indexName: IndexName
-    public var on: TableName
+    public var schemaName: Name<Schema>?
+    public var indexName: Name<Index>
+    public var on: Name<Table>
     
-    public var indexedColumns: Array<IndexedColumn>
+    public var indexedColumns: List<IndexedColumn>
     
     public var `where`: Expression?
     
-    public init(unique: Bool, ifNotExists: Bool, schemaName: SchemaName? = nil, indexName: IndexName, on: TableName, indexedColumns: Array<IndexedColumn>) {
+    public init(unique: Bool, ifNotExists: Bool, schemaName: Name<Schema>? = nil, indexName: Name<Index>, on: Name<Table>, indexedColumns: List<IndexedColumn>) {
         self.unique = unique
         self.ifNotExists = ifNotExists
         self.schemaName = schemaName
         self.indexName = indexName
         self.on = on
         self.indexedColumns = indexedColumns
-    }
-    
-    public func validate() throws(SyntaxError) {
-        try require(indexedColumns.count > 0, reason: "\(Self.self) must have at least one indexed column")
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
@@ -41,9 +37,7 @@ public struct CreateIndexStatement: Syntax {
         try builder.add(name: schemaName, indexName)
         builder.add("ON")
         try builder.add(on)
-        builder.add("(")
-        try builder.addList(indexedColumns, delimiter: ",")
-        builder.add(")")
+        try builder.add(group: indexedColumns)
         if let `where` {
             builder.add("WHERE")
             try builder.add(`where`)

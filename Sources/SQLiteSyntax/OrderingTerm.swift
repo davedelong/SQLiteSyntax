@@ -22,11 +22,11 @@ public struct OrderingTerm: Syntax {
     }
     
     public var expression: Expression
-    public var collationName: CollationName?
+    public var collationName: Name<Collation>?
     public var sortDirection: SortDirection?
     public var nulls: Nulls?
     
-    public init(expression: Expression, collationName: CollationName? = nil, sortDirection: SortDirection? = nil, nulls: Nulls? = nil) {
+    public init(expression: Expression, collationName: Name<Collation>? = nil, sortDirection: SortDirection? = nil, nulls: Nulls? = nil) {
         self.expression = expression
         self.collationName = collationName
         self.sortDirection = sortDirection

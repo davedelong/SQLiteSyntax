@@ -7,27 +7,9 @@
 
 import Foundation
 
-public struct FunctionArgumentList: Syntax {
-    
-    public var arguments: Array<FunctionArgument>
-    
-    public init(arguments: Array<FunctionArgument>) {
-        self.arguments = arguments
-    }
-    
-    public func validate() throws(SyntaxError) {
-        try require(arguments.count > 0, reason: "An argument list must specify at least one argument")
-    }
-    
-    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.addList(arguments, delimiter: ",")
-    }
-    
-}
-
 public enum FunctionArgument: Syntax {
     
-    case expression(distinct: Bool, ExpressionList, OrderBy?)
+    case expression(distinct: Bool, List<Expression>, OrderBy?)
     case wildcard(Wildcard?)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

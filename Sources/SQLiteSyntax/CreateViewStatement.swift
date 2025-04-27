@@ -12,13 +12,13 @@ public struct CreateViewStatement: Syntax {
     public var temporary: Bool
     public var ifNotExists: Bool
     
-    public var schemaName: SchemaName?
-    public var viewName: ViewName
+    public var schemaName: Name<Schema>?
+    public var viewName: Name<View>
     
-    public var columnNames: ColumnNameList?
+    public var columnNames: List<Name<Column>>?
     public var `as`: SelectStatement
     
-    public init(temporary: Bool, ifNotExists: Bool, schemaName: SchemaName? = nil, viewName: ViewName, columnNames: ColumnNameList? = nil, as: SelectStatement) {
+    public init(temporary: Bool, ifNotExists: Bool, schemaName: Name<Schema>? = nil, viewName: Name<View>, columnNames: List<Name<Column>>? = nil, as: SelectStatement) {
         self.temporary = temporary
         self.ifNotExists = ifNotExists
         self.schemaName = schemaName
@@ -33,11 +33,7 @@ public struct CreateViewStatement: Syntax {
         builder.add("VIEW")
         if ifNotExists { builder.add("IF", "NOT", "EXISTS") }
         try builder.add(name: schemaName, viewName)
-        if let columnNames {
-            builder.add("(")
-            try builder.add(columnNames)
-            builder.add(")")
-        }
+        try builder.add(group: columnNames)
         try builder.addAlias(`as`)
     }
     

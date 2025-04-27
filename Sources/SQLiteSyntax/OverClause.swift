@@ -9,8 +9,8 @@ import Foundation
 
 public enum OverClause: Syntax {
     
-    case windowName(WindowName)
-    case expression(WindowName?, partitionBy: ExpressionList?, orderBy: OrderBy?, frameSpec: FrameSpec?)
+    case windowName(Name<Window>)
+    case expression(Name<Window>?, partitionBy: List<Expression>?, orderBy: OrderBy?, frameSpec: FrameSpec?)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("OVER")

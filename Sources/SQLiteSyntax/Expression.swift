@@ -7,31 +7,17 @@
 
 import Foundation
 
-public struct ExpressionList: Syntax {
-    
-    public var expressions: Array<Expression>
-    
-    public func validate() throws(SyntaxError) {
-        try require(expressions.count > 0, reason: "An expression list must have at least one expression")
-    }
-    
-    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.addList(expressions, delimiter: ",")
-    }
-    
-}
-
 public indirect enum Expression: Syntax {
     
     case literalValue(LiteralValue)
     case bindParameter(BindParameter)
-    case columnName(SchemaName?, TableName?, ColumnName)
+    case columnName(Name<Schema>?, Name<Table>?, Name<Column>)
     case unaryOperator(UnaryOperator, Expression)
     case binaryOperator(Expression, BinaryOperator, Expression)
-    case function(FunctionName, FunctionArgumentList, FilterClause?, OverClause?)
-    case expressionList(ExpressionList)
+    case function(Name<Function>, List<FunctionArgument>, FilterClause?, OverClause?)
+    case expressionList(List<Expression>)
     case cast(Expression, as: TypeName)
-    case collate(Expression, CollationName)
+    case collate(Expression, Name<Collation>)
     case like(Expression, negated: Bool, like: Expression, escape: Expression?)
     case glob(Expression, negated: Bool, glob: Expression)
     case regexp(Expression, negated: Bool, regexp: Expression)
@@ -41,9 +27,9 @@ public indirect enum Expression: Syntax {
     case equals(Expression, negated: Bool, distinct: Bool, from: Expression)
     case between(Expression, negated: Bool,lower: Expression, upper: Expression)
     case inStatement(Expression, negated: Bool, SelectStatement)
-    case inExpression(Expression, negated: Bool, ExpressionList)
-    case inTable(Expression, negated: Bool, SchemaName?, TableName?)
-    case inTableFunction(Expression, negated: Bool, SchemaName?, FunctionName, FunctionArgumentList)
+    case inExpression(Expression, negated: Bool, List<Expression>)
+    case inTable(Expression, negated: Bool, Name<Schema>?, Name<Table>?)
+    case inTableFunction(Expression, negated: Bool, Name<Schema>?, Name<Function>, List<FunctionArgument>)
     case select(SelectStatement)
     case exists(negated: Bool, SelectStatement)
     case when(Expression?, Array<(when: Expression, then: Expression)>, else: Expression?)
@@ -75,15 +61,11 @@ public indirect enum Expression: Syntax {
                 try builder.add(right)
             case .function(let name, let args, let filter, let over):
                 try builder.add(name)
-                builder.add("(")
-                try builder.add(args)
-                builder.add(")")
+                try builder.add(group: args)
                 try builder.add(filter)
                 try builder.add(over)
             case .expressionList(let list):
-                builder.add("(")
-                try builder.add(list)
-                builder.add(")")
+                try builder.add(group: list)
             case .cast(let val, as: let type):
                 builder.add("CAST", "(")
                 try builder.add(val)
@@ -147,9 +129,7 @@ public indirect enum Expression: Syntax {
                 try builder.add(expr)
                 if negated { builder.add("NOT") }
                 builder.add("IN")
-                builder.add("(")
-                try builder.add(list)
-                builder.add(")")
+                try builder.add(group: list)
             case .inTable(let expr, negated: let negated, let schema, let table):
                 try builder.add(expr)
                 if negated { builder.add("NOT") }
@@ -160,19 +140,13 @@ public indirect enum Expression: Syntax {
                 if negated { builder.add("NOT") }
                 builder.add("IN")
                 try builder.add(name: schema, function)
-                builder.add("(")
-                try builder.add(args)
-                builder.add(")")
+                try builder.add(group: args)
             case .select(let select):
-                builder.add("(")
-                try builder.add(select)
-                builder.add(")")
+                try builder.add(group: select)
             case .exists(negated: let negated, let select):
                 if negated { builder.add("NOT") }
                 builder.add("EXISTS")
-                builder.add("(")
-                try builder.add(select)
-                builder.add(")")
+                try builder.add(group: select)
             case .when(let expr, let whenThens, else: let `else`):
                 builder.add("CASE")
                 try builder.add(expr)

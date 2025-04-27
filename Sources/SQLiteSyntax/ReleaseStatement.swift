@@ -10,9 +10,9 @@ import Foundation
 public struct ReleaseStatement: Syntax {
     
     public var savepoint: Bool
-    public var savepointName: SavepointName
+    public var savepointName: Name<Savepoint>
     
-    public init(savepoint: Bool, savepointName: SavepointName) {
+    public init(savepoint: Bool, savepointName: Name<Savepoint>) {
         self.savepoint = savepoint
         self.savepointName = savepointName
     }

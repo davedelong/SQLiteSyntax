@@ -10,9 +10,9 @@ import Foundation
 public enum AnalyzeStatement: Syntax {
     
     case blank
-    case schema(SchemaName)
-    case index(SchemaName?, IndexName)
-    case table(SchemaName?, TableName)
+    case schema(Name<Schema>)
+    case index(Name<Schema>?, Name<Index>)
+    case table(Name<Schema>?, Name<Table>)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("ANALYZE")
