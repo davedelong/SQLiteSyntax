@@ -62,7 +62,10 @@ public enum SelectCore: Syntax {
             try builder.add(selection)
             try builder.add(columns)
             try builder.add(from)
-            try builder.add(`where`)
+            if let `where` {
+                builder.add("WHERE")
+                try builder.add(`where`)
+            }
             if groupBy.count > 0 {
                 builder.add("GROUP", "BY")
                 try builder.addList(groupBy, delimiter: ",")

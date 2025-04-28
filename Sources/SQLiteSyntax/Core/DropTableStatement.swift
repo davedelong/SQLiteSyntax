@@ -13,7 +13,7 @@ public struct DropTableStatement: Syntax {
     public var schemaName: Name<Schema>?
     public var tableName: Name<Table>
     
-    public init(ifExists: Bool, schemaName: Name<Schema>? = nil, tableName: Name<Table>) {
+    public init(ifExists: Bool = true, schemaName: Name<Schema>? = nil, tableName: Name<Table>) {
         self.ifExists = ifExists
         self.schemaName = schemaName
         self.tableName = tableName

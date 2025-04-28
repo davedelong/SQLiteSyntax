@@ -22,6 +22,9 @@ public struct ColumnDefinition: Syntax {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.add(name)
         try builder.add(typeName)
-        try builder.add(constraints)
+        
+        var withoutDelimiter = constraints
+        withoutDelimiter?.delimiter = ""
+        try builder.add(withoutDelimiter)
     }
 }

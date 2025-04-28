@@ -110,6 +110,7 @@ public struct SyntaxBuilder {
 
 public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
+    case invalidMutation(String)
 }
 
 extension Syntax {

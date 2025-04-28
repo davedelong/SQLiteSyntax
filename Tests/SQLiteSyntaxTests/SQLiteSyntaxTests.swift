@@ -38,3 +38,25 @@ import Testing
     let sql = try create.build()
     #expect(sql == #"CREATE TABLE "BEGIN" ( "END" )"#)
 }
+
+@Test func convenientTable() async throws {
+    var create = Table.Create(name: "Test")
+    create.addPrimaryKey("id", type: .integer)
+    create.addColumn("name", type: .text, canBeNull: false)
+    create.addColumn("dob", type: .text)
+    create.options = []
+    
+    let sql = try create.build()
+    #expect(sql == "CREATE TABLE IF NOT EXISTS Test ( id INTEGER NOT NULL PRIMARY KEY , name TEXT NOT NULL , dob TEXT )")
+}
+
+@Test func selection() async throws {
+    var select = Select.star(from: "Test")
+    let s1 = try select.build()
+    #expect(s1 == "SELECT * FROM Test")
+    
+    select.where = .binaryOperator(.columnName("foo"), .equals, .literalValue("bar"))
+    let s2 = try select.build()
+    #expect(s2 == #"SELECT * FROM Test WHERE foo == "bar""#)
+    
+}
