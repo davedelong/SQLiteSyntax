@@ -7,6 +7,8 @@
 
 import Foundation
 
+#warning("TODO: conveniences")
+
 public protocol Syntax: Sendable {
     
     /// Validate that the syntax is correct and has everything it needs.

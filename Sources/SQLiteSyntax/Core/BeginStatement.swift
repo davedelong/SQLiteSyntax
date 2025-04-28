@@ -26,7 +26,7 @@ public struct BeginStatement: Syntax {
     public var behavior: Behavior?
     public var transaction: Bool
     
-    public init(behavior: Behavior? = nil, transaction: Bool) {
+    public init(behavior: Behavior? = nil, transaction: Bool = true) {
         self.behavior = behavior
         self.transaction = transaction
     }

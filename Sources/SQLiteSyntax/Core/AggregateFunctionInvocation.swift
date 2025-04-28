@@ -30,7 +30,7 @@ public struct AggregateFunctionInvocation: Syntax {
         public var expressions: List<Expression>
         public var orderBy: OrderBy?
         
-        public init(distinct: Bool, expressions: List<Expression>, orderBy: OrderBy? = nil) {
+        public init(distinct: Bool = false, expressions: List<Expression>, orderBy: OrderBy? = nil) {
             self.distinct = distinct
             self.expressions = expressions
             self.orderBy = orderBy
@@ -43,7 +43,7 @@ public struct AggregateFunctionInvocation: Syntax {
         }
     }
     
-    public init(functionName: Name<Function>, definition: Definition, filterClause: FilterClause?) {
+    public init(functionName: Name<Function>, definition: Definition, filterClause: FilterClause? = nil) {
         self.functionName = functionName
         self.definition = definition
         self.filterClause = filterClause

@@ -14,6 +14,10 @@ public enum AnalyzeStatement: Syntax {
     case index(Name<Schema>?, Name<Index>)
     case table(Name<Schema>?, Name<Table>)
     
+    public init() {
+        self = .blank
+    }
+    
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add("ANALYZE")
         switch self {

@@ -26,3 +26,15 @@ import Testing
     
     #expect(throws: SyntaxError.self, performing: { try create.build() })
 }
+
+@Test func specialTableName() async throws {
+    let create = CreateTableStatement(temporary: false,
+                                      ifNotExists: false,
+                                      tableName: "BEGIN",
+                                      contents: .columns([
+                                        .init(name: "END", constraints: nil)
+                                      ], [], []))
+    
+    let sql = try create.build()
+    #expect(sql == #"CREATE TABLE "BEGIN" ( "END" )"#)
+}

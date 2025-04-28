@@ -45,6 +45,7 @@ public struct InsertStatement: Syntax {
     }
     
     public enum Values: Syntax {
+        #warning("TODO: Should be a list of list/group of expressions")
         case values(List<Expression>, UpsertClause?)
         case select(SelectStatement, UpsertClause?)
         case defaultValues

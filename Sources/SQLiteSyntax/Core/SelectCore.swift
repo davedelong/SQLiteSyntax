@@ -85,6 +85,7 @@ public enum SelectCore: Syntax {
     }
     
     case select(Core)
+#warning("TODO: Should be a list of list/group of expressions")
     case values(List<Expression>)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
