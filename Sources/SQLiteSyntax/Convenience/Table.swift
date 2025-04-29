@@ -78,4 +78,19 @@ extension Table.Create {
         
         self.columns.append(def)
     }
+    
+    public mutating func addForeignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, canBeNull: Bool, onUpdate: ForeignKeyClause.Action? = nil, onDelete: ForeignKeyClause.Action? = nil) {
+        
+        var clause = ForeignKeyClause(references: references, referencedColumns: [column], conditions: [])
+        if let onUpdate { clause.conditions?.append(.onUpdate(onUpdate)) }
+        if let onDelete { clause.conditions?.append(.onDelete(onDelete)) }
+        
+        var def = ColumnDefinition(name: name, constraints: [
+            .init(name: nil, constraint: .foreignKey(clause))
+        ])
+        if canBeNull == false {
+            def.constraints = [.init(name: nil, constraint: .notNull(.none))]
+        }
+        self.columns.append(def)
+    }
 }

@@ -14,7 +14,7 @@ import Testing
                                               ])
                                       ], [], nil))
     
-    let sql = try create.build()
+    let sql = try create.sql()
     #expect(sql == "CREATE TABLE IF NOT EXISTS Test ( id INT PRIMARY KEY ON CONFLICT ABORT AUTOINCREMENT )")
 }
 
@@ -24,7 +24,7 @@ import Testing
                                       tableName: "Test",
                                       contents: .columns([], [], nil))
     
-    #expect(throws: SyntaxError.self, performing: { try create.build() })
+    #expect(throws: SyntaxError.self, performing: { try create.sql() })
 }
 
 @Test func specialTableName() async throws {
@@ -35,7 +35,7 @@ import Testing
                                         .init(name: "END", constraints: nil)
                                       ], [], []))
     
-    let sql = try create.build()
+    let sql = try create.sql()
     #expect(sql == #"CREATE TABLE "BEGIN" ( "END" )"#)
 }
 
@@ -46,17 +46,28 @@ import Testing
     create.addColumn("dob", type: .text)
     create.options = []
     
-    let sql = try create.build()
-    #expect(sql == "CREATE TABLE IF NOT EXISTS Test ( id INTEGER NOT NULL PRIMARY KEY , name TEXT NOT NULL , dob TEXT )")
+    let s1 = try create.sql()
+    #expect(s1 == "CREATE TABLE IF NOT EXISTS Test ( id INTEGER NOT NULL PRIMARY KEY , name TEXT NOT NULL , dob TEXT )")
+    
+    create.addForeignKey(
+        "parent",
+        references: "Test",
+        column: "id",
+        canBeNull: true,
+        onDelete: .setNull
+    )
+    
+    let s2 = try create.sql()
+    #expect(s2 == "CREATE TABLE IF NOT EXISTS Test ( id INTEGER NOT NULL PRIMARY KEY , name TEXT NOT NULL , dob TEXT , parent REFERENCES Test ( id ) ON DELETE SET NULL )")
 }
 
 @Test func selection() async throws {
     var select = Select.star(from: "Test")
-    let s1 = try select.build()
+    let s1 = try select.sql()
     #expect(s1 == "SELECT * FROM Test")
     
-    select.where = .binaryOperator(.columnName("foo"), .equals, .literalValue("bar"))
-    let s2 = try select.build()
+    select.where = .column("foo") == "bar"
+    let s2 = try select.sql()
     #expect(s2 == #"SELECT * FROM Test WHERE foo == "bar""#)
     
 }

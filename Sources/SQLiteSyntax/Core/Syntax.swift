@@ -19,6 +19,24 @@ public protocol Syntax: Sendable {
     
 }
 
+extension Syntax {
+    
+    public func validate() throws(SyntaxError) { }
+    
+    public func sql() throws(SyntaxError) -> String {
+        var builder = SyntaxBuilder()
+        try self.build(using: &builder)
+        return builder.terms.joined(separator: " ")
+    }
+    
+    internal func require(_ expression: Bool, reason: String) throws(SyntaxError) {
+        if expression == false {
+            throw SyntaxError.invalidSyntax(self, reason: reason)
+        }
+    }
+    
+}
+
 public struct SyntaxBuilder {
     
     internal var terms: Array<String> = []
@@ -110,23 +128,4 @@ public struct SyntaxBuilder {
 
 public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
-    case invalidMutation(String)
-}
-
-extension Syntax {
-    
-    public func validate() throws(SyntaxError) { }
-    
-    public func build() throws(SyntaxError) -> String {
-        var builder = SyntaxBuilder()
-        try self.build(using: &builder)
-        return builder.terms.joined(separator: " ")
-    }
-    
-    internal func require(_ expression: Bool, reason: String) throws(SyntaxError) {
-        if expression == false {
-            throw SyntaxError.invalidSyntax(self, reason: reason)
-        }
-    }
-    
 }
