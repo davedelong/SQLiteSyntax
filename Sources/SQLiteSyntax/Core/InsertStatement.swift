@@ -45,15 +45,15 @@ public struct InsertStatement: Syntax {
     }
     
     public enum Values: Syntax {
-        #warning("TODO: Should be a list of list/group of expressions")
-        case values(List<Expression>, UpsertClause?)
+        case values(List<Group<List<Expression>>>, UpsertClause?)
         case select(SelectStatement, UpsertClause?)
         case defaultValues
         
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
                 case .values(let list, let upsert):
-                    try builder.add(group: list)
+                    builder.add("VALUES")
+                    try builder.add(list)
                     try builder.add(upsert)
                 case .select(let select, let upsert):
                     try builder.add(select)

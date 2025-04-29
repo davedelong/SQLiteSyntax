@@ -7,8 +7,6 @@
 
 import Foundation
 
-#warning("TODO: conveniences")
-
 public protocol Syntax: Sendable {
     
     /// Validate that the syntax is correct and has everything it needs.
@@ -26,7 +24,7 @@ extension Syntax {
     public func sql() throws(SyntaxError) -> String {
         var builder = SyntaxBuilder()
         try self.build(using: &builder)
-        return builder.terms.joined(separator: " ")
+        return builder.sql
     }
     
     internal func require(_ expression: Bool, reason: String) throws(SyntaxError) {
@@ -39,7 +37,9 @@ extension Syntax {
 
 public struct SyntaxBuilder {
     
-    internal var terms: Array<String> = []
+    private var terms: Array<String> = []
+    
+    var sql: String { terms.joined(separator: " ") }
     
     mutating func add(_ terms: String?...) {
         self.add(terms)

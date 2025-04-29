@@ -71,3 +71,25 @@ import Testing
     #expect(s2 == #"SELECT * FROM Test WHERE foo == "bar""#)
     
 }
+
+@Test func insert() async throws {
+    let insert = InsertStatement(action: .insert(.none),
+                                 tableName: "Test",
+                                 columns: [
+                                    "greeting",
+                                    "target"
+                                 ],
+                                 values: .values([
+                                    Group(contents: [
+                                        "Hello",
+                                        "World"
+                                    ]),
+                                    Group(contents: [
+                                        "Goodnight",
+                                        "Moon"
+                                    ])
+                                 ], nil))
+    
+    let sql = try insert.sql()
+    #expect(sql == #"INSERT INTO Test ( greeting , target ) VALUES ( "Hello" , "World" ) , ( "Goodnight" , "Moon" )"#)
+}

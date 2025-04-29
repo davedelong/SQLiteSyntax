@@ -88,17 +88,15 @@ public enum SelectCore: Syntax {
     }
     
     case select(Core)
-#warning("TODO: Should be a list of list/group of expressions")
-    case values(List<Expression>)
+    case values(List<Group<List<Expression>>>)
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
             case .select(let core):
                 try builder.add(core)
             case .values(let list):
-                builder.add("VALUES", "(")
+                builder.add("VALUES")
                 try builder.add(list)
-                builder.add(")")
         }
     }
     
