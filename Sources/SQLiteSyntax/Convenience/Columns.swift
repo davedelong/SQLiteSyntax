@@ -9,11 +9,11 @@ import Foundation
 
 extension ColumnConstraint {
     
-    public var notNull: Self {
+    public static var notNull: Self {
         return .init(name: nil, constraint: .notNull(.none))
     }
     
-    public var unique: Self {
+    public static var unique: Self {
         return .init(name: nil, constraint: .unique(.none))
     }
     
