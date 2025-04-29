@@ -89,7 +89,7 @@ extension Table.Create {
             .init(name: nil, constraint: .foreignKey(clause))
         ])
         if canBeNull == false {
-            def.constraints = [.init(name: nil, constraint: .notNull(.none))]
+            def.constraints?.append(.init(name: nil, constraint: .notNull(.none)))
         }
         self.columns.append(def)
     }
