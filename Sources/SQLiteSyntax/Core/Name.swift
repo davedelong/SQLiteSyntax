@@ -29,8 +29,7 @@ public struct Name<T>: Syntax {
         needsEscaping = needsEscaping || Name<Any>.keywords.contains(value.lowercased())
         
         if needsEscaping {
-            let escaped = value.replacingOccurrences(of: #"""#, with: #"\""#)
-            builder.add(#""\#(escaped)""#)
+            builder.add(Literals.string(value))
         } else {
             builder.add(value)
         }
@@ -64,6 +63,7 @@ extension Character {
     fileprivate var isProbablySpecial: Bool {
         // underscores are allowed in names, but even though it's a symbol
         if self == "_" { return false }
+        if self == "'" { return true }
         
         if isWhitespace { return true }
         if isPunctuation { return true }

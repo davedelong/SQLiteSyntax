@@ -24,11 +24,9 @@ public enum LiteralValue: Syntax {
             case .number(let d):
                 builder.add(d.description)
             case .string(let s):
-                let escaped = s.replacingOccurrences(of: #"""#, with: #"\""#)
-                builder.add(#""\#(escaped)""#)
+                builder.add(Literals.string(s))
             case .blob(let d):
-                let hex = d.map { String($0, radix: 16, uppercase: true) }.joined()
-                builder.add("X'\(hex)'")
+                builder.add(Literals.blob(d))
             case .null:
                 builder.add("NULL")
             case .true:
