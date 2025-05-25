@@ -19,6 +19,10 @@ extension Table.Create {
         self.init(temporary: false, ifNotExists: ifNotExists, tableName: name, contents: .columns([], nil, nil))
     }
     
+    public init(name: Name<Table>, ifNotExists: Bool = true, columns: List<ColumnDefinition>) {
+        self.init(temporary: false, ifNotExists: ifNotExists, tableName: name, contents: .columns(columns, nil, nil))
+    }
+    
     public var columns: List<ColumnDefinition> {
         get {
             guard case .columns(let c, _, _) = contents else { return [] }
@@ -62,35 +66,14 @@ extension Table.Create {
     }
     
     public mutating func addPrimaryKey(_ name: Name<Column>, type: TypeName, autoincrement: Bool = false) {
-        let def = ColumnDefinition(name: name, typeName: type, constraints: [
-            .init(name: nil, constraint: .notNull(.none)),
-            .init(name: nil, constraint: .primaryKey(nil, .none, autoincrement: autoincrement))
-        ])
-        
-        self.columns.append(def)
+        self.columns.append(.primaryKey(name, type: type, autoincrement: autoincrement))
     }
     
     public mutating func addColumn(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true) {
-        var def = ColumnDefinition(name: name, typeName: type, constraints: nil)
-        if canBeNull == false {
-            def.constraints = [.init(name: nil, constraint: .notNull(.none))]
-        }
-        
-        self.columns.append(def)
+        self.columns.append(.init(name, type: type, canBeNull: canBeNull))
     }
     
     public mutating func addForeignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, type: TypeName? = nil, canBeNull: Bool, onUpdate: ForeignKeyClause.Action? = nil, onDelete: ForeignKeyClause.Action? = nil) {
-        
-        var clause = ForeignKeyClause(references: references, referencedColumns: [column], conditions: [])
-        if let onUpdate { clause.conditions?.append(.onUpdate(onUpdate)) }
-        if let onDelete { clause.conditions?.append(.onDelete(onDelete)) }
-        
-        var def = ColumnDefinition(name: name, typeName: type, constraints: [
-            .init(name: nil, constraint: .foreignKey(clause))
-        ])
-        if canBeNull == false {
-            def.constraints?.append(.init(name: nil, constraint: .notNull(.none)))
-        }
-        self.columns.append(def)
+        self.columns.append(.foreignKey(name, references: references, column: column, type: type, canBeNull: canBeNull, onUpdate: onUpdate, onDelete: onDelete))
     }
 }
