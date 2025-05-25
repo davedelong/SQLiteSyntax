@@ -32,11 +32,29 @@ extension ColumnDefinition {
         return def
     }
     
+    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: Expression? = nil) {
+        self.init(name, type: type, canBeNull: canBeNull, defaultValue: defaultValue.map { .expression($0) })
+    }
     
-    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true) {
+    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: LiteralValue? = nil) {
+        self.init(name, type: type, canBeNull: canBeNull, defaultValue: defaultValue.map { .expression(.literalValue($0)) })
+    }
+    
+    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: String? = nil) {
+        self.init(name, type: type, canBeNull: canBeNull, defaultValue: defaultValue.map { .literalValue($0) })
+    }
+    
+    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: ColumnConstraint.DefaultValue? = nil) {
         self.init(name: name, typeName: type, constraints: nil)
+        var constraints = Array<ColumnConstraint>()
         if canBeNull == false {
-            self.constraints = [.init(name: nil, constraint: .notNull(.none))]
+            constraints.append(.init(name: nil, constraint: .notNull(.none)))
+        }
+        if let defaultValue {
+            constraints.append(.init(name: nil, constraint: .default(defaultValue)))
+        }
+        if constraints.isEmpty == false {
+            self.constraints = List(constraints)
         }
     }
     
