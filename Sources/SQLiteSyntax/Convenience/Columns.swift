@@ -9,7 +9,7 @@ import Foundation
 
 extension ColumnDefinition {
     
-    static func primaryKey(_ name: Name<Column>, type: TypeName, autoincrement: Bool = false) -> Self {
+    public static func primaryKey(_ name: Name<Column>, type: TypeName, autoincrement: Bool = false) -> Self {
         let def = ColumnDefinition(name: name, typeName: type, constraints: [
             .init(name: nil, constraint: .notNull(.none)),
             .init(name: nil, constraint: .primaryKey(nil, .none, autoincrement: autoincrement))
