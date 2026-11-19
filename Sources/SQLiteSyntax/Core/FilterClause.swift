@@ -16,7 +16,7 @@ public struct FilterClause: Syntax {
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        builder.add("FILTER", "(")
+        builder.add("FILTER", "(", "WHERE")
         try builder.add(`where`)
         builder.add(")")
     }

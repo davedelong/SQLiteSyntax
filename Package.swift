@@ -33,19 +33,24 @@ let package = Package(
             name: "GrammarExtraction",
             dependencies: ["CPikchr"]
         ),
+        // Generates Swift `Syntax` types from the extracted grammar (see Grammar/codegen.json).
+        .target(
+            name: "SyntaxGeneration",
+            dependencies: ["GrammarExtraction"]
+        ),
         .executableTarget(
             name: "sqlite-grammar",
-            dependencies: ["GrammarExtraction"]
+            dependencies: ["GrammarExtraction", "SyntaxGeneration"]
         ),
         .plugin(
             name: "GenerateGrammar",
             capability: .command(
                 intent: .custom(
                     verb: "generate-grammar",
-                    description: "Regenerate Grammar/sqlite.ebnf from the SQLite documentation's syntax diagrams"
+                    description: "Regenerate Grammar/sqlite.ebnf, and the Swift types listed in Grammar/codegen.json, from the SQLite documentation's syntax diagrams"
                 ),
                 permissions: [
-                    .writeToPackageDirectory(reason: "Writes the extracted grammar to Grammar/sqlite.ebnf")
+                    .writeToPackageDirectory(reason: "Writes Grammar/sqlite.ebnf and Sources/SQLiteSyntax/Generated/")
                 ]
             )
         ),

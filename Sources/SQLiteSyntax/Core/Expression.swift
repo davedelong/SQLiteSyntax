@@ -51,8 +51,7 @@ public indirect enum Expression: Syntax {
             case .bindParameter(let p):
                 try builder.add(p)
             case .columnName(let s, let t, let c):
-                try builder.add(name: s, t)
-                try builder.add(c)
+                try builder.addQualified(s, t, c)
             case .unaryOperator(let o, let e):
                 try o.build(using: &builder, argument: e)
             case .binaryOperator(let left, let op, let right):

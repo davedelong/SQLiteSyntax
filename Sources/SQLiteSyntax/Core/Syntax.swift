@@ -107,6 +107,19 @@ public struct SyntaxBuilder {
         }
     }
     
+    /// Adds the present parts as one dot-separated term, e.g. `schema.table.column`.
+    mutating func addQualified(_ parts: (any Syntax)?...) throws(SyntaxError) {
+        var names: Array<String> = []
+        for part in parts {
+            guard let part else { continue }
+            try part.validate()
+            var inner = SyntaxBuilder()
+            try part.build(using: &inner)
+            names.append(inner.sql)
+        }
+        if names.isEmpty == false { terms.append(names.joined(separator: ".")) }
+    }
+
     mutating func addList<S: Syntax>(_ list: Array<S>, delimiter: String? = nil) throws(SyntaxError) {
         var needsDelimiter = false
         for item in list {

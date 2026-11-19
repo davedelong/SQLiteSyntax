@@ -1,0 +1,40 @@
+{
+    "rules": [
+        "column-constraint",
+        "compound-operator",
+        "conflict-clause",
+        "filter-clause",
+        "frame-spec",
+        "indexed-column",
+        "join-constraint",
+        "join-operator",
+        "ordering-term",
+        "signed-number"
+    ],
+    "references": {
+        "expr": "Expression",
+        "foreign-key-clause": "ForeignKeyClause",
+        "literal-value": "LiteralValue"
+    },
+    "tokens": {
+        "collation-name": "Name<Collation>",
+        "column-name": "Name<Column>",
+        "name": "Name<Any>",
+        "numeric-literal": "NumericLiteral"
+    },
+    "keywordEnums": {
+        "ASC|DESC": "SortDirection"
+    },
+    "names": {
+        "ColumnConstraint.option": "constraint",
+        "ColumnConstraint.Constraint.as": "generated",
+        "ColumnConstraint.Constraint.generated.option": "storage",
+        "FrameSpec.option": "unit",
+        "FrameSpec.option2": "extent",
+        "FrameSpec.Extent.between.between": "start",
+        "FrameSpec.Extent.between.and": "end",
+        "IndexedColumn.option": "target",
+        "JoinOperator.join.option": "kind",
+        "SignedNumber.option": "sign"
+    }
+}

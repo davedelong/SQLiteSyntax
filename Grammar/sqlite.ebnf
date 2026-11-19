@@ -1,0 +1,142 @@
+aggregate-function-invocation ::= aggregate-func '(' [ ( '*' | [ 'DISTINCT' ] expr { ',' expr } [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] ) ] ')' [ filter-clause ]
+
+alter-table-stmt ::= 'ALTER' 'TABLE' [ schema-name '.' ] table-name ( 'ADD' ( [ 'COLUMN' ] column-def | [ 'CONSTRAINT' constraint-name ] 'CHECK' '(' expr ')' [ conflict-clause ] ) | 'ALTER' [ 'COLUMN' ] column-name ( 'DROP' 'NOT' 'NULL' | 'SET' 'NOT' 'NULL' [ conflict-clause ] ) | 'DROP' ( 'CONSTRAINT' constraint-name | [ 'COLUMN' ] column-name ) | 'RENAME' ( 'TO' new-table-name | [ 'COLUMN' ] column-name 'TO' new-column-name ) )
+
+analyze-stmt ::= 'ANALYZE' [ ( index-or-table-name | schema-name [ '.' table-or-index-name ] ) ]
+
+attach-stmt ::= 'ATTACH' [ 'DATABASE' ] expr 'AS' schema-name
+
+begin-stmt ::= 'BEGIN' [ ( 'DEFERRED' | 'EXCLUSIVE' | 'IMMEDIATE' ) ] [ 'TRANSACTION' ]
+
+column-constraint ::= [ 'CONSTRAINT' name ] ( 'CHECK' '(' expr ')' | 'COLLATE' collation-name | 'DEFAULT' ( '(' expr ')' | literal-value | signed-number ) | 'NOT' 'NULL' conflict-clause | 'PRIMARY' 'KEY' [ ( 'ASC' | 'DESC' ) ] conflict-clause [ 'AUTOINCREMENT' ] | 'UNIQUE' conflict-clause | [ 'GENERATED' 'ALWAYS' ] 'AS' '(' expr ')' [ ( 'STORED' | 'VIRTUAL' ) ] | foreign-key-clause )
+
+column-def ::= column-name [ type-name ] { column-constraint }
+
+column-name-list ::= '(' column-name { ',' column-name } ')'
+
+comment-syntax ::= ( '--' { anything-except-newline } ( end-of-input | newline ) | '/*' { 'anything-except-*/' } ( '*/' | end-of-input ) )
+
+commit-stmt ::= ( 'COMMIT' | 'END' ) [ 'TRANSACTION' ]
+
+common-table-expression ::= table-name [ '(' column-name { ',' column-name } ')' ] 'AS' [ [ 'NOT' ] 'MATERIALIZED' ] '(' select-stmt ')'
+
+compound-operator ::= ( 'EXCEPT' | 'INTERSECT' | 'UNION' [ 'ALL' ] )
+
+compound-select-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] select-core ( 'EXCEPT' | 'INTERSECT' | 'UNION' [ 'ALL' ] ) select-core { ( 'EXCEPT' | 'INTERSECT' | 'UNION' [ 'ALL' ] ) select-core } [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] [ 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] ]
+
+conflict-clause ::= [ 'ON' 'CONFLICT' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ]
+
+create-index-stmt ::= 'CREATE' [ 'UNIQUE' ] 'INDEX' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] index-name 'ON' table-name '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ]
+
+create-table-stmt ::= 'CREATE' [ ( 'TEMP' | 'TEMPORARY' ) ] 'TABLE' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] table-name ( '(' column-def { ',' column-def } { ',' table-constraint } ')' [ table-options ] | 'AS' select-stmt )
+
+create-trigger-stmt ::= 'CREATE' [ ( 'TEMP' | 'TEMPORARY' ) ] 'TRIGGER' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] trigger-name [ ( 'AFTER' | 'BEFORE' | 'INSTEAD' 'OF' ) ] ( 'DELETE' | 'INSERT' | 'UPDATE' [ 'OF' column-name { ',' column-name } ] ) 'ON' table-name [ ( 'FOR' 'EACH' 'ROW' [ 'WHEN' expr ] | 'WHEN' expr ) ] 'BEGIN' ( delete-stmt | insert-stmt | select-stmt | update-stmt ) ';' { ( delete-stmt | insert-stmt | select-stmt | update-stmt ) ';' } 'END'
+
+create-view-stmt ::= 'CREATE' [ ( 'TEMP' | 'TEMPORARY' ) ] 'VIEW' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] view-name [ '(' column-name { ',' column-name } ')' ] 'AS' select-stmt
+
+create-virtual-table-stmt ::= 'CREATE' 'VIRTUAL' 'TABLE' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] table-name 'USING' module-name [ '(' module-argument { ',' module-argument } ')' ]
+
+cte-table-name ::= table-name [ '(' column-name { ',' column-name } ')' ]
+
+delete-stmt-limited ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] 'DELETE' 'FROM' qualified-table-name [ 'WHERE' expr ] [ returning-clause ] [ [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] ]
+
+delete-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] 'DELETE' 'FROM' qualified-table-name [ 'WHERE' expr ] [ returning-clause ]
+
+detach-stmt ::= 'DETACH' [ 'DATABASE' ] schema-name
+
+drop-index-stmt ::= 'DROP' 'INDEX' [ 'IF' 'EXISTS' ] [ schema-name '.' ] index-name
+
+drop-table-stmt ::= 'DROP' 'TABLE' [ 'IF' 'EXISTS' ] [ schema-name '.' ] table-name
+
+drop-trigger-stmt ::= 'DROP' 'TRIGGER' [ 'IF' 'EXISTS' ] [ schema-name '.' ] trigger-name
+
+drop-view-stmt ::= 'DROP' 'VIEW' [ 'IF' 'EXISTS' ] [ schema-name '.' ] view-name
+
+expr ::= ( '(' expr { ',' expr } ')' | 'CASE' [ expr ] 'WHEN' expr 'THEN' expr { 'WHEN' expr 'THEN' expr } [ 'ELSE' expr ] 'END' | 'CAST' '(' expr 'AS' type-name ')' | [ [ 'NOT' ] 'EXISTS' ] '(' select-stmt ')' | [ [ schema-name '.' ] table-name '.' ] column-name | bind-parameter | expr 'COLLATE' collation-name | expr 'IS' [ 'NOT' ] [ 'DISTINCT' 'FROM' ] expr | expr ( 'ISNULL' | 'NOT' 'NULL' | 'NOTNULL' ) | expr [ 'NOT' ] 'BETWEEN' expr 'AND' expr | expr [ 'NOT' ] 'IN' '(' [ ( expr { ',' expr } | select-stmt ) ] ')' | expr [ 'NOT' ] 'IN' [ schema-name '.' ] ( table-function '(' [ expr { ',' expr } ] ')' | table-name ) | expr [ 'NOT' ] ( 'LIKE' expr [ 'ESCAPE' expr ] | ( 'GLOB' | 'MATCH' | 'REGEXP' ) expr ) | expr binary-operator expr | function-name '(' function-arguments ')' [ filter-clause ] [ over-clause ] | literal-value | raise-function | unary-operator expr )
+
+factored-select-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] select-core { compound-operator select-core } [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] [ 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] ]
+
+filter-clause ::= 'FILTER' '(' 'WHERE' expr ')'
+
+foreign-key-clause ::= 'REFERENCES' foreign-table [ '(' column-name { ',' column-name } ')' ] { ( 'MATCH' name | 'ON' ( 'DELETE' | 'UPDATE' ) ( 'CASCADE' | 'NO' 'ACTION' | 'RESTRICT' | 'SET' 'DEFAULT' | 'SET' 'NULL' ) ) } [ [ 'NOT' ] 'DEFERRABLE' [ 'INITIALLY' ( 'DEFERRED' | 'IMMEDIATE' ) ] ]
+
+frame-spec ::= ( 'GROUPS' | 'RANGE' | 'ROWS' ) ( 'BETWEEN' ( 'CURRENT' 'ROW' | 'UNBOUNDED' 'PRECEDING' | expr 'FOLLOWING' | expr 'PRECEDING' ) 'AND' ( 'CURRENT' 'ROW' | ( 'UNBOUNDED' | expr ) 'FOLLOWING' | expr 'PRECEDING' ) | 'CURRENT' 'ROW' | 'UNBOUNDED' 'PRECEDING' | expr 'PRECEDING' ) [ 'EXCLUDE' ( 'CURRENT' 'ROW' | 'GROUP' | 'NO' 'OTHERS' | 'TIES' ) ]
+
+function-arguments ::= [ ( '*' | [ 'DISTINCT' ] expr { ',' expr } [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] ) ]
+
+indexed-column ::= ( column-name | expr ) [ 'COLLATE' collation-name ] [ ( 'ASC' | 'DESC' ) ]
+
+insert-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] ( 'INSERT' [ 'OR' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ] | 'REPLACE' ) 'INTO' [ schema-name '.' ] table-name [ 'AS' alias ] [ '(' column-name { ',' column-name } ')' ] ( 'DEFAULT' 'VALUES' | ( 'VALUES' '(' expr { ( ')' ',' '(' | ',' ) expr } ')' | select-stmt ) [ upsert-clause ] ) [ returning-clause ]
+
+join-clause ::= table-or-subquery [ join-operator table-or-subquery join-constraint { join-operator table-or-subquery join-constraint } ]
+
+join-constraint ::= [ ( 'ON' expr | 'USING' '(' column-name { ',' column-name } ')' ) ]
+
+join-operator ::= ( ',' | ( 'CROSS' | [ 'NATURAL' ] [ ( 'FULL' | 'INNER' | 'LEFT' | 'RIGHT' | ( 'FULL' | 'LEFT' | 'RIGHT' ) 'OUTER' ) ] ) 'JOIN' )
+
+literal-value ::= ( 'CURRENT_DATE' | 'CURRENT_TIME' | 'CURRENT_TIMESTAMP' | 'FALSE' | 'NULL' | 'TRUE' | blob-literal | numeric-literal | string-literal )
+
+numeric-literal ::= ( ( '.' digit { [ '_' ] digit } | digit { [ '_' ] digit } [ '.' { digit { '_' digit } } ] ) [ ( 'E' | e ) [ ( '+' | '-' ) ] digit { [ '_' ] digit } ] | ( '0X' | '0x' ) hexdigit { [ '_' ] hexdigit } )
+
+ordering-term ::= expr [ 'COLLATE' collation-name ] [ ( 'ASC' | 'DESC' ) ] [ 'NULLS' ( 'FIRST' | 'LAST' ) ]
+
+over-clause ::= 'OVER' ( '(' [ base-window-name ] [ 'PARTITION' 'BY' expr { ',' expr } ] [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] [ frame-spec ] ')' | window-name )
+
+pragma-stmt ::= 'PRAGMA' [ schema-name '.' ] pragma-name [ ( '(' pragma-value ')' | '=' pragma-value ) ]
+
+pragma-value ::= ( name | signed-literal | signed-number )
+
+qualified-table-name ::= [ schema-name '.' ] table-name [ 'AS' alias ] [ ( 'INDEXED' 'BY' index-name | 'NOT' 'INDEXED' ) ]
+
+raise-function ::= 'RAISE' '(' ( 'IGNORE' | ( 'ABORT' | 'FAIL' | 'ROLLBACK' ) ',' expr ) ')'
+
+recursive-cte ::= cte-table-name 'AS' '(' initial-select 'UNION' [ 'ALL' ] recursive-select ')'
+
+reindex-stmt ::= 'REINDEX' [ ( 'EXPRESSIONS' | [ schema-name '.' ] ( index-name | table-name ) | collation-name ) ]
+
+release-stmt ::= 'RELEASE' [ 'SAVEPOINT' ] savepoint-name
+
+result-column ::= ( [ table-name '.' ] '*' | expr [ [ 'AS' ] column-alias ] )
+
+returning-clause ::= 'RETURNING' ( '*' | expr [ [ 'AS' ] column-alias ] ) { ',' ( '*' | expr [ [ 'AS' ] column-alias ] ) }
+
+rollback-stmt ::= 'ROLLBACK' [ 'TRANSACTION' ] [ 'TO' [ 'SAVEPOINT' ] savepoint-name ]
+
+savepoint-stmt ::= 'SAVEPOINT' savepoint-name
+
+select-core ::= ( 'SELECT' [ ( 'ALL' | 'DISTINCT' ) ] result-column { ',' result-column } [ ( 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) [ 'WHERE' expr ] | 'WHERE' expr ) ] [ 'GROUP' 'BY' expr { ',' expr } ] [ 'HAVING' expr ] [ 'WINDOW' window-name 'AS' window-defn { ',' window-name 'AS' window-defn } ] | 'VALUES' '(' expr { ',' expr } ')' { ',' '(' expr { ',' expr } ')' } )
+
+select-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] ( 'SELECT' [ ( 'ALL' | 'DISTINCT' ) ] result-column { ',' result-column } [ ( 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) [ 'WHERE' expr ] | 'WHERE' expr ) ] [ 'GROUP' 'BY' expr { ',' expr } ] [ 'HAVING' expr ] [ 'WINDOW' window-name 'AS' window-defn { ',' window-name 'AS' window-defn } ] | 'VALUES' '(' expr { ',' expr } ')' { ',' '(' expr { ',' expr } ')' } ) { compound-operator ( 'SELECT' [ ( 'ALL' | 'DISTINCT' ) ] result-column { ',' result-column } [ ( 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) [ 'WHERE' expr ] | 'WHERE' expr ) ] [ 'GROUP' 'BY' expr { ',' expr } ] [ 'HAVING' expr ] [ 'WINDOW' window-name 'AS' window-defn { ',' window-name 'AS' window-defn } ] | 'VALUES' '(' expr { ',' expr } ')' { ',' '(' expr { ',' expr } ')' } ) } [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] [ 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] ]
+
+signed-number ::= [ ( '+' | '-' ) ] numeric-literal
+
+simple-function-invocation ::= simple-func '(' [ ( '*' | expr { ',' expr } ) ] ')'
+
+simple-select-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] select-core [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] [ 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] ]
+
+sql-stmt-list ::= [ sql-stmt ] { ';' [ sql-stmt ] }
+
+sql-stmt ::= [ 'EXPLAIN' [ 'QUERY' 'PLAN' ] ] ( alter-table-stmt | analyze-stmt | attach-stmt | begin-stmt | commit-stmt | create-index-stmt | create-table-stmt | create-trigger-stmt | create-view-stmt | create-virtual-table-stmt | delete-stmt | delete-stmt-limited | detach-stmt | drop-index-stmt | drop-table-stmt | drop-trigger-stmt | drop-view-stmt | insert-stmt | pragma-stmt | reindex-stmt | release-stmt | rollback-stmt | savepoint-stmt | select-stmt | update-stmt | update-stmt-limited | vacuum-stmt )
+
+table-constraint ::= [ 'CONSTRAINT' name ] ( 'CHECK' '(' expr ')' | 'FOREIGN' 'KEY' '(' column-name { ',' column-name } ')' foreign-key-clause | ( 'PRIMARY' 'KEY' '(' indexed-column 'AUTOINCREMENT' | ( 'PRIMARY' 'KEY' | 'UNIQUE' ) '(' indexed-column { ',' indexed-column } ) ')' conflict-clause )
+
+table-options ::= ( 'STRICT' | 'WITHOUT' 'ROWID' ) { ',' ( 'STRICT' | 'WITHOUT' 'ROWID' ) }
+
+table-or-subquery ::= ( '(' ( ( join-clause | select-stmt | table-or-subquery { ',' table-or-subquery } ) ')' | select-stmt ')' [ 'AS' ] table-alias ) | [ schema-name '.' ] table-function-name '(' expr { ',' expr } ')' [ [ 'AS' ] table-alias ] | [ schema-name '.' ] table-name [ ( 'INDEXED' 'BY' index-name | 'NOT' 'INDEXED' | [ 'AS' ] table-alias [ ( 'INDEXED' 'BY' index-name | 'NOT' 'INDEXED' ) ] ) ] )
+
+type-name ::= name+ [ '(' signed-number [ ',' signed-number ] ')' ]
+
+update-stmt-limited ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] 'UPDATE' [ 'OR' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ] qualified-table-name 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) ] [ 'WHERE' expr ] [ returning-clause ] [ ( 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] | 'ORDER' 'BY' ordering-term { ',' ordering-term } [ 'LIMIT' expr [ ( ',' | 'OFFSET' ) expr ] ] ) ]
+
+update-stmt ::= [ 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression } ] 'UPDATE' [ 'OR' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ] qualified-table-name 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) ] [ 'WHERE' expr ] [ returning-clause ]
+
+upsert-clause ::= 'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] ) { 'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] ) }
+
+vacuum-stmt ::= 'VACUUM' [ schema-name ] [ 'INTO' filename ]
+
+window-defn ::= '(' [ base-window-name ] [ 'PARTITION' 'BY' expr { ',' expr } ] [ 'ORDER' 'BY' ordering-term { ',' ordering-term } ] [ frame-spec ] ')'
+
+window-function-invocation ::= window-func '(' [ ( '*' | expr { ',' expr } ) ] ')' [ filter-clause ] 'OVER' ( window-defn | window-name )
+
+with-clause ::= 'WITH' [ 'RECURSIVE' ] cte-table-name 'AS' [ [ 'NOT' ] 'MATERIALIZED' ] '(' select-stmt ')' { ',' cte-table-name 'AS' [ [ 'NOT' ] 'MATERIALIZED' ] '(' select-stmt ')' }
+

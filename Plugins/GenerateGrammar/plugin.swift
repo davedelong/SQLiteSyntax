@@ -1,9 +1,10 @@
 import Foundation
 import PackagePlugin
 
-/// `swift package generate-grammar [--docs <path>]`
+/// `swift package --allow-writing-to-package-directory generate-grammar [--docs <path>]`
 ///
-/// Regenerates Grammar/sqlite.ebnf from the SQLite documentation's syntax diagrams.
+/// Regenerates Grammar/sqlite.ebnf from the SQLite documentation's syntax diagrams and, when
+/// Grammar/codegen.json exists, the Swift types it lists into Sources/SQLiteSyntax/Generated/.
 /// The docs checkout defaults to `../sqlite-docsrc-git` next to this package.
 @main
 struct GenerateGrammar: CommandPlugin {
@@ -25,7 +26,13 @@ struct GenerateGrammar: CommandPlugin {
         }
         let process = Process()
         process.executableURL = tool.url
-        process.arguments = ["--docs", docs.path, "--output", output.path] + extractor.remainingArguments
+        var toolArguments = ["--docs", docs.path, "--output", output.path]
+        let codegen = outputDirectory.appendingPathComponent("codegen.json")
+        if FileManager.default.fileExists(atPath: codegen.path) {
+            let swiftOutput = packageDirectory.appendingPathComponent("Sources/SQLiteSyntax/Generated")
+            toolArguments += ["--codegen-config", codegen.path, "--swift-output", swiftOutput.path]
+        }
+        process.arguments = toolArguments + extractor.remainingArguments
         try process.run()
         process.waitUntilExit()
         if process.terminationStatus != 0 {
