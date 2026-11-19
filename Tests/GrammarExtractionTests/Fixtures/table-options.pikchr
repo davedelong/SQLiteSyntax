@@ -1,0 +1,25 @@
+     linerad = 10px
+     linewid *= 0.5
+     $h = 0.21
+
+EC:  circle radius 10%
+
+     arrow from EC.e right 4*arrowht then up 1.25*linerad then right 1.5*linerad
+WO:  oval "WITHOUT" fit
+     arrow from WO.e right 1.5*arrowht
+RID: oval "ROWID" fit
+     line right arrowht then down 1.25*linerad then right 3*arrowht
+
+XC:  circle radius 10%
+
+     arrow from EC.e right 4*arrowht then down 1.25*linerad then right 1.5*linerad
+ST:  oval "STRICT" fit
+     arrow right even with RID.e then right arrowht \
+      then up 1.25*linerad then right 3*arrowht
+
+     arrow from (2.5*arrowht left of XC.w) right linerad then down 3*linerad \
+      then left even with RID.w
+     oval "," fit
+     arrow left even with ST.w
+     line left even with 0.5*linerad right of EC.e \
+      then up even with EC.e then right 1.5*linerad

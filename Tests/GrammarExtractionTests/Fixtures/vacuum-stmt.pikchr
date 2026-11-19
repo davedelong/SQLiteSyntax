@@ -1,0 +1,18 @@
+     linerad = 10px
+     linewid *= 0.5
+     $h = 0.21
+     # debug_label_color=red; color=lightgray; margin=1cm
+
+C0:  circle radius 10%
+     arrow 2*arrowht
+     oval "VACUUM" fit
+     arrow right linerad then down $h then right linerad+arrowht
+     oval "schema-name" fit
+     arrow right linerad then up even with VACUUM then right linerad+arrowht
+     arrow right linerad then down $h then right linerad+arrowht
+     oval "INTO" fit
+     arrow 2*arrowht
+     oval "filename" fit
+     arrow right linerad then up even with VACUUM then right
+     circle same
+     line from VACUUM.e to arrowht left of last circle.w

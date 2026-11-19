@@ -1,0 +1,48 @@
+     linerad = 10px
+     linewid *= 0.5 
+     $h = 0.21
+     # debug_label_color=red; color=lightgray; margin=1cm
+
+C0:  circle radius 10%
+     arrow 2*arrowht
+E1:  box "expr" fit
+Y1:  0.9*$h below E1
+Y2:  1.25*$h below Y1
+     arrow right linerad then down even with Y1 then right linerad
+     oval "COLLATE" fit
+     arrow 2*arrowht
+     oval "collation-name" fit
+     arrow right linerad then up even with C0 then right linerad+arrowht
+X1:  previous.end
+     arrow from E1.e to .5<E1.e,X1>; line to arrowht left of X1
+
+     arrow from X1 right linerad then down even with Y2 \
+        then right linerad+arrowht
+     oval "DESC" fit
+     arrow right linerad then up even with C0 then right linerad+arrowht
+X2:  previous.end
+     oval "ASC" fit with .w at (last oval.w,Y1)
+     arrow from (linerad right of X1,last oval.n) down even with last oval \
+       then to last oval.w
+     line from last oval.e right even with linerad east of 2nd last oval.e \
+       then up linerad
+     
+     arrow from X1 to 0.5<X1,X2>; line to arrowht left of X2
+
+     arrow from X2 right linerad then down even with Y1 \
+        then right linerad+arrowht
+     oval "NULLS" fit
+     arrow right 2*arrowht
+     oval "FIRST" fit
+     arrow right linerad then up even with C0 then right linerad+arrowht
+X3:  previous.end
+     oval "NULLS" fit with .w at (2nd last oval.w,Y2)
+     arrow right 2*arrowht
+     oval "LAST" fit
+     arrow from (linerad right of X2,4th last oval.n) \
+       down even with 2nd last oval \
+       then to 2nd last oval.w
+     line from last oval.e right even with linerad east of 3rd last oval.e \
+       then up even with 3rd last oval.n
+     
+     arrow from X2 to 0.5<X2,X3>; line to arrowht left of X3

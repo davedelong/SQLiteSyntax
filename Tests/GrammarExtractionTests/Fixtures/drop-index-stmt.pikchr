@@ -1,0 +1,32 @@
+     linerad = 10px
+     linewid *= 0.5
+     $h = 0.21
+
+     circle radius 10%
+     arrow 2*arrowht
+     oval "DROP" fit
+     arrow 2*arrowht
+TYP: oval "INDEX" fit
+     arrow
+     oval "IF" fit
+     arrow 2*arrowht
+ETS: oval "EXISTS" fit
+     arrow 150%
+SN:  oval "schema-name" fit
+     arrow 2*arrowht
+DOT: oval "." bold fit
+     arrow
+     oval "index-name" fit
+     arrow 2*arrowht
+     circle same
+
+     # IF EXISTS bypass
+     arrow from TYP.e right linerad then down $h then right even with ETS.w
+     line right even with ETS.e+(linerad,0) then up even with ETS \
+       then right linerad
+     
+     # schema bypass
+     arrow from SN.w-(linerad+arrowht*1.5,0) right linerad then down $h \
+        then right even with SN
+     line right even with DOT.e+(linerad,0) then up even with DOT \
+        then right linerad

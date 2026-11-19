@@ -1,0 +1,58 @@
+     linerad = 10px
+     linewid *= 0.5 
+     $h = 0.21
+
+C0:  circle radius 10%
+Y1:  .8*$h below C0
+Y2:  1.8*$h below C0
+     # Longest path through NATURAL LEFT OUTER JOIN
+     arrow right linerad then down even with Y2 then right linerad+arrowht
+NAT: oval "NATURAL" fit
+     arrow right linerad then up even with Y1 then right linerad+arrowht
+X2:  previous.end
+     arrow right linerad then down even with Y2 then right linerad+arrowht
+     oval "LEFT" fit
+A1:  arrow 2.5*linewid
+OTR: oval "OUTER" fit
+     arrow 2*arrowht
+X3:  previous.end
+     arrow right linerad then up even with Y1 then right linerad+arrowht
+JN:  oval "JOIN" fit
+     arrow right linerad then up even with C0 then right linerad+arrowht
+C9:  circle same
+
+     # Straight through comma-join
+CMA: oval "," bold fit at .5<C0,C9>
+     arrow from C0.e to CMA.w
+     line from CMA.e to arrowht west of C9.w
+
+     # NATURAL bypass
+     arrow from C0.e right linerad then down even with X2 \
+       then right even with NAT; line to arrowht west of X2
+
+     # join type bypass
+     line from X2 right to arrowht west of JN.w
+
+     # OUTER bypass
+     arrow from linerad*2+arrowht west of OUTER.w right linerad \
+        then up even with Y1 then right linerad+arrowht
+
+     # RIGHT and FULL joins
+     arrow from X2 right linerad then down even with 1.25*$h below LEFT \
+       then right linerad+arrowht
+     oval "RIGHT" fit
+     arrow right linerad then up even with LEFT then right linerad+arrowht
+     arrow from X2 right linerad then down even with 1.25*$h below RIGHT \
+       then right linerad+arrowht
+     oval "FULL" fit
+     line right even with linerad east of RIGHT.e then up even with RIGHT.n
+
+     # INNER and CROSS joins
+     arrow from X2 right linerad then down even with 1.5*$h below FULL \
+       then right linerad+arrowht
+     oval "INNER" fit
+     arrow right even with X3; line right linerad then up linerad
+     arrow from C0.e right linerad then down even with 1.5*$h below INNER \
+       then right even with INNER.w
+     oval "CROSS" fit
+     arrow right even with X3; line right linerad then up even with OTR.n

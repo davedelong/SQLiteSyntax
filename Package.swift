@@ -21,5 +21,38 @@ let package = Package(
             name: "SQLiteSyntaxTests",
             dependencies: ["SQLiteSyntax"]
         ),
+
+        // MARK: Grammar extraction (development tooling; not part of the library product)
+
+        // The Pikchr diagram renderer, vendored unmodified from sqlite-docsrc/search/pikchr.c.
+        .target(
+            name: "CPikchr"
+        ),
+        // Reads SQLite's railroad syntax diagrams and turns them into a verified EBNF grammar.
+        .target(
+            name: "GrammarExtraction",
+            dependencies: ["CPikchr"]
+        ),
+        .executableTarget(
+            name: "sqlite-grammar",
+            dependencies: ["GrammarExtraction"]
+        ),
+        .plugin(
+            name: "GenerateGrammar",
+            capability: .command(
+                intent: .custom(
+                    verb: "generate-grammar",
+                    description: "Regenerate Grammar/sqlite.ebnf from the SQLite documentation's syntax diagrams"
+                ),
+                permissions: [
+                    .writeToPackageDirectory(reason: "Writes the extracted grammar to Grammar/sqlite.ebnf")
+                ]
+            )
+        ),
+        .testTarget(
+            name: "GrammarExtractionTests",
+            dependencies: ["GrammarExtraction"],
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )

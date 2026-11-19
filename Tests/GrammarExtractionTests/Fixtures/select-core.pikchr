@@ -1,0 +1,157 @@
+       linerad = 10px
+       linewid *= 0.5 
+       $h = 0.21
+       # debug_label_color=red; color=lightgray; margin=1cm
+
+C0:    circle radius 10%
+       arrow 150%
+X1:    previous.end
+SEL:   oval "SELECT" fit
+       arrow right linerad then down 1.0*$h then right linerad+arrowht
+DSTCT: oval "DISTINCT" fit
+       arrow right linerad then up even with SEL then right 150%
+RC:    box "result-column" fit
+CMA1:  oval "," bold fit at 1.25*$h below RC
+       arrow from RC.e right linerad then down even with CMA1 then to CMA1.e
+       line from CMA1.w right even with linerad+arrowht west of RC.w \
+          then up even with RC then right linerad
+
+       # DISTINCT bypass
+       arrow from SEL.e right even with DSTCT
+       line to arrowht west of RC.w
+
+       # ALL option
+ALL:   oval "ALL" fit with .w at 1.25*$h below DISTINCT.w
+       arrow right even with DSTCT.e
+       line right linerad then up even with DSTCT.n
+       arrow from SEL.e right linerad then down even with ALL then to ALL.w
+
+BACK1: 1.25*$h below ALL
+X2:    linerad+arrowht right of X1
+
+       # Build the FROM clause
+       right
+FROM:  oval "FROM" fit with .w at (X2,1.25*$h below BACK1)
+       arrow 200%
+TORS:  box "table-or-subquery" fit
+JCLS:  box "join-clause" fit at 2.45*$h below TORS
+CMA2:  oval "," bold fit at 1.2*$h below TORS
+       arrow from TORS.e right linerad then down even with CMA2 \
+          then to CMA2.e
+       line from CMA2.w left even with linerad+arrowht left of TORS.w \
+          then up even with TORS then right linerad
+       arrow from FROM.e right linerad then down 2.45*$h \
+          then to JCLS.w
+       arrow from JCLS.e right even with TORS.e then right 2.2*linerad \
+          then up 1.1*$h
+       arrow up 1.35*$h then right 1.4*linerad
+       line right even with linewid right of TORS.e \
+          then down even with TORS then right linerad
+Fout:  previous.end
+
+       # Linkage from SELECT down into FROM
+       arrow from RC.e right linerad then down even with ALL
+       arrow down even with BACK1 then left even with DSTCT.e
+       arrow left even with X1 then down even with FROM then to FROM.w
+
+BACK2: 1.25*$h below JCLS
+
+       # Build the WHERE clause
+       right
+WHERE: oval "WHERE" fit with .w at (X2,1.25*$h below BACK2)
+       arrow 2*arrowht
+WHEX:  box "expr" fit
+BACK3: 1.25*$h below WHERE
+
+       # Linkage from FROM down to WHERE
+       arrow from TORS.e to linerad east of Fout then down even with CMA2.s
+       arrow down even with BACK2 then to BACK2
+       arrow left even with X1 then down even with WHERE then to WHERE.w
+       arrow from (X1,FROM.n) down even with CMA2.s
+       line down even with WHERE.n
+
+       # Build the GROUP BY clause
+       right
+GROUP: oval "GROUP" fit with .w at (X2,2*$h below BACK3)
+       arrow 2*arrowht
+       oval "BY" fit
+       arrow
+GEX:   box "expr" fit
+       arrow 230%
+HVNG:  oval "HAVING" fit
+       arrow 2*arrowht
+HEX:   box "expr" fit
+GCMA:  oval "," bold fit at 1.25*$h below GEX
+       arrow from GEX.e right linerad then down even with GCMA then to GCMA.e
+       line from GCMA.w left even with linerad+arrowht west of GEX.w \
+          then up even with GEX then right linerad
+       arrow from 2*linerad+arrowht west of HAVING.w then right linerad \
+          then down $h then right even with .5<HAVING,HAVING.e>
+       line right even with linerad east of HEX.e then down even with HEX \
+          then right linerad
+Gout:  previous.end
+BACK4: (BACK2,1.25*$h below GCMA)
+       arrow from (X1,BACK3) then down $h \
+          then right even with BY
+       arrow right even with linerad right of GEX.e \
+          then down even with GEX then right linerad+arrowht
+
+       # Link the WHERE clause down into the GROUP BY clause
+       arrow from WHEX.e right linerad then down even with BACK3 \
+          then left even with WHERE.e
+       arrow left even with X1 then down even with GROUP then to GROUP.w
+       arrow from (X1,WHERE.n) down even with .5<WHERE,arrowht below BACK3>
+       line down even with GROUP.n
+       right
+
+       # build the WINDOW clause
+       oval "WINDOW" fit with .w at (X2,1.25*$h below BACK4)
+       arrow
+WNAM:  oval "window-name" fit
+       arrow 2*arrowht
+       oval "AS" fit
+       arrow same
+WDEF:  box "window-defn" fit
+WCMA:  oval "," bold fit at 1.25*$h below .5<WNAM.w,WDEF.e>
+       arrow from WDEF.e right linerad then down even with WCMA then to WCMA.e
+       line from WCMA.w left even with linerad+arrowht west of WNAM.w \
+           then up even with WNAM then right linerad
+OUT5:  (BACK2,1.25*$h below WCMA)
+
+       # Link GROUP BY down into WINDOW and WINDOW to output
+       arrow from HEX.e to linerad east of Gout then down even with GCMA
+       arrow down even with BACK4 then to BACK4
+       arrow left even with X1 then down even with WINDOW then to WINDOW.w
+       arrow from (X1,GROUP.n) down even with GCMA
+       arrow down even with OUT5 then to OUT5
+       arrow right even with 2*linewid east of Gout
+C99:   circle same
+       arrow from (linerad right of WDEF.e,WCMA.n) \
+          down even with arrowht above OUT5
+       line down even with OUT5 then right linerad
+
+       # build the VALUES clause
+       right
+       oval "VALUES" fit with .w at (X1,2.5*$h below OUT5)
+       arrow
+VLP:   oval "(" bold fit
+       arrow
+VEX:   box "expr" fit
+       arrow
+VRP:   oval ")" bold fit
+       arrow right even with Gout
+       arrow right linerad then up even with linerad below OUT5
+       line up even with OUT5 then right
+       # expr loop
+VCMA1: oval "," bold fit at 1.25*$h above VEX
+VCMA2: oval "," bold fit at 1.25*$h below VEX
+       arrow from VEX.e right linerad then up even with VCMA1 then to VCMA1.e
+       line from VCMA1.w left even with linerad+arrowht west of VEX.w \
+          then down even with VEX then right linerad
+       arrow from VRP.e right linerad then down even with VCMA2 then to VCMA2.e
+       line from VCMA2.w left even with linerad+arrowht west of VLP.w \
+          then up even with VLP then right linerad
+
+       # link input down to VALUES
+       arrow from C0.e right linerad then down even with VALUES \
+          then to VALUES.w

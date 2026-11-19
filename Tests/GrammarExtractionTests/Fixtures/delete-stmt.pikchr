@@ -1,0 +1,58 @@
+     linerad = 10px
+     linewid *= 0.5
+     $h = 0.21
+
+     circle radius 10%
+A0:  arrow 2*arrowht
+
+     # Draw the optional WITH prefix
+     arrow
+WTH: oval "WITH" fit
+RSV: oval "RECURSIVE" fit with .w at WTH.e + (1.25*linewid,-1.0*$h)
+     arrow from WTH.e right even with RSV
+     arrow right even with RSV.e+(2.5*linewid,0)
+CTE: box "common-table-expression" fit
+
+     # Link in the RECURSIVE bubble
+     arrow from WTH.e right linerad then down even with RSV then to RSV.w
+     arrow from RSV.e right 2*arrowht
+     line right linerad then up even with WTH then to arrowht left of CTE.w
+
+     # CTE loop back
+C1:  oval "," bold fit at 1.25*$h below CTE
+     arrow from CTE.e right linerad then down even with C1 then to C1.e
+     line from C1.w right even with 2*arrowht west of CTE.w \
+        then up even with CTE then to arrowht west of CTE.w
+
+     # Main line
+Y1:  1.25*$h below RSV   # Vertical position of the WITH clause back-arrow
+     right
+DEL: oval "DELETE" fit with .w at (WTH.w,1.25*$h below Y1)
+     arrow 2*arrowht
+FRM: oval "FROM" fit
+     arrow 2*arrowht
+QTN: box "qualified-table-name" fit
+Y9:  3.0*$h below QTN
+
+C9:  circle same at (linewid right of CTE.e, Y9)
+     line from C9.w then left linewid then up $h \
+       then left linerad
+RC:  box "returning-clause" fit
+     arrow <- left linerad+arrowht then down even with C9 then left linerad
+     arrow <- left linerad+arrowht then up even with RC then left linerad
+EXP: box "expr" fit
+     arrow <- left 2*arrowht
+WHR: oval "WHERE" fit
+     arrow from QTN.e right linerad \
+       then down even with 0.5<QTN,WHR> then left even with QTN
+XW:  linerad+arrowht left of WHR.nw
+     arrow left even with XW then down even with WHR then to WHR.w
+     arrow from XW down even with C9 then to C9.w
+
+     # Link the WITH clause and its bypass into the DELETE keyword
+     arrow from CTE.e right linerad then down even with Y1 \
+        then right even with QTN
+     arrow left even with linerad right of A0.end \
+        then down even with DEL then to DEL.w
+     arrow from A0.end right linerad then down even with RSV
+     line down even with DEL.n

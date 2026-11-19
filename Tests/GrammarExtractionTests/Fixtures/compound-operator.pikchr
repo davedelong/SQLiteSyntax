@@ -1,0 +1,32 @@
+     linerad = 10px
+     linewid *= 0.5
+
+     circle radius 10%
+A0:  arrow 2*arrowht
+     arrow
+U:   oval "UNION" fit
+U2:  oval "UNION" fit with .w at 1.25*U.ht below U.w
+IX:  oval "INTERSECT" fit with .w at 1.25*U.ht below U2.w
+EX:  oval "EXCEPT" fit with .w at 1.25*U.ht below IX.w
+  
+     # Complete the UNION ALL row first since it will be the longest and
+     # will establish the right up stack
+     arrow from U2.e right 2*arrowht
+     oval "ALL" fit
+A1:  arrow 2*arrowht
+     arrow right linerad then up even with U then right
+     circle same
+     arrow from A0.end right linerad then down even with U2 then to U2.w
+
+     # complete the line for UNION
+     line from U.e to arrowht left of last circle
+
+     # connect in the INTERSECT bubble
+     arrow from (linerad right of A0.end,U2.n) down even with IX then to IX.w
+     arrow from IX.e right even with A1.end
+     line right linerad then up even with U2.n
+
+     # connect in the EXCEPT bubble
+     arrow from (linerad right of A0.end,IX.n) down even with EX then to EX.w
+     arrow from EX.e right even with A1.end
+     line right linerad then up even with IX.n

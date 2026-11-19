@@ -1,0 +1,37 @@
+    linerad = 10px
+    linewid *= 0.5 
+    $h = 0.21
+
+C0: circle radius 10%
+    arrow right 2*linerad+arrowht
+CN: oval "column-name" fit
+    arrow right linerad*3 then down 1.0*$h then right linerad+arrowht
+    oval "COLLATE" fit
+    arrow right arrowht*1.5
+LN: oval "collation-name" fit
+    arrow 1.5*arrowht
+    arrow right linerad then up even with C0 then right linerad \
+       then down 2.25*$h then right linerad+arrowht
+DC: oval "DESC" fit
+A1: arrow right 1.5*arrowht
+    arrow right linerad then up even with C0 then right linerad+arrowht
+    circle same
+
+    # add the "expr" option below column-name
+    arrow from C0.e right linerad then down 1.25*$h then right linerad+arrowht
+    box "expr" fit
+    arrow right even with CN.e
+    line right linerad then up even with C0 then right linerad
+
+    # fill in the COLLATE collation-name bypass and the
+    # ASC/DESC bypass
+    arrow from CN.e right even with LN.w
+    arrow right even with DC
+    line to arrowht left of last circle.w
+
+    # Add the ASC option
+AC: oval "ASC" fit with .w at 1.25*$h above DC.w
+    arrow right even with A1.end
+    line right linerad then up linerad
+    arrow from (linerad+arrowht left of AC.w,AC.n) down even with AC \
+       then to AC.w
