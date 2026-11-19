@@ -29,6 +29,7 @@ public struct GrammarRule: Sendable {
 
 public enum GrammarExtractionError: Error, CustomStringConvertible {
     case render(name: String, message: String)
+    case svg(name: String, message: String)
     case noTerminals(name: String)
     case emptyLanguage(name: String)
     /// The simplified expression does not describe the same syntax as the diagram. Indicates a bug.
@@ -37,6 +38,7 @@ public enum GrammarExtractionError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
             case .render(let name, let message): return "\(name): pikchr failed: \(message)"
+            case .svg(let name, let message): return "\(name): could not read SVG: \(message)"
             case .noTerminals(let name): return "\(name): no entry/exit circles found"
             case .emptyLanguage(let name): return "\(name): the diagram accepts nothing (no path from entry to exit)"
             case .verificationFailed(let name, let witness):
@@ -56,7 +58,8 @@ public enum GrammarExtractor {
 
     /// Extracts the grammar rule drawn by Pikchr-rendered SVG.
     public static func rule(named name: String, svg: String) throws(GrammarExtractionError) -> GrammarRule {
-        let reader = DiagramReader(svg: svg)
+        let reader: DiagramReader
+        do { reader = try DiagramReader(svg: svg) } catch { throw .svg(name: name, message: error.message) }
         guard !reader.terminals.isEmpty else { throw .noTerminals(name: name) }
         let graph = reader.automaton()
         let diagram = Language(automaton: graph.automaton, start: graph.start, accept: graph.accept)

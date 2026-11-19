@@ -11,6 +11,9 @@ let package = Package(
         .library(
             name: "SQLiteSyntax",
             targets: ["SQLiteSyntax"]),
+        .library(
+            name: "SQLiteParser",
+            targets: ["SQLiteParser"]),
     ],
     dependencies: [
         // EBNF reading/writing for the grammar tooling. Gramophone has no tagged releases yet.
@@ -24,6 +27,16 @@ let package = Package(
         .testTarget(
             name: "SQLiteSyntaxTests",
             dependencies: ["SQLiteSyntax"]
+        ),
+
+        // Parses SQL text into SQLiteSyntax values (prototype: expressions only).
+        .target(
+            name: "SQLiteParser",
+            dependencies: ["SQLiteSyntax"]
+        ),
+        .testTarget(
+            name: "SQLiteParserTests",
+            dependencies: ["SQLiteParser", "SQLiteSyntax"]
         ),
 
         // MARK: Grammar extraction (development tooling; not part of the library product)

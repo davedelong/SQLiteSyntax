@@ -92,7 +92,7 @@ struct GeneratedSyntaxTests {
         #expect(try SQLiteSyntax.Expression.columnName(nil, nil, "a").sql() == "a")
         #expect(try SQLiteSyntax.Expression.columnName(nil, "t", "a").sql() == "t.a")
         #expect(try SQLiteSyntax.Expression.columnName("main", "t", "a").sql() == "main.t.a")
-        #expect(try SQLiteSyntax.Expression.columnName(nil, "my table", "a").sql() == "'my table'.a")
+        #expect(try SQLiteSyntax.Expression.columnName(nil, "my table", "a").sql() == "\"my table\".a")
         for column in [SQLiteSyntax.Expression.columnName(nil, "t", "a"), .columnName("main", "t", "a")] {
             expectAccepted("SELECT \(try column.sql()) FROM t")
         }

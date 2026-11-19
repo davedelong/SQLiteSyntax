@@ -31,9 +31,11 @@ public struct Name<T>: Syntax {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         var needsEscaping = value.contains(where: \.isProbablySpecial)
         needsEscaping = needsEscaping || Name<Any>.keywords.contains(value.lowercased())
+        // An unquoted name cannot be empty or start with a digit (it would read as a number).
+        needsEscaping = needsEscaping || value.isEmpty || value.first!.isNumber
         
         if needsEscaping {
-            builder.add(Literals.string(value))
+            builder.add(Literals.identifier(value))
         } else {
             builder.add(value)
         }

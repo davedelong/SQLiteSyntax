@@ -92,8 +92,8 @@ struct DiagramReader {
     /// Tracks whose direction is fixed by an arrowhead, in the order discovered.
     var arrowed: [Int] = []
 
-    init(svg: String) {
-        let document = SVGDocument(svg)
+    init(svg: String) throws(SVGDocument.ParseError) {
+        let document = try SVGDocument(svg)
         var heads: [[Point]] = []
         var texts: [(Point, String)] = []
         for element in document.elements {

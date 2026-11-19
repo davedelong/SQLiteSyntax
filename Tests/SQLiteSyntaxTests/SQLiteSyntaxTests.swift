@@ -68,7 +68,7 @@ import Testing
     
     select.where = .column("foo") == "bar"
     let s2 = try select.sql()
-    #expect(s2 == #"SELECT * FROM Test WHERE foo == "bar""#)
+    #expect(s2 == "SELECT * FROM Test WHERE foo == 'bar'")
     
 }
 
@@ -91,5 +91,5 @@ import Testing
                                  ], nil))
     
     let sql = try insert.sql()
-    #expect(sql == #"INSERT INTO Test ( greeting , target ) VALUES ( "Hello" , "World" ) , ( "Goodnight" , "Moon" )"#)
+    #expect(sql == "INSERT INTO Test ( greeting , target ) VALUES ( 'Hello' , 'World' ) , ( 'Goodnight' , 'Moon' )")
 }

@@ -1,5 +1,9 @@
-/// A minimal reader for the SVG that Pikchr emits. It only understands the
-/// handful of elements Pikchr produces for syntax diagrams.
+import Foundation
+
+/// The elements of the SVG that Pikchr emits, read with `XMLDocument`.
+/// Only the handful of elements Pikchr produces for syntax diagrams are kept.
+///
+/// `XMLDocument` is macOS-only; the grammar tooling only runs on macOS.
 struct SVGDocument {
 
     struct Element {
@@ -8,90 +12,37 @@ struct SVGDocument {
         var text: String?
     }
 
+    struct ParseError: Error, CustomStringConvertible {
+        var message: String
+        var description: String { message }
+    }
+
+    /// Elements in document order (the reader relies on it: the first circle is the entry).
     var elements: [Element] = []
 
-    init(_ svg: String) {
-        let chars = Array(svg.unicodeScalars)
-        var i = 0
+    init(_ svg: String) throws(ParseError) {
+        #if os(macOS)
+        let document: XMLDocument
+        do { document = try XMLDocument(xmlString: svg) } catch { throw ParseError(message: "\(error)") }
+        guard let root = document.rootElement() else { throw ParseError(message: "SVG has no root element") }
         let wanted: Set<String> = ["path", "polygon", "circle", "text"]
-        while i < chars.count {
-            guard chars[i] == "<" else { i += 1; continue }
-            var j = i + 1
-            var name = ""
-            while j < chars.count, chars[j].properties.isAlphabetic {
-                name.unicodeScalars.append(chars[j]); j += 1
+        var found: [Element] = []
+        func visit(_ element: XMLElement) {
+            let tag = element.localName ?? element.name ?? ""
+            if wanted.contains(tag) {
+                var attributes: [String: String] = [:]
+                for attribute in element.attributes ?? [] {
+                    if let name = attribute.localName ?? attribute.name { attributes[name] = attribute.stringValue ?? "" }
+                }
+                found.append(Element(tag: tag, attributes: attributes, text: tag == "text" ? element.stringValue : nil))
             }
-            guard wanted.contains(name), j < chars.count, !chars[j].properties.isAlphabetic else { i += 1; continue }
-            // attributes up to '>'
-            var attrText = String.UnicodeScalarView()
-            while j < chars.count, chars[j] != ">" { attrText.append(chars[j]); j += 1 }
-            j += 1
-            var element = Element(tag: name, attributes: SVGDocument.parseAttributes(String(attrText)), text: nil)
-            if name == "text" {
-                var body = String.UnicodeScalarView()
-                while j < chars.count, chars[j] != "<" { body.append(chars[j]); j += 1 }
-                element.text = SVGDocument.unescape(String(body))
-            }
-            elements.append(element)
-            i = j
+            for case let child as XMLElement in element.children ?? [] { visit(child) }
         }
-    }
-
-    static func parseAttributes(_ s: String) -> [String: String] {
-        var result: [String: String] = [:]
-        let chars = Array(s.unicodeScalars)
-        var i = 0
-        while i < chars.count {
-            while i < chars.count, !isNameChar(chars[i]) { i += 1 }
-            var name = String.UnicodeScalarView()
-            while i < chars.count, isNameChar(chars[i]) { name.append(chars[i]); i += 1 }
-            guard i < chars.count, chars[i] == "=" else { continue }
-            i += 1
-            guard i < chars.count, chars[i] == "\"" || chars[i] == "'" else { continue }
-            let quote = chars[i]; i += 1
-            var value = String.UnicodeScalarView()
-            while i < chars.count, chars[i] != quote { value.append(chars[i]); i += 1 }
-            i += 1
-            result[String(name)] = String(value)
-        }
-        return result
-    }
-
-    private static func isNameChar(_ c: Unicode.Scalar) -> Bool {
-        c.properties.isAlphabetic || c == "-" || c == ":" || c == "_" || ("0"..."9").contains(c)
-    }
-
-    static func unescape(_ s: String) -> String {
-        guard s.contains("&") else { return s }
-        var out = ""
-        var rest = Substring(s)
-        while let amp = rest.firstIndex(of: "&") {
-            out += rest[..<amp]
-            guard let semi = rest[amp...].firstIndex(of: ";") else { break }
-            let entity = rest[rest.index(after: amp)..<semi]
-            var replacement: String?
-            switch entity {
-                case "lt": replacement = "<"
-                case "gt": replacement = ">"
-                case "amp": replacement = "&"
-                case "quot": replacement = "\""
-                case "apos": replacement = "'"
-                default:
-                    if entity.hasPrefix("#x") || entity.hasPrefix("#X"), let v = UInt32(entity.dropFirst(2), radix: 16), let u = Unicode.Scalar(v) {
-                        replacement = String(Character(u))
-                    } else if entity.hasPrefix("#"), let v = UInt32(entity.dropFirst()), let u = Unicode.Scalar(v) {
-                        replacement = String(Character(u))
-                    }
-            }
-            if let replacement {
-                out += replacement
-                rest = rest[rest.index(after: semi)...]
-            } else {
-                out += "&"
-                rest = rest[rest.index(after: amp)...]
-            }
-        }
-        return out + rest
+        visit(root)
+        elements = found
+        #else
+        throw ParseError(message: "reading SVG requires XMLDocument, which is only available on macOS")
+        #endif
     }
 }
 
