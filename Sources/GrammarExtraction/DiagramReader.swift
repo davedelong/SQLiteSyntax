@@ -75,6 +75,13 @@ public struct DiagramDiagnostics: Sendable {
     public var directionConflicts: [String]
     /// Number of terminal circles found.
     public var terminals: Int
+
+    public init(unresolvedEndpoints: Int = 0, undeterminedTracks: Int = 0, directionConflicts: [String] = [], terminals: Int = 0) {
+        self.unresolvedEndpoints = unresolvedEndpoints
+        self.undeterminedTracks = undeterminedTracks
+        self.directionConflicts = directionConflicts
+        self.terminals = terminals
+    }
 }
 
 struct DiagramReader {

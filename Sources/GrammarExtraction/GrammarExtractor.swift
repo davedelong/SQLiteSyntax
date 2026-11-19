@@ -13,7 +13,16 @@ public struct GrammarRule: Sendable {
     public var expression: GrammarExpression
     /// How each symbol appearing in `expression` was drawn.
     public var symbolKinds: [String: SymbolKind]
+    /// Diagram-reading diagnostics (empty for rules read from a grammar file).
     public var diagnostics: DiagramDiagnostics
+
+    public init(name: String, expression: GrammarExpression, symbolKinds: [String: SymbolKind],
+                diagnostics: DiagramDiagnostics = DiagramDiagnostics()) {
+        self.name = name
+        self.expression = expression
+        self.symbolKinds = symbolKinds
+        self.diagnostics = diagnostics
+    }
 
     public var ebnf: String { "\(name) ::= \(expression.ebnf)" }
 }
@@ -82,8 +91,8 @@ public enum GrammarExtractor {
         }
     }
 
-    /// The grammar file format: one `name ::= expression` rule per paragraph.
+    /// The grammar file format, written with Gramophone (see `GrammarFile`).
     public static func ebnfDocument(_ rules: [GrammarRule]) -> String {
-        rules.map { $0.ebnf + "\n\n" }.joined()
+        GrammarFile.text(for: rules)
     }
 }

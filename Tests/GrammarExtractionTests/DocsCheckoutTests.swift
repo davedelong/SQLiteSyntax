@@ -23,6 +23,8 @@ struct DocsCheckoutTests {
         // `rules` throws if any rule fails its equivalence check against its diagram.
         let rules = try GrammarExtractor.rules(docsDirectory: Self.docs)
         #expect(rules.count >= 70)
+        // Every rule survives Gramophone's EBNF printer and parser unchanged.
+        _ = try GrammarFile.roundTrip(rules)
         for rule in rules {
             #expect(rule.diagnostics.terminals >= 1, "\(rule.name)")
             #expect(rule.diagnostics.undeterminedTracks == 0, "\(rule.name)")

@@ -12,6 +12,10 @@ let package = Package(
             name: "SQLiteSyntax",
             targets: ["SQLiteSyntax"]),
     ],
+    dependencies: [
+        // EBNF reading/writing for the grammar tooling. Gramophone has no tagged releases yet.
+        .package(url: "https://github.com/ChimeHQ/Gramophone", branch: "main"),
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
@@ -31,7 +35,7 @@ let package = Package(
         // Reads SQLite's railroad syntax diagrams and turns them into a verified EBNF grammar.
         .target(
             name: "GrammarExtraction",
-            dependencies: ["CPikchr"]
+            dependencies: ["CPikchr", .product(name: "Gramophone", package: "Gramophone")]
         ),
         // Generates Swift `Syntax` types from the extracted grammar (see Grammar/codegen.json).
         .target(
@@ -56,7 +60,7 @@ let package = Package(
         ),
         .testTarget(
             name: "GrammarExtractionTests",
-            dependencies: ["GrammarExtraction"],
+            dependencies: ["GrammarExtraction", .product(name: "Gramophone", package: "Gramophone")],
             resources: [.copy("Fixtures")]
         ),
     ]

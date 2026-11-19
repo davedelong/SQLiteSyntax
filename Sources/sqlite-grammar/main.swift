@@ -3,17 +3,21 @@ import GrammarExtraction
 import SyntaxGeneration
 
 let usage = """
-    usage: sqlite-grammar --docs <sqlite-docsrc checkout> [--output <file>]
+    usage: sqlite-grammar (--docs <sqlite-docsrc checkout> | --grammar <file.ebnf>) [--output <file>]
                           [--codegen-config <codegen.json> --swift-output <directory>] [--verbose]
 
-    Extracts the SQL grammar from the railroad diagrams in <docs>/art/syntax/*.pikchr
-    and writes it as EBNF (to stdout when no --output is given).
+    With --docs, extracts the SQL grammar from the railroad diagrams in <docs>/art/syntax/*.pikchr
+    and writes it as EBNF (to stdout when no --output is given). The EBNF is written and read back
+    with Gramophone, and every rule is checked to round-trip unchanged.
+
+    With --grammar, reads an existing EBNF grammar instead (no docs checkout needed).
 
     With --codegen-config and --swift-output, also generates Swift types for the rules listed
     in the config. Generated files in the output directory are replaced; other files are left alone.
     """
 
 var docs: String?
+var grammar: String?
 var output: String?
 var codegenConfig: String?
 var swiftOutput: String?
@@ -22,6 +26,7 @@ var arguments = CommandLine.arguments.dropFirst()
 while let argument = arguments.popFirst() {
     switch argument {
         case "--docs": docs = arguments.popFirst()
+        case "--grammar": grammar = arguments.popFirst()
         case "--output": output = arguments.popFirst()
         case "--codegen-config": codegenConfig = arguments.popFirst()
         case "--swift-output": swiftOutput = arguments.popFirst()
@@ -32,28 +37,36 @@ while let argument = arguments.popFirst() {
     }
 }
 
-guard let docs else {
-    FileHandle.standardError.write(Data("\(usage)\n".utf8)); exit(2)
+guard (docs == nil) != (grammar == nil) else {
+    FileHandle.standardError.write(Data("pass exactly one of --docs or --grammar\n\(usage)\n".utf8)); exit(2)
 }
 
 func log(_ message: String) { FileHandle.standardError.write(Data((message + "\n").utf8)) }
 
 do {
     let start = Date()
-    let rules = try GrammarExtractor.rules(docsDirectory: URL(fileURLWithPath: docs))
-    for rule in rules {
-        let d = rule.diagnostics
-        let suspicious = d.unresolvedEndpoints > 0 || d.undeterminedTracks > 0 || !d.directionConflicts.isEmpty
-        if verbose || suspicious {
-            log("\(rule.name): unresolved=\(d.unresolvedEndpoints) undetermined=\(d.undeterminedTracks) conflicts=\(d.directionConflicts.count)")
+    // The rules code generation works from: always as read by Gramophone.
+    let rules: [GrammarRule]
+    if let docs {
+        let extracted = try GrammarExtractor.rules(docsDirectory: URL(fileURLWithPath: docs))
+        for rule in extracted {
+            let d = rule.diagnostics
+            let suspicious = d.unresolvedEndpoints > 0 || d.undeterminedTracks > 0 || !d.directionConflicts.isEmpty
+            if verbose || suspicious {
+                log("\(rule.name): unresolved=\(d.unresolvedEndpoints) undetermined=\(d.undeterminedTracks) conflicts=\(d.directionConflicts.count)")
+            }
         }
-    }
-    let document = GrammarExtractor.ebnfDocument(rules)
-    if let output {
-        try document.write(toFile: output, atomically: true, encoding: .utf8)
-        log("wrote \(rules.count) rules to \(output) in \(String(format: "%.1f", Date().timeIntervalSince(start)))s")
-    } else if swiftOutput == nil {
-        print(document, terminator: "")
+        let (document, readBack) = try GrammarFile.roundTrip(extracted)
+        rules = readBack
+        if let output {
+            try document.write(toFile: output, atomically: true, encoding: .utf8)
+            log("wrote \(rules.count) rules to \(output) in \(String(format: "%.1f", Date().timeIntervalSince(start)))s")
+        } else if swiftOutput == nil {
+            print(document, terminator: "")
+        }
+    } else {
+        rules = try GrammarFile.rules(from: String(contentsOfFile: grammar!, encoding: .utf8))
+        log("read \(rules.count) rules from \(grammar!)")
     }
     if let codegenConfig, let swiftOutput {
         let configuration = try JSONDecoder().decode(CodegenConfiguration.self,

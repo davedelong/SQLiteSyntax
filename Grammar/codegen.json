@@ -14,7 +14,8 @@
     "references": {
         "expr": "Expression",
         "foreign-key-clause": "ForeignKeyClause",
-        "literal-value": "LiteralValue"
+        "literal-value": "LiteralValue",
+        "numeric-literal": "NumericLiteral"
     },
     "tokens": {
         "collation-name": "Name<Collation>",
