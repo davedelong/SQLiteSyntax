@@ -111,9 +111,11 @@ extension Expression {
     
 }
 
-extension Expression: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral, ExpressibleByNilLiteral {
-    
-    
+extension Expression: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
+
+    /// SQL `NULL`.
+    public static var null: Expression { .literalValue(.null) }
+
     public init(stringLiteral value: String) {
         self = .literalValue(.string(value))
     }
@@ -128,10 +130,6 @@ extension Expression: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, E
     
     public init(floatLiteral value: Double) {
         self = .literalValue(.real(value))
-    }
-    
-    public init(nilLiteral: ()) {
-        self = .literalValue(.null)
     }
     
 }

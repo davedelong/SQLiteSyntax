@@ -22,6 +22,7 @@ extension Syntax {
     public func validate() throws(SyntaxError) { }
     
     public func sql() throws(SyntaxError) -> String {
+        try validate()
         var builder = SyntaxBuilder()
         try self.build(using: &builder)
         return builder.sql

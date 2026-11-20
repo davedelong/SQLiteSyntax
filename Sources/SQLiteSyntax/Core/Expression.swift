@@ -180,26 +180,6 @@ public indirect enum Expression: Syntax {
     }
 }
 
-/// Binding strengths from SQLite's parse.y (`%left OR.` … `%right BITNOT.`), weakest first.
-/// Used to add parentheses only where an operand would otherwise bind differently.
-enum ExpressionPrecedence {
-    static let or = 1
-    static let and = 2
-    static let not = 3
-    /// IS, IN, LIKE/GLOB/REGEXP/MATCH, BETWEEN, ISNULL/NOTNULL, =, ==, !=, <>
-    static let equality = 4
-    static let comparison = 5        // < <= > >=
-    static let escape = 6
-    static let bitwise = 7           // & | << >>
-    static let additive = 8          // + -
-    static let multiplicative = 9    // * / %
-    static let concatenation = 10    // || -> ->>
-    static let collate = 11
-    static let unary = 12            // ~ and unary + -
-    /// Literals, names, function calls, parenthesized and bracketed forms: never need parentheses.
-    static let atom = 13
-}
-
 extension Expression {
     /// How tightly this expression binds when used as an operand.
     var precedence: Int {

@@ -14,6 +14,8 @@ let usage = """
 
     With --codegen-config and --swift-output, also generates Swift types for the rules listed
     in the config, and with --parser-output their parse functions (for the SQLiteParser module).
+    With --sqlite-source <sqlite checkout>, also regenerates the precedence and keyword tables from
+    its src/parse.y and tool/mkkeywordhash.c (SQLiteTables.swift, next to the generated types).
     Generated files in the output directories are replaced; other files are left alone.
     """
 
@@ -23,6 +25,7 @@ var output: String?
 var codegenConfig: String?
 var swiftOutput: String?
 var parserOutput: String?
+var sqliteSource: String?
 var verbose = false
 var arguments = CommandLine.arguments.dropFirst()
 while let argument = arguments.popFirst() {
@@ -33,6 +36,7 @@ while let argument = arguments.popFirst() {
         case "--codegen-config": codegenConfig = arguments.popFirst()
         case "--swift-output": swiftOutput = arguments.popFirst()
         case "--parser-output": parserOutput = arguments.popFirst()
+        case "--sqlite-source": sqliteSource = arguments.popFirst()
         case "--verbose", "-v": verbose = true
         case "--help", "-h": print(usage); exit(0)
         default:
@@ -95,6 +99,15 @@ do {
         if let parserOutput {
             try replaceGenerated(in: parserOutput, with: generated.parserFiles)
             log("wrote \(generated.parserFiles.count) parser files to \(parserOutput)")
+        }
+        if let sqliteSource {
+            let root = URL(fileURLWithPath: sqliteSource)
+            let source = try SQLiteSourceTables.swiftSource(
+                parseY: String(contentsOf: root.appendingPathComponent("src/parse.y"), encoding: .utf8),
+                keywordHash: String(contentsOf: root.appendingPathComponent("tool/mkkeywordhash.c"), encoding: .utf8))
+            let file = URL(fileURLWithPath: swiftOutput).appendingPathComponent("SQLiteTables.swift")
+            try source.write(to: file, atomically: true, encoding: .utf8)
+            log("wrote precedence and keyword tables from \(sqliteSource) to \(file.path)")
         }
         log("wrote \(generated.files.count) Swift files to \(swiftOutput)")
     }

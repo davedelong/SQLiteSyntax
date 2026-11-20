@@ -6,6 +6,8 @@ whole grammar, and work in both directions — building SQL (`sql()`) and parsin
 
 ## Where things stand (2026-11-20)
 
+This table is the starting point of the plan. Phases 0–8 are now done; each phase below says what it changed.
+
 | Piece | State |
 |---|---|
 | Grammar extraction (`GrammarExtraction`, `sqlite-grammar`, `generate-grammar` plugin) | Done. 71 diagrams → `Grammar/sqlite.ebnf`, each rule verified equal to its diagram, written/read with Gramophone, round-trip checked. |
@@ -157,18 +159,19 @@ required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JO
 - Also round-trip each accepted statement: parse → `sql()` → SQLite accepts → parse again equal.
 - Done when: all disagreements are classified and the bug list is empty.
 
-## Phase 8 — Hardening and cleanup (2–3 days)
+## Phase 8 — Hardening and cleanup ✅ done
 
-- Single source for the precedence and keyword tables: have `sqlite-grammar` extract them from
-  `parse.y`/`mkkeywordhash.c` and generate them into both `SQLiteSyntax` and `SQLiteParser`
-  (today the precedence table is duplicated; a test catches drift).
-- `Expression: ExpressibleByNilLiteral` turns `nil` into SQL `NULL` in `Expression?` contexts
-  (it caused a parser bug). Consider removing it or replacing with an explicit `.null`.
-- `sql()` does not run `validate()` on the top-level value; decide whether it should.
-- Portability: `SQLiteParser` reads the keyword list from the system SQLite at runtime; embed it
-  (from Phase 8's generated table) if Linux or a bundled SQLite build matters.
-- README: workflow for regenerating (`swift package --allow-writing-to-package-directory
-  generate-grammar`), `codegen.json`, and how to migrate a rule.
+- Precedence and keyword tables have a single source: `sqlite-grammar --sqlite-source ../sqlite`
+  (passed by the plugin when the checkout exists) reads `src/parse.y` and `tool/mkkeywordhash.c`
+  and writes `SQLiteSyntax/Generated/SQLiteTables.swift` (`package` access):
+  `ExpressionPrecedence` and `SQLiteKeywords` (all keywords, `%fallback ID`, `JOIN_KW`,
+  `LIKE_KW`, `CTIME_KW`; default build, so ordered-set `WITHIN` is excluded). The printer, name
+  quoting and the parser all use it; the duplicate parser table is gone.
+- Portability: neither library reads keywords from the system SQLite at runtime any more.
+- `ExpressibleByNilLiteral` removed from `Expression` and `LiteralValue`; SQL NULL is `.null`.
+- `sql()` validates the top-level value (children were already validated while building).
+- Generated `validate()` binds only the fields it checks and omits an unreachable `default`.
+- `README.md`: regeneration workflow, `codegen.json` keys, migrating a rule.
 
 ## Open decisions
 
@@ -178,7 +181,7 @@ required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JO
 2. ~~**`LiteralValue` shape**~~ — decided: typed `.integer(Int64)` / `.real(Double)`.
 3. **Generated naming policy** (Phase 3–4): match existing hand-written names, or accept
    grammar-derived names and update the `Convenience/` layer.
-4. **Where generated parsers live** (Phase 5): `SQLiteParser` (planned) vs alongside the types.
+4. ~~**Where generated parsers live**~~ — decided: `SQLiteParser/Generated`.
 5. ~~**Grammar authority for validation**~~ — decided: the diagrams, plus targeted `grammarPatches`
    for parse.y syntax that matters in practice (see `Grammar/CORPUS.md`); rarer legacy forms are
    documented, not supported.

@@ -5,7 +5,8 @@ import PackagePlugin
 ///
 /// Regenerates Grammar/sqlite.ebnf from the SQLite documentation's syntax diagrams and, when
 /// Grammar/codegen.json exists, the Swift types it lists into Sources/SQLiteSyntax/Generated/.
-/// The docs checkout defaults to `../sqlite-docsrc-git` next to this package.
+/// The docs checkout defaults to `../sqlite-docsrc-git` next to this package; the SQLite source checkout
+/// (for precedence and keyword tables) to `../sqlite` (`--sqlite-source <path>`).
 @main
 struct GenerateGrammar: CommandPlugin {
     func performCommand(context: PluginContext, arguments: [String]) async throws {
@@ -33,6 +34,13 @@ struct GenerateGrammar: CommandPlugin {
             let parserOutput = packageDirectory.appendingPathComponent("Sources/SQLiteParser/Generated")
             toolArguments += ["--codegen-config", codegen.path, "--swift-output", swiftOutput.path,
                               "--parser-output", parserOutput.path]
+        }
+        // The precedence and keyword tables come from SQLite's own sources, when a checkout is next to us.
+        let sqliteSource = extractor.extractOption(named: "sqlite-source").last
+            .map { URL(fileURLWithPath: $0, relativeTo: packageDirectory) }
+            ?? packageDirectory.deletingLastPathComponent().appendingPathComponent("sqlite")
+        if FileManager.default.fileExists(atPath: sqliteSource.appendingPathComponent("src/parse.y").path) {
+            toolArguments += ["--sqlite-source", sqliteSource.path]
         }
         process.arguments = toolArguments + extractor.remainingArguments
         try process.run()

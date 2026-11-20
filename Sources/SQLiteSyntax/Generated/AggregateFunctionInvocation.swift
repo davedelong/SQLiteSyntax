@@ -33,7 +33,7 @@ public struct AggregateFunctionInvocation: Syntax {
 
         public func validate() throws(SyntaxError) {
             switch self {
-                case .orderBy(let distinct, let expressions, let orderBy):
+                case .orderBy(_, let expressions, _):
                     try require(!expressions.isEmpty, reason: "Arguments.orderBy list must not be empty")
                 default:
                     break

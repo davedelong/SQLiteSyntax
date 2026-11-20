@@ -9,7 +9,7 @@ public enum FunctionArguments: Syntax {
 
     public func validate() throws(SyntaxError) {
         switch self {
-            case .arguments(let quantifier, let expressions, let orderBy):
+            case .arguments(_, let expressions, _):
                 try require(!expressions.isEmpty, reason: "FunctionArguments.arguments list must not be empty")
             default:
                 break

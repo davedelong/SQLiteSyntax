@@ -79,15 +79,17 @@ struct Emitter {
                         e.block("\(e.access)func validate() throws(SyntaxError)") { e in
                             e.block("switch self") { e in
                                 for c in validating {
-                                    e.line("case \(Emitter.pattern(c)):")
+                                    e.line("case \(Emitter.pattern(c, binding: \.nonEmptyList)):")
                                     e.indent += 1
                                     for f in c.payload where f.nonEmptyList {
                                         e.line("try require(!\(Naming.identifier(f.name)).isEmpty, reason: \"\(decl.name).\(c.name) list must not be empty\")")
                                     }
                                     e.indent -= 1
                                 }
-                                e.line("default:")
-                                e.line("    break")
+                                if validating.count < cases.count {
+                                    e.line("default:")
+                                    e.line("    break")
+                                }
                             }
                         }
                     }
@@ -110,9 +112,12 @@ struct Emitter {
         }
     }
 
-    static func pattern(_ c: Case) -> String {
+    /// `case .name(let a, let b)`; fields not in `binding` (when given) are matched with `_`.
+    static func pattern(_ c: Case, binding: ((Field) -> Bool)? = nil) -> String {
         if c.payload.isEmpty { return ".\(Naming.identifier(c.name))" }
-        return ".\(Naming.identifier(c.name))(" + c.payload.map { "let \(Naming.identifier($0.name))" }.joined(separator: ", ") + ")"
+        return ".\(Naming.identifier(c.name))(" + c.payload.map { f in
+            binding?(f) == false ? "_" : "let \(Naming.identifier(f.name))"
+        }.joined(separator: ", ") + ")"
     }
 
     mutating func emit(_ body: [Template]) {

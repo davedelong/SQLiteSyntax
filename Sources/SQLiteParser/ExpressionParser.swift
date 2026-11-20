@@ -13,23 +13,6 @@ extension SQLiteSyntax.Expression {
     }
 }
 
-/// Binding strengths from parse.y (`%left OR.` … `%right BITNOT.`), weakest first.
-enum Precedence {
-    static let or = 1
-    static let and = 2
-    static let not = 3
-    /// IS, IN, LIKE/GLOB/REGEXP/MATCH, BETWEEN, ISNULL/NOTNULL, =, ==, !=, <>
-    static let equality = 4
-    static let comparison = 5        // < <= > >=
-    static let escape = 6
-    static let bitwise = 7           // & | << >>
-    static let additive = 8          // + -
-    static let multiplicative = 9    // * / %
-    static let concatenation = 10    // || -> ->>
-    static let collate = 11
-    static let unary = 12            // ~ and unary + -
-}
-
 extension Parser {
 
     // MARK: Precedence climbing
@@ -48,26 +31,26 @@ extension Parser {
             guard let keyword = token.keyword else { break }
             switch keyword {
                 case "OR", "AND":
-                    let level = keyword == "OR" ? Precedence.or : Precedence.and
+                    let level = keyword == "OR" ? ExpressionPrecedence.or : ExpressionPrecedence.and
                     guard level >= minimum else { return left }
                     _ = advance()
                     left = .binaryOperator(left, keyword == "OR" ? .or : .and, try parseExpression(level + 1))
                 case "COLLATE":
-                    guard Precedence.collate >= minimum else { return left }
+                    guard ExpressionPrecedence.collate >= minimum else { return left }
                     _ = advance()
                     left = .collate(left, Name<Collation>(value: try parseName(allowString: true)))
                 case "ISNULL", "NOTNULL":
-                    guard Precedence.equality >= minimum else { return left }
+                    guard ExpressionPrecedence.equality >= minimum else { return left }
                     _ = advance()
                     left = keyword == "ISNULL" ? .isNull(left) : .notNull(left)
                 case "IS":
-                    guard Precedence.equality >= minimum else { return left }
+                    guard ExpressionPrecedence.equality >= minimum else { return left }
                     _ = advance()
                     let negated = accept(keyword: "NOT")
                     let distinct = accept(keywords: "DISTINCT", "FROM")
-                    left = .equals(left, negated: negated, distinct: distinct, from: try parseExpression(Precedence.equality + 1))
+                    left = .equals(left, negated: negated, distinct: distinct, from: try parseExpression(ExpressionPrecedence.equality + 1))
                 case "NOT", "IN", "LIKE", "GLOB", "REGEXP", "MATCH", "BETWEEN":
-                    guard Precedence.equality >= minimum else { return left }
+                    guard ExpressionPrecedence.equality >= minimum else { return left }
                     if keyword == "NOT" {
                         let next = peek().keyword ?? ""
                         if next == "NULL" { position += 2; left = .notNull(left); continue }
@@ -86,24 +69,24 @@ extension Parser {
     func binaryOperator(_ token: Token) -> (Int, BinaryOperator)? {
         guard case .symbol(let s) = token.kind else { return nil }
         switch s {
-            case "=": return (Precedence.equality, .equals)
-            case "!=", "<>": return (Precedence.equality, .notEquals)
-            case "<": return (Precedence.comparison, .lessThan)
-            case "<=": return (Precedence.comparison, .lessThanOrEqual)
-            case ">": return (Precedence.comparison, .greaterThan)
-            case ">=": return (Precedence.comparison, .greaterThanOrEqual)
-            case "&": return (Precedence.bitwise, .bitwiseAnd)
-            case "|": return (Precedence.bitwise, .bitwiseOr)
-            case "<<": return (Precedence.bitwise, .leftShift)
-            case ">>": return (Precedence.bitwise, .rightShift)
-            case "+": return (Precedence.additive, .add)
-            case "-": return (Precedence.additive, .subtract)
-            case "*": return (Precedence.multiplicative, .multiply)
-            case "/": return (Precedence.multiplicative, .divide)
-            case "%": return (Precedence.multiplicative, .modulo)
-            case "||": return (Precedence.concatenation, .concat)
-            case "->": return (Precedence.concatenation, .extractJSON)
-            case "->>": return (Precedence.concatenation, .extractValue)
+            case "=": return (ExpressionPrecedence.equality, .equals)
+            case "!=", "<>": return (ExpressionPrecedence.equality, .notEquals)
+            case "<": return (ExpressionPrecedence.comparison, .lessThan)
+            case "<=": return (ExpressionPrecedence.comparison, .lessThanOrEqual)
+            case ">": return (ExpressionPrecedence.comparison, .greaterThan)
+            case ">=": return (ExpressionPrecedence.comparison, .greaterThanOrEqual)
+            case "&": return (ExpressionPrecedence.bitwise, .bitwiseAnd)
+            case "|": return (ExpressionPrecedence.bitwise, .bitwiseOr)
+            case "<<": return (ExpressionPrecedence.bitwise, .leftShift)
+            case ">>": return (ExpressionPrecedence.bitwise, .rightShift)
+            case "+": return (ExpressionPrecedence.additive, .add)
+            case "-": return (ExpressionPrecedence.additive, .subtract)
+            case "*": return (ExpressionPrecedence.multiplicative, .multiply)
+            case "/": return (ExpressionPrecedence.multiplicative, .divide)
+            case "%": return (ExpressionPrecedence.multiplicative, .modulo)
+            case "||": return (ExpressionPrecedence.concatenation, .concat)
+            case "->": return (ExpressionPrecedence.concatenation, .extractJSON)
+            case "->>": return (ExpressionPrecedence.concatenation, .extractValue)
             default: return nil
         }
     }
@@ -114,18 +97,18 @@ extension Parser {
         switch operatorToken.keyword! {
             case "BETWEEN":
                 // The lower bound runs up to AND; the upper bound binds tighter than the BETWEEN itself.
-                let lower = try parseExpression(Precedence.not)
+                let lower = try parseExpression(ExpressionPrecedence.not)
                 try expect(keyword: "AND")
-                let upper = try parseExpression(Precedence.equality + 1)
+                let upper = try parseExpression(ExpressionPrecedence.equality + 1)
                 return .between(left, negated: negated, lower: lower, upper: upper)
             case "IN":
                 return try parseIn(left, negated: negated)
             case let op:
-                let pattern = try parseExpression(Precedence.equality + 1)
-                var escape: Expr? = Optional.none
+                let pattern = try parseExpression(ExpressionPrecedence.equality + 1)
+                var escape: Expr? = nil
                 if accept(keyword: "ESCAPE") {
                     guard op == "LIKE" else { throw error("ESCAPE is only supported after LIKE", at: previous) }
-                    escape = try parseExpression(Precedence.escape)
+                    escape = try parseExpression(ExpressionPrecedence.escape)
                 }
                 switch op {
                     case "LIKE": return .like(left, negated: negated, like: pattern, escape: escape)
@@ -209,15 +192,15 @@ extension Parser {
                         case let other: return .unaryOperator(.negate, .literalValue(other))
                     }
                 }
-                return .unaryOperator(.negate, try parseExpression(Precedence.unary))
+                return .unaryOperator(.negate, try parseExpression(ExpressionPrecedence.unary))
             case .symbol("+"):
-                _ = advance(); return .unaryOperator(.plus, try parseExpression(Precedence.unary))
+                _ = advance(); return .unaryOperator(.plus, try parseExpression(ExpressionPrecedence.unary))
             case .symbol("~"):
-                _ = advance(); return .unaryOperator(.bitwiseNot, try parseExpression(Precedence.unary))
+                _ = advance(); return .unaryOperator(.bitwiseNot, try parseExpression(ExpressionPrecedence.unary))
             case .keyword("NOT"):
                 _ = advance()
                 if accept(keyword: "EXISTS") { return .exists(negated: true, try parseParenthesizedSelect()) }
-                return .unaryOperator(.not, try parseExpression(Precedence.not))
+                return .unaryOperator(.not, try parseExpression(ExpressionPrecedence.not))
             case .keyword("EXISTS"):
                 _ = advance()
                 return .exists(negated: false, try parseParenthesizedSelect())
@@ -322,9 +305,7 @@ extension Parser {
 
     mutating func parseCase() throws(ParseError) -> Expr {
         try expect(keyword: "CASE")
-        // Note: `Expression` is ExpressibleByNilLiteral (meaning SQL NULL), so `cond ? nil : expr`
-        // would produce `.literalValue(.null)`, not `Optional.none`. Spell out the optionals.
-        var base: Expr? = Optional.none
+        var base: Expr? = nil
         if !current.isKeyword("WHEN") { base = try parseExpression() }
         var branches: [(when: Expr, then: Expr)] = []
         repeat {
@@ -333,7 +314,7 @@ extension Parser {
             try expect(keyword: "THEN")
             branches.append((condition, try parseExpression()))
         } while current.isKeyword("WHEN")
-        var otherwise: Expr? = Optional.none
+        var otherwise: Expr? = nil
         if accept(keyword: "ELSE") { otherwise = try parseExpression() }
         try expect(keyword: "END")
         return .when(base, branches, else: otherwise)

@@ -57,7 +57,7 @@ public struct CreateTableStatement: Syntax {
 
         public func validate() throws(SyntaxError) {
             switch self {
-                case .columns(let columnDefinitions, let tableConstraints, let tableOptions):
+                case .columns(let columnDefinitions, _, _):
                     try require(!columnDefinitions.isEmpty, reason: "Definition.columns list must not be empty")
                 default:
                     break

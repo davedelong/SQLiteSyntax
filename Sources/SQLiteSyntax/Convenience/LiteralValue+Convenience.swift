@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension LiteralValue: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral, ExpressibleByNilLiteral {
+extension LiteralValue: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
     
     public init(stringLiteral value: String) {
         self = .string(value)
@@ -23,10 +23,6 @@ extension LiteralValue: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
     
     public init(floatLiteral value: Double) {
         self = .real(value)
-    }
-    
-    public init(nilLiteral: ()) {
-        self = .null
     }
     
 }

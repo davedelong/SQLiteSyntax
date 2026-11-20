@@ -9,7 +9,7 @@ public indirect enum SelectCore: Syntax {
 
     public func validate() throws(SyntaxError) {
         switch self {
-            case .select(let selection, let resultColumns, let source, let groupBy, let having, let window):
+            case .select(_, let resultColumns, _, _, _, _):
                 try require(!resultColumns.isEmpty, reason: "SelectCore.select list must not be empty")
             default:
                 break

@@ -54,7 +54,7 @@ public struct TableConstraint: Syntax {
 
             public func validate() throws(SyntaxError) {
                 switch self {
-                    case .list(let kind, let indexedColumns):
+                    case .list(_, let indexedColumns):
                         try require(!indexedColumns.isEmpty, reason: "Columns.list list must not be empty")
                     default:
                         break

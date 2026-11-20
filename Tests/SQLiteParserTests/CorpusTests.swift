@@ -42,7 +42,7 @@ struct CorpusTests {
         var outcomes: [Outcome] = []
         var roundTripFailures: [Outcome] = []
         for file in files {
-            guard let text = try? String(contentsOf: file, encoding: .utf8) ?? String(contentsOf: file, encoding: .isoLatin1) else { continue }
+            guard let text = (try? String(contentsOf: file, encoding: .utf8)) ?? (try? String(contentsOf: file, encoding: .isoLatin1)) else { continue }
             for script in Self.sqlScripts(in: text) {
                 for statement in Self.statements(in: script) where seen.insert(statement).inserted {
                     // Comment-only fragments are not statements.

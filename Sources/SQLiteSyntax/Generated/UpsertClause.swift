@@ -67,7 +67,7 @@ public struct UpsertClause: Syntax {
 
             public func validate() throws(SyntaxError) {
                 switch self {
-                    case .updateSet(let updateSet, let `where`):
+                    case .updateSet(let updateSet, _):
                         try require(!updateSet.isEmpty, reason: "Do.updateSet list must not be empty")
                     default:
                         break

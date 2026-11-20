@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SQLite3
 
 public struct Name<T>: Syntax {
     
@@ -30,7 +29,7 @@ public struct Name<T>: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         var needsEscaping = value.contains(where: \.isProbablySpecial)
-        needsEscaping = needsEscaping || Name<Any>.keywords.contains(value.lowercased())
+        needsEscaping = needsEscaping || SQLiteKeywords.all.contains(value.uppercased())
         // An unquoted name cannot be empty or start with a digit (it would read as a number).
         needsEscaping = needsEscaping || value.isEmpty || value.first!.isNumber
         
@@ -77,22 +76,4 @@ extension Character {
         
         return false
     }
-}
-
-extension Name<Any> {
-    fileprivate static let keywords: Set<String> = {
-        var keywords = Set<String>()
-        for i in 0 ..< sqlite3_keyword_count() {
-            var chars: UnsafePointer<Int8>?
-            var count = Int32(0)
-            guard sqlite3_keyword_name(i, &chars, &count) == SQLITE_OK else { continue }
-            guard let chars else { continue }
-            
-            let mutableChars = UnsafeMutablePointer(mutating: chars)
-            let data = Data(bytesNoCopy: mutableChars, count: Int(count), deallocator: .none)
-            let rawKeyword = String(decoding: data, as: UTF8.self)
-            keywords.insert(rawKeyword.lowercased())
-        }
-        return keywords
-    }()
 }
