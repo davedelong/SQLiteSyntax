@@ -17,7 +17,7 @@ extension CreateTableStatement: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let tableName = try Name<Table>.parse(&p, class: .name, excluding: ["AS"])
+            let tableName = try Name<Table>.parse(&p, class: .name)
             let definition = try Definition.parse(&p)
             return CreateTableStatement(create: create, ifNotExists: ifNotExists, schemaName: schemaName, tableName: tableName, definition: definition)
         }

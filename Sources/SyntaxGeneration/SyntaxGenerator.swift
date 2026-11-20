@@ -37,6 +37,22 @@ public enum SyntaxGenerator {
                 warnings.append("extraRules: \(error)")
             }
         }
+        // Patches for syntax SQLite accepts beyond the diagrams.
+        let defined = Set(rules.map(\.name))
+        for patch in configuration.grammarPatches {
+            guard let index = rules.firstIndex(where: { $0.name == patch.rule }) else {
+                warnings.append("grammarPatches: no rule \(patch.rule)"); continue
+            }
+            do {
+                if let patched = try GrammarPatching.apply(patch, to: rules[index], defined: defined) {
+                    rules[index] = patched
+                } else {
+                    warnings.append("grammarPatches: \(patch.rule): fragment not found exactly once: \(patch.find)")
+                }
+            } catch {
+                warnings.append("grammarPatches: \(patch.rule): \(error)")
+            }
+        }
         let byName = Dictionary(rules.map { ($0.name, $0) }, uniquingKeysWith: { _, extra in extra })
         let builder = TypeBuilder(configuration: configuration)
 

@@ -10,7 +10,7 @@ extension QualifiedTableName: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let tableName = try Name<Table>.parse(&p, class: .name, excluding: ["AS", "INDEXED", "NOT"])
+            let tableName = try Name<Table>.parse(&p, class: .name)
             let alias = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Table> in
                 try p.expect(texts: ["AS"])
                 let value = try Name<Table>.parse(&p, class: .alias, excluding: ["INDEXED", "NOT"])

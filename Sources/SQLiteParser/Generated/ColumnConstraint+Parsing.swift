@@ -7,7 +7,7 @@ extension ColumnConstraint: SQLParsable {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ColumnConstraint in
             let name = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Any> in
                 try p.expect(texts: ["CONSTRAINT"])
-                let value = try Name<Any>.parse(&p, class: .name, excluding: ["AS", "CHECK", "COLLATE", "DEFAULT", "GENERATED", "NOT", "PRIMARY", "REFERENCES", "UNIQUE"])
+                let value = try Name<Any>.parse(&p, class: .name, excluding: ["AS", "CHECK", "COLLATE", "DEFAULT", "GENERATED", "NOT", "NULL", "PRIMARY", "REFERENCES", "UNIQUE"])
                 return value
             }
             let constraint = try Constraint.parse(&p)
@@ -40,6 +40,11 @@ extension ColumnConstraint.Constraint: SQLParsable {
                     try p.expect(texts: ["NOT", "NULL"])
                     let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
                     return .notNull(conflictClause)
+                },
+                { (p: inout Parser) throws -> ColumnConstraint.Constraint in
+                    try p.expect(texts: ["NULL"])
+                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
+                    return .null(conflictClause)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     try p.expect(texts: ["PRIMARY", "KEY"])
@@ -95,6 +100,10 @@ extension ColumnConstraint.Constraint.Default: SQLParsable {
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint.Default in
                     let signedNumber = try SignedNumber.parse(&p)
                     return .signedNumber(signedNumber)
+                },
+                { (p: inout Parser) throws -> ColumnConstraint.Constraint.Default in
+                    let name = try Name<Any>.parse(&p, class: .name)
+                    return .name(name)
                 },
             ]
             let value = try p.longest(alternatives)

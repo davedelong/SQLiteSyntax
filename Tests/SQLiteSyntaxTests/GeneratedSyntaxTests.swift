@@ -185,7 +185,7 @@ struct GeneratedSyntaxTests {
 
     @Test func joinsParse() throws {
         expectAccepted("SELECT * FROM t \(try JoinOperator.comma.sql()) u")
-        expectAccepted("SELECT * FROM t \(try JoinOperator.crossJoin.sql()) u")
+        expectAccepted("SELECT * FROM t \(try JoinOperator.crossJoin().sql()) u")
         for kind in [nil] + JoinOperator.Kind.allCases {
             expectAccepted("SELECT * FROM t \(try JoinOperator.join(natural: true, kind: kind).sql()) u")
             let on = JoinConstraint.on(.binaryOperator(.columnName(nil, "t", "a"), .equals, .columnName(nil, "u", "a")))

@@ -86,8 +86,24 @@ struct ParserEmitter {
         for (position, t) in body.enumerated() {
             // Keywords that may come next here can't be taken as a name (SQLite only lets a keyword be
             // a name where the keyword itself cannot appear): `OVER ( [name] PARTITION BY …`.
-            let follow = followKeywords(after: position, in: body, fields: fieldOf, owner: decl)
-            func call(_ type: String, symbol: String?) -> String { ParserEmitter.call(type, symbol: symbol, excluding: follow) }
+            // Only where the name may be skipped: a required name is the only thing that can come here,
+            // so (as in SQLite) any keyword usable as a name is one (`CREATE TRIGGER after …`).
+            let optionalHere: Bool = {
+                switch t {
+                    case .optional: return true
+                    case .value, .list: return fieldOf[position]!.type.hasSuffix("?") || fieldOf[position]!.type.hasPrefix("[")
+                    default: return false
+                }
+            }()
+            let follow = optionalHere ? followKeywords(after: position, in: body, fields: fieldOf, owner: decl) : []
+            // parse.y: `AS nm` allows any name (JOIN_KW too: `AS outer`); a bare alias is the narrower `ids`.
+            var asFlag: String? = nil
+            if position > 0, case .flag(let flagName, let texts) = body[position - 1], texts == ["AS"] { asFlag = Naming.identifier(flagName) }
+            func call(_ type: String, symbol: String?) -> String {
+                var code = ParserEmitter.call(type, symbol: symbol, excluding: follow)
+                if let asFlag, code.contains("class: .alias") { code = code.replacingOccurrences(of: "class: .alias", with: "class: \(asFlag) ? .name : .alias") }
+                return code
+            }
             func listCall(_ type: String, separator: String?, leading: Bool, symbol: String?) -> String {
                 ParserEmitter.listCall(type, separator: separator, leading: leading, symbol: symbol, excluding: follow)
             }

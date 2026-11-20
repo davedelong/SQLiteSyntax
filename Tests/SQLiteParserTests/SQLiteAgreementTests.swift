@@ -13,7 +13,7 @@ struct SQLiteAgreementTests {
         "NOT 1 = 2", "NOT 0 AND 0", "1 OR 0 AND 0", "0 AND 0 OR 1", "-2 || 3", "'a' || 'b' || 'c'",
         "1 << 2 + 1", "5 & 3 | 8", "~1 + 1", "- - 1", "+1", "NOT NOT 1",
         "1 BETWEEN 0 AND 2 = 1", "2 NOT BETWEEN 3 AND 4", "1 + 2 BETWEEN 2 AND 3 + 1", "1 BETWEEN 0 AND 1 AND 0",
-        "1 IN (1, 2, 3)", "4 NOT IN (1, 2)", "1 IN (2) = 0", "(1, 2) = (1, 2)",
+        "1 IN (1, 2, 3)", "4 NOT IN (1, 2)", "1 IN ()", "1 NOT IN ()", "1 IN (2) = 0", "(1, 2) = (1, 2)",
         "'abc' LIKE 'a%'", "'abc' NOT LIKE 'A_C'", "'a_c' LIKE 'a/_c' ESCAPE '/'", "'abc' GLOB 'a*'", "'x' NOT GLOB 'y'",
         "NULL IS NULL", "1 IS NOT 2", "1 IS DISTINCT FROM NULL", "1 IS NOT DISTINCT FROM 1", "NULL ISNULL", "1 NOTNULL", "1 NOT NULL",
         "1 = 1 IS 1", "1 IS 1 = 1", "1 < 2 IS 1",
@@ -54,7 +54,7 @@ struct SQLiteAgreementTests {
         #expect(try LiteralValue.real(-.infinity).sql() == "-9e999")
         #expect(try LiteralValue.real(.nan).sql() == "NULL")
         #expect(try LiteralValue.integer(42).sql() == "42")
-        #expect(try LiteralValue.integer(.min).sql() == "(-9223372036854775807 - 1)")
+        #expect(try LiteralValue.integer(.min).sql() == "-9223372036854775808")
         let db = Database()
         #expect(db.evaluate(try LiteralValue.integer(.min).sql()) == "integer -9223372036854775808")
         #expect(db.evaluate(try LiteralValue.real(.infinity).sql()) == "real Inf")

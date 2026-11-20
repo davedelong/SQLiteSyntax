@@ -28,7 +28,8 @@ public indirect enum Expression: Syntax {
     case equals(Expression, negated: Bool, distinct: Bool, from: Expression)
     case between(Expression, negated: Bool,lower: Expression, upper: Expression)
     case inStatement(Expression, negated: Bool, SelectStatement)
-    case inExpression(Expression, negated: Bool, List<Expression>)
+    /// `x [NOT] IN ( a , b … )`; the list may be empty (`x IN ()` is false).
+    case inExpression(Expression, negated: Bool, [Expression])
     case inTable(Expression, negated: Bool, Name<Schema>?, Name<Table>?)
     case inTableFunction(Expression, negated: Bool, Name<Schema>?, Name<Function>, [Expression])
     case select(SelectStatement)
@@ -53,6 +54,10 @@ public indirect enum Expression: Syntax {
                 try builder.add(p)
             case .columnName(let s, let t, let c):
                 try builder.addQualified(s, t, c)
+            case .unaryOperator(.negate, .literalValue(.integer(let i))) where i >= 0:
+                builder.add("-" + Literals.integer(i))          // prints as the literal it parses back as
+            case .unaryOperator(.negate, .literalValue(.real(let d))) where d.sign == .plus && !d.isNaN:
+                builder.add("-" + Literals.real(d))
             case .unaryOperator(let o, let e):
                 let argument: any Syntax = e.precedence < o.precedence ? Group(contents: e) : e
                 try o.build(using: &builder, argument: argument)
@@ -133,8 +138,9 @@ public indirect enum Expression: Syntax {
             case .inExpression(let expr, negated: let negated, let list):
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 if negated { builder.add("NOT") }
-                builder.add("IN")
-                try builder.add(group: list)
+                builder.add("IN", "(")
+                try builder.addList(list, delimiter: ",")
+                builder.add(")")
             case .inTable(let expr, negated: let negated, let schema, let table):
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 if negated { builder.add("NOT") }

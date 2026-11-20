@@ -12,16 +12,25 @@ extension CreateVirtualTableStatement: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let tableName = try Name<Table>.parse(&p, class: .name, excluding: ["USING"])
+            let tableName = try Name<Table>.parse(&p, class: .name)
             try p.expect(texts: ["USING"])
             let moduleName = try Name<Module>.parse(&p, class: .name)
+            let arguments = p.attempt { (p: inout Parser) throws(ParseError) -> Arguments in try Arguments.parse(&p) }
+            return CreateVirtualTableStatement(ifNotExists: ifNotExists, schemaName: schemaName, tableName: tableName, moduleName: moduleName, arguments: arguments)
+        }
+    }
+}
+
+extension CreateVirtualTableStatement.Arguments: SQLParsable {
+    static func parse(_ p: inout Parser) throws(ParseError) -> CreateVirtualTableStatement.Arguments {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> CreateVirtualTableStatement.Arguments in
+            try p.expect(texts: ["("])
             let moduleArguments = p.attempt { (p: inout Parser) throws(ParseError) -> List<ModuleArgument> in
-                try p.expect(texts: ["("])
                 let value = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> ModuleArgument in try ModuleArgument.parse(&p) })
-                try p.expect(texts: [")"])
                 return value
             }
-            return CreateVirtualTableStatement(ifNotExists: ifNotExists, schemaName: schemaName, tableName: tableName, moduleName: moduleName, moduleArguments: moduleArguments)
+            try p.expect(texts: [")"])
+            return CreateVirtualTableStatement.Arguments(moduleArguments: moduleArguments)
         }
     }
 }

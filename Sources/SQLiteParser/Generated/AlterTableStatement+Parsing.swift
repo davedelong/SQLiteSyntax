@@ -11,7 +11,7 @@ extension AlterTableStatement: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let tableName = try Name<Table>.parse(&p, class: .name, excluding: ["ADD", "ALTER", "DROP", "RENAME"])
+            let tableName = try Name<Table>.parse(&p, class: .name)
             let action = try Action.parse(&p)
             return AlterTableStatement(schemaName: schemaName, tableName: tableName, action: action)
         }
@@ -30,7 +30,7 @@ extension AlterTableStatement.Action: SQLParsable {
                 { (p: inout Parser) throws -> AlterTableStatement.Action in
                     try p.expect(texts: ["ALTER"])
                     let column = p.accept(texts: ["COLUMN"])
-                    let columnName = try Name<Column>.parse(&p, class: .name, excluding: ["DROP", "SET"])
+                    let columnName = try Name<Column>.parse(&p, class: .name)
                     let change = try Change.parse(&p)
                     return .alter(column: column, columnName: columnName, change: change)
                 },
@@ -137,7 +137,7 @@ extension AlterTableStatement.Action.Rename: SQLParsable {
                 },
                 { (p: inout Parser) throws -> AlterTableStatement.Action.Rename in
                     let column = p.accept(texts: ["COLUMN"])
-                    let columnName = try Name<Column>.parse(&p, class: .name, excluding: ["TO"])
+                    let columnName = try Name<Column>.parse(&p, class: .name)
                     try p.expect(texts: ["TO"])
                     let newColumnName = try Name<Column>.parse(&p, class: .name)
                     return .column(column: column, columnName: columnName, newColumnName: newColumnName)

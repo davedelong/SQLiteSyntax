@@ -11,8 +11,9 @@ extension JoinOperator: SQLParsable {
                     return .comma
                 },
                 { (p: inout Parser) throws -> JoinOperator in
+                    let natural = p.accept(texts: ["NATURAL"])
                     try p.expect(texts: ["CROSS", "JOIN"])
-                    return .crossJoin
+                    return .crossJoin(natural: natural)
                 },
                 { (p: inout Parser) throws -> JoinOperator in
                     let natural = p.accept(texts: ["NATURAL"])

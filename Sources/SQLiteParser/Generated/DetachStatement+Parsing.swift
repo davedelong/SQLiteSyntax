@@ -7,8 +7,8 @@ extension DetachStatement: SQLParsable {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> DetachStatement in
             try p.expect(texts: ["DETACH"])
             let database = p.accept(texts: ["DATABASE"])
-            let schemaName = try Name<Schema>.parse(&p, class: .name)
-            return DetachStatement(database: database, schemaName: schemaName)
+            let expression = try Expression.parse(&p)
+            return DetachStatement(database: database, expression: expression)
         }
     }
 }

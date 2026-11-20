@@ -139,7 +139,13 @@ Original notes:
 - `SQLStatement(parsing:)` and a statement-list parser (`;`-separated, `EXPLAIN [QUERY PLAN]`).
 - Consistent error type and positions across expression and statement parsing.
 
-## Phase 7 — Corpus agreement testing (2–3 days)
+## Phase 7 — Corpus agreement testing ✅ done
+
+Done: `CorpusTests` (opt-in) checks 47,745 statements from SQLite's test suite: 99.81% agreement,
+0 round-trip failures. Every remaining disagreement is classified in `Grammar/CORPUS.md`. Fixes it
+drove: grammar patches for parse.y syntax missing from the diagrams (`codegen.json` `grammarPatches`),
+required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JOIN_KW names, empty
+`IN ()`, negative numeric literals round-trip, `Int64.min` spelled plainly. Original notes:
 
 - Extract SQL from SQLite's test suite (`sqlite/test/*.test`: `execsql {…}`, `catchsql {…}`),
   de-duplicate, and run each through our parser and `sqlite3_prepare` against a permissive
@@ -173,8 +179,9 @@ Original notes:
 3. **Generated naming policy** (Phase 3–4): match existing hand-written names, or accept
    grammar-derived names and update the `Convenience/` layer.
 4. **Where generated parsers live** (Phase 5): `SQLiteParser` (planned) vs alongside the types.
-5. **Grammar authority for validation**: the diagrams (current) or parse.y's broader legacy
-   syntax; Phase 7 will show how much the difference matters in practice.
+5. ~~**Grammar authority for validation**~~ — decided: the diagrams, plus targeted `grammarPatches`
+   for parse.y syntax that matters in practice (see `Grammar/CORPUS.md`); rarer legacy forms are
+   documented, not supported.
 
 ## Rough total
 

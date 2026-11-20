@@ -207,7 +207,14 @@
         "ColumnDefinition.columnConstraints": "constraints",
         "ForeignKeyClause.columnNameList": "columns",
         "CommonTableExpression.as": "materialized",
-        "Limit.Offset.expression": "comma"
+        "Limit.Offset.expression": "comma",
+        "CreateTriggerStatement.schemaName2": "tableSchemaName",
+        "CreateVirtualTableStatement.option": "arguments",
+        "TableOrSubquery.Parenthesized.tableAlias": "joined",
+        "TableOrSubquery.Parenthesized.joined.option": "source",
+        "TableOrSubquery.Parenthesized.Source.option": "tables",
+        "AggregateFunctionInvocation.option": "arguments",
+        "FunctionArguments.arguments.option": "quantifier"
     },
     "extraRules": [
         "limit_clause = 'LIMIT', expr, [(',', expr) | ('OFFSET', expr)];",
@@ -217,5 +224,79 @@
         "index_hint = ('INDEXED', 'BY', index_name) | ('NOT', 'INDEXED');"
     ],
     "namespace": "",
-    "public": true
+    "public": true,
+    "grammarPatches": [
+        {
+            "rule": "pragma-value",
+            "find": "name",
+            "replace": "name | 'ON' | 'DELETE' | 'DEFAULT'",
+            "reason": "parse.y nmnum also accepts the keywords ON, DELETE and DEFAULT: PRAGMA foreign_keys = ON"
+        },
+        {
+            "rule": "column-constraint",
+            "find": "'NOT', 'NULL', conflict_clause",
+            "replace": "('NOT', 'NULL', conflict_clause) | ('NULL', conflict_clause)",
+            "reason": "parse.y ccons accepts a bare NULL constraint (a no-op, common in schemas from other databases)"
+        },
+        {
+            "rule": "create-virtual-table-stmt",
+            "find": "module_argument, {',', module_argument}",
+            "replace": "[module_argument, {',', module_argument}]",
+            "reason": "parse.y accepts an empty module argument list: USING fts5()"
+        },
+        {
+            "rule": "join-operator",
+            "find": "'CROSS'",
+            "replace": "['NATURAL'], 'CROSS'",
+            "reason": "parse.y joinop accepts NATURAL CROSS JOIN (the diagram dropped it in 2022)"
+        },
+        {
+            "rule": "table-or-subquery",
+            "find": "(join_clause | select_stmt | (table_or_subquery, {',', table_or_subquery})), ')'",
+            "replace": "((join_clause | (table_or_subquery, {',', table_or_subquery})), ')', [['AS'], table_alias]) | (select_stmt, ')')",
+            "reason": "parse.y seltablist accepts an alias after a parenthesized join or table list: FROM (a, b) AS c"
+        },
+        {
+            "rule": "create-trigger-stmt",
+            "find": "'ON', table_name",
+            "replace": "'ON', [schema_name, '.'], table_name",
+            "reason": "parse.y trigger_decl accepts a qualified table name: ON main.t"
+        },
+        {
+            "rule": "column-constraint",
+            "find": "('(', expr, ')') | literal_value | signed_number",
+            "replace": "('(', expr, ')') | literal_value | signed_number | name",
+            "reason": "parse.y ccons accepts DEFAULT followed by a bare identifier (legacy): DEFAULT hello"
+        },
+        {
+            "rule": "function-arguments",
+            "find": "['DISTINCT']",
+            "replace": "['DISTINCT' | 'ALL']",
+            "reason": "parse.y distinct accepts ALL: count(ALL a)"
+        },
+        {
+            "rule": "table-or-subquery",
+            "find": "expr, {',', expr}",
+            "replace": "[expr, {',', expr}]",
+            "reason": "parse.y accepts a table-valued function with no arguments: pragma_table_list()"
+        },
+        {
+            "rule": "table-constraint",
+            "find": "'CHECK', '(', expr, ')'",
+            "replace": "'CHECK', '(', expr, ')', conflict_clause",
+            "reason": "parse.y tcons accepts ON CONFLICT after a CHECK table constraint"
+        },
+        {
+            "rule": "attach-stmt",
+            "find": "schema_name",
+            "replace": "expr",
+            "reason": "parse.y attaches AS any expression, e.g. a bind parameter: ATTACH ? AS ?"
+        },
+        {
+            "rule": "detach-stmt",
+            "find": "schema_name",
+            "replace": "expr",
+            "reason": "parse.y detaches any expression, e.g. a bind parameter: DETACH ?"
+        }
+    ]
 }

@@ -24,7 +24,8 @@ extension TableConstraint.Constraint: SQLParsable {
                     try p.expect(texts: ["CHECK", "("])
                     let check = try Expression.parse(&p)
                     try p.expect(texts: [")"])
-                    return .check(check)
+                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
+                    return .check(check: check, conflictClause: conflictClause)
                 },
                 { (p: inout Parser) throws -> TableConstraint.Constraint in
                     try p.expect(texts: ["FOREIGN", "KEY"])

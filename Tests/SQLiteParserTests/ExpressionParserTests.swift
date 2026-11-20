@@ -57,7 +57,7 @@ struct ExpressionParserTests {
         #expect(try shape("1 - 2 - 3") == "((1 - 2) - 3)")
         #expect(try shape("NOT a = b AND c") == "((NOT (a == b)) AND c)")
         #expect(try shape("a OR b AND c") == "(a OR (b AND c))")
-        #expect(try shape("-a || b") == "((-a) || b)")
+        #expect(try shape("-a || b") == "((- a) || b)")
         #expect(try shape("a BETWEEN 1 AND 2 AND c") == "((a BETWEEN 1 AND 2) AND c)")
         #expect(try shape("a = b IS NULL") == "((a == b) IS NULL)")
         #expect(try shape("a COLLATE NOCASE = b") == "((a COLLATE NOCASE) == b)")
@@ -74,7 +74,7 @@ struct ExpressionParserTests {
         }
     }
 
-    @Test(arguments: ["a IN ()", "#x", "percentile(a) WITHIN GROUP (ORDER BY a)"])
+    @Test(arguments: ["percentile(a) WITHIN GROUP (ORDER BY a)", "a GLOB b ESCAPE c", "#1"])
     func unsupportedForms(_ text: String) {
         #expect(throws: ParseError.self) { try Expr(parsing: text) }
     }

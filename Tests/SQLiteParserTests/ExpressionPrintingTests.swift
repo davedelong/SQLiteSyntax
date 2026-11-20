@@ -102,7 +102,7 @@ struct SeededRandom {
             case 10:
                 return .collate(expression(depth: d), bool() ? "NOCASE" : "BINARY")
             default:
-                return .inExpression(expression(depth: d), negated: bool(), List([expression(depth: d), expression(depth: d)]))
+                return .inExpression(expression(depth: d), negated: bool(), Array(repeating: (), count: next(3)).map { expression(depth: d) })
         }
     }
 }

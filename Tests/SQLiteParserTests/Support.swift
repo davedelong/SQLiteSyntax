@@ -67,10 +67,10 @@ func parenthesized(_ e: Expr) throws -> String {
                 case .negate: symbol = "-"
                 case .plus: symbol = "+"
                 case .bitwiseNot: symbol = "~"
-                case .not: symbol = "NOT "
+                case .not: symbol = "NOT"
                 default: return try e.sql()
             }
-            return "(\(symbol)\(try p(x)))"
+            return "(\(symbol) \(try p(x)))"     // a space, so `- -1` never becomes a `--` comment
         case .between(let x, let negated, let lower, let upper):
             return "(\(try p(x)) \(not(negated))BETWEEN \(try p(lower)) AND \(try p(upper)))"
         case .like(let x, let negated, let pattern, let escape):

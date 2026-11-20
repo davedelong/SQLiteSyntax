@@ -17,14 +17,19 @@ extension CreateTriggerStatement: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let triggerName = try Name<Trigger>.parse(&p, class: .name, excluding: ["AFTER", "BEFORE", "DELETE", "INSERT", "INSTEAD", "UPDATE"])
+            let triggerName = try Name<Trigger>.parse(&p, class: .name)
             let timing = p.attempt { (p: inout Parser) throws(ParseError) -> Timing in
                 let value = try Timing.parse(&p)
                 return value
             }
             let event = try Event.parse(&p)
             try p.expect(texts: ["ON"])
-            let tableName = try Name<Table>.parse(&p, class: .name, excluding: ["BEGIN", "FOR", "WHEN"])
+            let tableSchemaName = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Schema> in
+                let value = try Name<Schema>.parse(&p, class: .name)
+                try p.expect(texts: ["."])
+                return value
+            }
+            let tableName = try Name<Table>.parse(&p, class: .name)
             let condition = p.attempt { (p: inout Parser) throws(ParseError) -> Condition in
                 let value = try Condition.parse(&p)
                 return value
@@ -34,7 +39,7 @@ extension CreateTriggerStatement: SQLParsable {
             try p.expect(texts: [";"])
             let statements = p.repeated(separator: []) { (p: inout Parser) throws(ParseError) -> StatementsElement in try StatementsElement.parse(&p) }
             try p.expect(texts: ["END"])
-            return CreateTriggerStatement(create: create, ifNotExists: ifNotExists, schemaName: schemaName, triggerName: triggerName, timing: timing, event: event, tableName: tableName, condition: condition, begin: begin, statements: statements)
+            return CreateTriggerStatement(create: create, ifNotExists: ifNotExists, schemaName: schemaName, triggerName: triggerName, timing: timing, event: event, tableSchemaName: tableSchemaName, tableName: tableName, condition: condition, begin: begin, statements: statements)
         }
     }
 }

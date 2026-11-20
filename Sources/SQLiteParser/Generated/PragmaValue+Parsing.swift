@@ -11,6 +11,18 @@ extension PragmaValue: SQLParsable {
                     return .name(name)
                 },
                 { (p: inout Parser) throws -> PragmaValue in
+                    try p.expect(texts: ["ON"])
+                    return .on
+                },
+                { (p: inout Parser) throws -> PragmaValue in
+                    try p.expect(texts: ["DELETE"])
+                    return .delete
+                },
+                { (p: inout Parser) throws -> PragmaValue in
+                    try p.expect(texts: ["DEFAULT"])
+                    return .`default`
+                },
+                { (p: inout Parser) throws -> PragmaValue in
                     let signedLiteral = try LiteralValue.parse(&p)
                     return .signedLiteral(signedLiteral)
                 },

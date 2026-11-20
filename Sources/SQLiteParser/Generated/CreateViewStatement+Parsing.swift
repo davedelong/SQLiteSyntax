@@ -17,7 +17,7 @@ extension CreateViewStatement: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let viewName = try Name<View>.parse(&p, class: .name, excluding: ["AS"])
+            let viewName = try Name<View>.parse(&p, class: .name)
             let columnNameList = p.attempt { (p: inout Parser) throws(ParseError) -> ColumnNameList in
                 let value = try ColumnNameList.parse(&p)
                 return value

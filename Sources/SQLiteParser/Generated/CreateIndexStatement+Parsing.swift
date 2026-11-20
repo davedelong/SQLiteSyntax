@@ -14,7 +14,7 @@ extension CreateIndexStatement: SQLParsable {
                 try p.expect(texts: ["."])
                 return value
             }
-            let indexName = try Name<Index>.parse(&p, class: .name, excluding: ["ON"])
+            let indexName = try Name<Index>.parse(&p, class: .name)
             try p.expect(texts: ["ON"])
             let tableName = try Name<Table>.parse(&p, class: .name)
             try p.expect(texts: ["("])

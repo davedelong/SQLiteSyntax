@@ -7,13 +7,40 @@ extension AggregateFunctionInvocation: SQLParsable {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> AggregateFunctionInvocation in
             let aggregateFunc = try Name<Function>.parse(&p, class: .name)
             try p.expect(texts: ["("])
-            let functionArguments = p.attempt { (p: inout Parser) throws(ParseError) -> FunctionArguments in try FunctionArguments.parse(&p) }
+            let arguments = p.attempt { (p: inout Parser) throws(ParseError) -> Arguments in
+                let value = try Arguments.parse(&p)
+                return value
+            }
             try p.expect(texts: [")"])
             let filterClause = p.attempt { (p: inout Parser) throws(ParseError) -> FilterClause in
                 let value = try FilterClause.parse(&p)
                 return value
             }
-            return AggregateFunctionInvocation(aggregateFunc: aggregateFunc, functionArguments: functionArguments, filterClause: filterClause)
+            return AggregateFunctionInvocation(aggregateFunc: aggregateFunc, arguments: arguments, filterClause: filterClause)
+        }
+    }
+}
+
+extension AggregateFunctionInvocation.Arguments: SQLParsable {
+    static func parse(_ p: inout Parser) throws(ParseError) -> AggregateFunctionInvocation.Arguments {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> AggregateFunctionInvocation.Arguments in
+            let alternatives: [(inout Parser) throws -> AggregateFunctionInvocation.Arguments] = [
+                { (p: inout Parser) throws -> AggregateFunctionInvocation.Arguments in
+                    try p.expect(texts: ["*"])
+                    return .star
+                },
+                { (p: inout Parser) throws -> AggregateFunctionInvocation.Arguments in
+                    let distinct = p.accept(texts: ["DISTINCT"])
+                    let expressions = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> Expression in try Expression.parse(&p) })
+                    let orderBy = p.attempt { (p: inout Parser) throws(ParseError) -> OrderBy in
+                        let value = try OrderBy.parse(&p)
+                        return value
+                    }
+                    return .orderBy(distinct: distinct, expressions: expressions, orderBy: orderBy)
+                },
+            ]
+            let value = try p.longest(alternatives)
+            return value
         }
     }
 }

@@ -36,7 +36,7 @@ extension ReturningClause.ReturningElement.ColumnAlias: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> ReturningClause.ReturningElement.ColumnAlias {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ReturningClause.ReturningElement.ColumnAlias in
             let `as` = p.accept(texts: ["AS"])
-            let columnAlias = try Name<Column>.parse(&p, class: .alias)
+            let columnAlias = try Name<Column>.parse(&p, class: `as` ? .name : .alias)
             return ReturningClause.ReturningElement.ColumnAlias(as: `as`, columnAlias: columnAlias)
         }
     }

@@ -19,7 +19,10 @@ extension TableOrSubquery: SQLParsable {
                     }
                     let tableFunctionName = try Name<Function>.parse(&p, class: .name)
                     try p.expect(texts: ["("])
-                    let expressions = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> Expression in try Expression.parse(&p) })
+                    let expressions = p.attempt { (p: inout Parser) throws(ParseError) -> List<Expression> in
+                        let value = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> Expression in try Expression.parse(&p) })
+                        return value
+                    }
                     try p.expect(texts: [")"])
                     let tableAlias = p.attempt { (p: inout Parser) throws(ParseError) -> TableAlias in try TableAlias.parse(&p) }
                     return .tableFunctionName(schemaName: schemaName, tableFunctionName: tableFunctionName, expressions: expressions, tableAlias: tableAlias)
@@ -30,7 +33,7 @@ extension TableOrSubquery: SQLParsable {
                         try p.expect(texts: ["."])
                         return value
                     }
-                    let tableName = try Name<Table>.parse(&p, class: .name, excluding: ["AS", "INDEXED", "NOT"])
+                    let tableName = try Name<Table>.parse(&p, class: .name)
                     let suffix = p.attempt { (p: inout Parser) throws(ParseError) -> Suffix in
                         let value = try Suffix.parse(&p)
                         return value
@@ -49,9 +52,10 @@ extension TableOrSubquery.Parenthesized: SQLParsable {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TableOrSubquery.Parenthesized in
             let alternatives: [(inout Parser) throws -> TableOrSubquery.Parenthesized] = [
                 { (p: inout Parser) throws -> TableOrSubquery.Parenthesized in
-                    let joinClause = try JoinClause.parse(&p)
+                    let source = try Source.parse(&p)
                     try p.expect(texts: [")"])
-                    return .joinClause(joinClause)
+                    let tableAlias = p.attempt { (p: inout Parser) throws(ParseError) -> TableAlias in try TableAlias.parse(&p) }
+                    return .joined(source: source, tableAlias: tableAlias)
                 },
                 { (p: inout Parser) throws -> TableOrSubquery.Parenthesized in
                     let selectStatement = try SelectStatement.parse(&p)
@@ -59,15 +63,10 @@ extension TableOrSubquery.Parenthesized: SQLParsable {
                     return .selectStatement(selectStatement)
                 },
                 { (p: inout Parser) throws -> TableOrSubquery.Parenthesized in
-                    let tableOrSubquerys = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> TableOrSubquery in try TableOrSubquery.parse(&p) })
-                    try p.expect(texts: [")"])
-                    return .tables(tableOrSubquerys)
-                },
-                { (p: inout Parser) throws -> TableOrSubquery.Parenthesized in
                     let selectStatement = try SelectStatement.parse(&p)
                     try p.expect(texts: [")"])
                     let `as` = p.accept(texts: ["AS"])
-                    let tableAlias = try Name<Table>.parse(&p, class: .alias)
+                    let tableAlias = try Name<Table>.parse(&p, class: `as` ? .name : .alias)
                     return .aliasedSubquery(selectStatement: selectStatement, as: `as`, tableAlias: tableAlias)
                 },
             ]
@@ -77,11 +76,40 @@ extension TableOrSubquery.Parenthesized: SQLParsable {
     }
 }
 
+extension TableOrSubquery.Parenthesized.Source: SQLParsable {
+    static func parse(_ p: inout Parser) throws(ParseError) -> TableOrSubquery.Parenthesized.Source {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TableOrSubquery.Parenthesized.Source in
+            let alternatives: [(inout Parser) throws -> TableOrSubquery.Parenthesized.Source] = [
+                { (p: inout Parser) throws -> TableOrSubquery.Parenthesized.Source in
+                    let joinClause = try JoinClause.parse(&p)
+                    return .joinClause(joinClause)
+                },
+                { (p: inout Parser) throws -> TableOrSubquery.Parenthesized.Source in
+                    let tableOrSubquerys = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> TableOrSubquery in try TableOrSubquery.parse(&p) })
+                    return .tables(tableOrSubquerys)
+                },
+            ]
+            let value = try p.longest(alternatives)
+            return value
+        }
+    }
+}
+
+extension TableOrSubquery.Parenthesized.TableAlias: SQLParsable {
+    static func parse(_ p: inout Parser) throws(ParseError) -> TableOrSubquery.Parenthesized.TableAlias {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TableOrSubquery.Parenthesized.TableAlias in
+            let `as` = p.accept(texts: ["AS"])
+            let tableAlias = try Name<Table>.parse(&p, class: `as` ? .name : .alias)
+            return TableOrSubquery.Parenthesized.TableAlias(as: `as`, tableAlias: tableAlias)
+        }
+    }
+}
+
 extension TableOrSubquery.TableAlias: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> TableOrSubquery.TableAlias {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TableOrSubquery.TableAlias in
             let `as` = p.accept(texts: ["AS"])
-            let tableAlias = try Name<Table>.parse(&p, class: .alias)
+            let tableAlias = try Name<Table>.parse(&p, class: `as` ? .name : .alias)
             return TableOrSubquery.TableAlias(as: `as`, tableAlias: tableAlias)
         }
     }
@@ -97,7 +125,7 @@ extension TableOrSubquery.Suffix: SQLParsable {
                 },
                 { (p: inout Parser) throws -> TableOrSubquery.Suffix in
                     let `as` = p.accept(texts: ["AS"])
-                    let tableAlias = try Name<Table>.parse(&p, class: .alias, excluding: ["INDEXED", "NOT"])
+                    let tableAlias = try Name<Table>.parse(&p, class: `as` ? .name : .alias)
                     let indexHint = p.attempt { (p: inout Parser) throws(ParseError) -> IndexHint in
                         let value = try IndexHint.parse(&p)
                         return value

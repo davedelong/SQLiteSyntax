@@ -21,8 +21,8 @@ internal enum Literals {
     }
     
     static func integer(_ i: Int64) -> String {
-        // -9223372036854775808 would be read as the negation of an out-of-range (REAL) literal.
-        i == .min ? "(-9223372036854775807 - 1)" : String(i)
+        // SQLite reads minus applied directly to 9223372036854775808 as the smallest INTEGER (expr.c).
+        String(i)
     }
     
     static func real(_ d: Double) -> String {

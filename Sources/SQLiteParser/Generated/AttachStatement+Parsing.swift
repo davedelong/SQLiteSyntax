@@ -9,8 +9,8 @@ extension AttachStatement: SQLParsable {
             let database = p.accept(texts: ["DATABASE"])
             let expression = try Expression.parse(&p)
             try p.expect(texts: ["AS"])
-            let schemaName = try Name<Schema>.parse(&p, class: .name)
-            return AttachStatement(database: database, expression: expression, schemaName: schemaName)
+            let `as` = try Expression.parse(&p)
+            return AttachStatement(database: database, expression: expression, as: `as`)
         }
     }
 }

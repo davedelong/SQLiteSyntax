@@ -6,7 +6,7 @@ extension ForeignKeyClause: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> ForeignKeyClause {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ForeignKeyClause in
             try p.expect(texts: ["REFERENCES"])
-            let foreignTable = try Name<Table>.parse(&p, class: .name, excluding: ["DEFERRABLE", "MATCH", "NOT", "ON"])
+            let foreignTable = try Name<Table>.parse(&p, class: .name)
             let columns = p.attempt { (p: inout Parser) throws(ParseError) -> ColumnNameList in
                 let value = try ColumnNameList.parse(&p)
                 return value

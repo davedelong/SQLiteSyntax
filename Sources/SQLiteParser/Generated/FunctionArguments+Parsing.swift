@@ -11,13 +11,35 @@ extension FunctionArguments: SQLParsable {
                     return .star
                 },
                 { (p: inout Parser) throws -> FunctionArguments in
-                    let distinct = p.accept(texts: ["DISTINCT"])
+                    let quantifier = p.attempt { (p: inout Parser) throws(ParseError) -> Quantifier in
+                        let value = try Quantifier.parse(&p)
+                        return value
+                    }
                     let expressions = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> Expression in try Expression.parse(&p) })
                     let orderBy = p.attempt { (p: inout Parser) throws(ParseError) -> OrderBy in
                         let value = try OrderBy.parse(&p)
                         return value
                     }
-                    return .arguments(distinct: distinct, expressions: expressions, orderBy: orderBy)
+                    return .arguments(quantifier: quantifier, expressions: expressions, orderBy: orderBy)
+                },
+            ]
+            let value = try p.longest(alternatives)
+            return value
+        }
+    }
+}
+
+extension FunctionArguments.Quantifier: SQLParsable {
+    static func parse(_ p: inout Parser) throws(ParseError) -> FunctionArguments.Quantifier {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> FunctionArguments.Quantifier in
+            let alternatives: [(inout Parser) throws -> FunctionArguments.Quantifier] = [
+                { (p: inout Parser) throws -> FunctionArguments.Quantifier in
+                    try p.expect(texts: ["DISTINCT"])
+                    return .distinct
+                },
+                { (p: inout Parser) throws -> FunctionArguments.Quantifier in
+                    try p.expect(texts: ["ALL"])
+                    return .all
                 },
             ]
             let value = try p.longest(alternatives)

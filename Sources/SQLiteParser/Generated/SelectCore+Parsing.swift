@@ -112,7 +112,7 @@ extension SelectCore.Source.From: SQLParsable {
 extension SelectCore.WindowElement: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> SelectCore.WindowElement {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> SelectCore.WindowElement in
-            let windowName = try Name<Window>.parse(&p, class: .name, excluding: ["AS"])
+            let windowName = try Name<Window>.parse(&p, class: .name)
             try p.expect(texts: ["AS"])
             let windowDefinition = try WindowDefinition.parse(&p)
             return SelectCore.WindowElement(windowName: windowName, windowDefinition: windowDefinition)

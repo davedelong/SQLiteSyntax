@@ -26,16 +26,19 @@ public struct CodegenConfiguration: Decodable, Sendable {
     /// Emit public types with public memberwise initialisers (for the library's API).
     public var isPublic: Bool
 
+    /// Syntax SQLite accepts but the diagrams don't draw, patched into rules before generation.
+    public var grammarPatches: [GrammarPatch]
+
     /// Helper rules in the grammar file's EBNF format (Gramophone syntax, `_` for `-`), generated like
     /// diagram rules. Wherever a diagram contains a fragment with exactly the same syntax, it references
     /// the helper instead, so repeated fragments (e.g. `LIMIT …`) share one type.
     public var extraRules: String
 
-    enum CodingKeys: String, CodingKey { case rules, references, tokens, keywordEnums, names, namespace, extraRules, isPublic = "public" }
+    enum CodingKeys: String, CodingKey { case rules, references, tokens, keywordEnums, names, namespace, extraRules, isPublic = "public", grammarPatches }
 
     public init(rules: [String], references: [String: String] = [:], tokens: [String: String] = [:],
                 keywordEnums: [String: String] = [:], names: [String: String] = [:], namespace: String = "Generated",
-                extraRules: String = "", isPublic: Bool = false) {
+                extraRules: String = "", isPublic: Bool = false, grammarPatches: [GrammarPatch] = []) {
         self.rules = rules
         self.references = references
         self.tokens = tokens
@@ -44,6 +47,7 @@ public struct CodegenConfiguration: Decodable, Sendable {
         self.namespace = namespace
         self.extraRules = extraRules
         self.isPublic = isPublic
+        self.grammarPatches = grammarPatches
     }
 
     public init(from decoder: any Decoder) throws {
@@ -55,6 +59,7 @@ public struct CodegenConfiguration: Decodable, Sendable {
         names = try c.decodeIfPresent([String: String].self, forKey: .names) ?? [:]
         namespace = try c.decodeIfPresent(String.self, forKey: .namespace) ?? "Generated"
         isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
+        grammarPatches = try c.decodeIfPresent([GrammarPatch].self, forKey: .grammarPatches) ?? []
         // A string, or an array of lines (easier to read in JSON).
         if let lines = try? c.decodeIfPresent([String].self, forKey: .extraRules) {
             extraRules = lines.joined(separator: "\n")

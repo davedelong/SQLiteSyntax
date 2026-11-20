@@ -5,7 +5,7 @@ import SQLiteSyntax
 extension ColumnDefinition: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> ColumnDefinition {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ColumnDefinition in
-            let name = try Name<Column>.parse(&p, class: .name, excluding: ["AS", "CHECK", "COLLATE", "CONSTRAINT", "DEFAULT", "GENERATED", "NOT", "PRIMARY", "REFERENCES", "UNIQUE"])
+            let name = try Name<Column>.parse(&p, class: .name)
             let typeName = p.attempt { (p: inout Parser) throws(ParseError) -> TypeName in
                 let value = try TypeName.parse(&p)
                 return value

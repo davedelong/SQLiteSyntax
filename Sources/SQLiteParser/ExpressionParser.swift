@@ -7,8 +7,7 @@ extension SQLiteSyntax.Expression {
 
     /// Parses SQL text containing a single SQLite expression, e.g. `a + 1 BETWEEN 0 AND 10`.
     ///
-    /// Not yet supported: `WITHIN GROUP`, and a few forms `Expression` cannot represent
-    /// (empty `IN ()`, `#name` parameters, `ESCAPE` on GLOB).
+    /// Not yet supported: `WITHIN GROUP`, and `ESCAPE` on GLOB (which `Expression` cannot represent).
     public init(parsing sql: String) throws(ParseError) {
         self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
     }
@@ -145,12 +144,10 @@ extension Parser {
                 try expect(symbol: ")")
                 return .inStatement(left, negated: negated, select)
             }
-            if current.isSymbol(")") {
-                throw error("an empty IN list cannot be represented by SQLiteSyntax.Expression", at: open)
-            }
-            let items = try parseExpressionList()
+            _ = open
+            let items = current.isSymbol(")") ? [] : try parseExpressionList()
             try expect(symbol: ")")
-            return .inExpression(left, negated: negated, List(items))
+            return .inExpression(left, negated: negated, items)
         }
         // IN [schema.]table   or   IN [schema.]table-function(args)
         var first = try parseName()
@@ -201,6 +198,16 @@ extension Parser {
                 if case .number(let text) = current.kind, text.replacingOccurrences(of: "_", with: "") == "9223372036854775808" {
                     _ = advance()
                     return .literalValue(.integer(.min))
+                }
+                // Minus directly before a number is a negative literal, so negative literals print and
+                // re-parse as the same value (`-5`, `-1.5`). (Negating Int64.min stays an operation.)
+                if case .number(let text) = current.kind {
+                    let token = advance()
+                    switch try numericLiteral(text, token: token) {
+                        case .integer(let i) where i != .min && i != 0: return .literalValue(.integer(-i))   // no integer -0
+                        case .real(let d): return .literalValue(.real(-d))
+                        case let other: return .unaryOperator(.negate, .literalValue(other))
+                    }
                 }
                 return .unaryOperator(.negate, try parseExpression(Precedence.unary))
             case .symbol("+"):
@@ -396,7 +403,8 @@ extension Parser {
             case ":": return .named(name)
             case "@": return .atNamed(name)
             case "$": return .tcl(name)
-            default: throw error("\(text.prefix(1))-style parameters cannot be represented by SQLiteSyntax.BindParameter", at: token)
+            // SQLite only accepts #name parameters in its own internal (nested) parsing.
+            default: throw error("#-style parameters are not valid in SQL statements", at: token)
         }
     }
 }
