@@ -121,3 +121,10 @@ extension ColumnConstraint.Constraint.Storage: SQLParsable {
         }
     }
 }
+
+extension ColumnConstraint {
+    /// Parses SQL text that consists of exactly one `ColumnConstraint`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try ColumnConstraint.parse(&p) }
+    }
+}

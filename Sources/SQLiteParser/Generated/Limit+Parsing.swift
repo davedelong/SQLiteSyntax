@@ -36,3 +36,10 @@ extension Limit.Offset: SQLParsable {
         }
     }
 }
+
+extension Limit {
+    /// Parses SQL text that consists of exactly one `Limit`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try Limit.parse(&p) }
+    }
+}

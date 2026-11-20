@@ -22,3 +22,10 @@ extension SimpleSelectStatement: SQLParsable {
         }
     }
 }
+
+extension SimpleSelectStatement {
+    /// Parses SQL text that consists of exactly one `SimpleSelectStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try SimpleSelectStatement.parse(&p) }
+    }
+}

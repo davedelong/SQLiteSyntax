@@ -123,3 +123,10 @@ extension ForeignKeyClause.Deferrable.Initially: SQLParsable {
         }
     }
 }
+
+extension ForeignKeyClause {
+    /// Parses SQL text that consists of exactly one `ForeignKeyClause`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try ForeignKeyClause.parse(&p) }
+    }
+}

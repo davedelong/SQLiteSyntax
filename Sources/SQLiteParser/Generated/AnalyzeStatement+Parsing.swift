@@ -38,3 +38,10 @@ extension AnalyzeStatement.Analyze: SQLParsable {
         }
     }
 }
+
+extension AnalyzeStatement {
+    /// Parses SQL text that consists of exactly one `AnalyzeStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try AnalyzeStatement.parse(&p) }
+    }
+}

@@ -110,3 +110,10 @@ extension TableOrSubquery.Suffix: SQLParsable {
         }
     }
 }
+
+extension TableOrSubquery {
+    /// Parses SQL text that consists of exactly one `TableOrSubquery`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try TableOrSubquery.parse(&p) }
+    }
+}

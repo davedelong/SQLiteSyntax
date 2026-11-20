@@ -23,3 +23,10 @@ extension RollbackStatement.To: SQLParsable {
         }
     }
 }
+
+extension RollbackStatement {
+    /// Parses SQL text that consists of exactly one `RollbackStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try RollbackStatement.parse(&p) }
+    }
+}

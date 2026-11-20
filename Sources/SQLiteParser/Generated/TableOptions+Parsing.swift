@@ -29,3 +29,10 @@ extension TableOptions.OptionsElement: SQLParsable {
         }
     }
 }
+
+extension TableOptions {
+    /// Parses SQL text that consists of exactly one `TableOptions`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try TableOptions.parse(&p) }
+    }
+}

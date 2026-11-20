@@ -22,3 +22,10 @@ extension SQLStatementList.StatementsElement: SQLParsable {
         }
     }
 }
+
+extension SQLStatementList {
+    /// Parses SQL text that consists of exactly one `SQLStatementList`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try SQLStatementList.parse(&p) }
+    }
+}

@@ -24,3 +24,10 @@ extension DeleteStatementLimited.Limiting: SQLParsable {
         }
     }
 }
+
+extension DeleteStatementLimited {
+    /// Parses SQL text that consists of exactly one `DeleteStatementLimited`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try DeleteStatementLimited.parse(&p) }
+    }
+}

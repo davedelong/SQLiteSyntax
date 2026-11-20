@@ -19,3 +19,10 @@ extension VacuumStatement: SQLParsable {
         }
     }
 }
+
+extension VacuumStatement {
+    /// Parses SQL text that consists of exactly one `VacuumStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try VacuumStatement.parse(&p) }
+    }
+}

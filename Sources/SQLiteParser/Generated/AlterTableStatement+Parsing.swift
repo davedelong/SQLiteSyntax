@@ -148,3 +148,10 @@ extension AlterTableStatement.Action.Rename: SQLParsable {
         }
     }
 }
+
+extension AlterTableStatement {
+    /// Parses SQL text that consists of exactly one `AlterTableStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try AlterTableStatement.parse(&p) }
+    }
+}

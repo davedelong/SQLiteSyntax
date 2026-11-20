@@ -33,3 +33,10 @@ extension FactoredSelectStatement.CompoundsElement: SQLParsable {
         }
     }
 }
+
+extension FactoredSelectStatement {
+    /// Parses SQL text that consists of exactly one `FactoredSelectStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try FactoredSelectStatement.parse(&p) }
+    }
+}

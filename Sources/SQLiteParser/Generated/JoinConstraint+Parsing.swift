@@ -22,3 +22,10 @@ extension JoinConstraint: SQLParsable {
         }
     }
 }
+
+extension JoinConstraint {
+    /// Parses SQL text that consists of exactly one `JoinConstraint`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try JoinConstraint.parse(&p) }
+    }
+}

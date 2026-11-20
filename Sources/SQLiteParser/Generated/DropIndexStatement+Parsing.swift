@@ -17,3 +17,10 @@ extension DropIndexStatement: SQLParsable {
         }
     }
 }
+
+extension DropIndexStatement {
+    /// Parses SQL text that consists of exactly one `DropIndexStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try DropIndexStatement.parse(&p) }
+    }
+}

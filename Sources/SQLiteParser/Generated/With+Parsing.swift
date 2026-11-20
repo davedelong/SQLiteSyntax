@@ -12,3 +12,10 @@ extension With: SQLParsable {
         }
     }
 }
+
+extension With {
+    /// Parses SQL text that consists of exactly one `With`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try With.parse(&p) }
+    }
+}

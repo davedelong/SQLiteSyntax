@@ -191,3 +191,10 @@ extension CreateTriggerStatement.StatementsElement: SQLParsable {
         }
     }
 }
+
+extension CreateTriggerStatement {
+    /// Parses SQL text that consists of exactly one `CreateTriggerStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try CreateTriggerStatement.parse(&p) }
+    }
+}

@@ -33,3 +33,10 @@ extension SelectStatement.CompoundsElement: SQLParsable {
         }
     }
 }
+
+extension SelectStatement {
+    /// Parses SQL text that consists of exactly one `SelectStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try SelectStatement.parse(&p) }
+    }
+}

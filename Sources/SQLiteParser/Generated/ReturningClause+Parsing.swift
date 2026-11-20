@@ -41,3 +41,10 @@ extension ReturningClause.ReturningElement.ColumnAlias: SQLParsable {
         }
     }
 }
+
+extension ReturningClause {
+    /// Parses SQL text that consists of exactly one `ReturningClause`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try ReturningClause.parse(&p) }
+    }
+}

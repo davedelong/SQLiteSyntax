@@ -47,3 +47,10 @@ extension CreateViewStatement.Create: SQLParsable {
         }
     }
 }
+
+extension CreateViewStatement {
+    /// Parses SQL text that consists of exactly one `CreateViewStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try CreateViewStatement.parse(&p) }
+    }
+}

@@ -12,3 +12,10 @@ extension ColumnNameList: SQLParsable {
         }
     }
 }
+
+extension ColumnNameList {
+    /// Parses SQL text that consists of exactly one `ColumnNameList`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try ColumnNameList.parse(&p) }
+    }
+}

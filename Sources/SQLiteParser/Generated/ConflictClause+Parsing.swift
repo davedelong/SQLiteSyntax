@@ -33,3 +33,10 @@ extension ConflictClause: SQLParsable {
         }
     }
 }
+
+extension ConflictClause {
+    /// Parses SQL text that consists of exactly one `ConflictClause`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try ConflictClause.parse(&p) }
+    }
+}

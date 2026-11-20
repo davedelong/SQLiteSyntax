@@ -86,3 +86,10 @@ extension TableConstraint.Constraint.Columns.Kind: SQLParsable {
         }
     }
 }
+
+extension TableConstraint {
+    /// Parses SQL text that consists of exactly one `TableConstraint`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try TableConstraint.parse(&p) }
+    }
+}

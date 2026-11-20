@@ -119,3 +119,10 @@ extension SelectCore.WindowElement: SQLParsable {
         }
     }
 }
+
+extension SelectCore {
+    /// Parses SQL text that consists of exactly one `SelectCore`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try SelectCore.parse(&p) }
+    }
+}

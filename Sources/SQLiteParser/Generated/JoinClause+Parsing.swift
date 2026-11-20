@@ -25,3 +25,10 @@ extension JoinClause.JoinsElement: SQLParsable {
         }
     }
 }
+
+extension JoinClause {
+    /// Parses SQL text that consists of exactly one `JoinClause`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try JoinClause.parse(&p) }
+    }
+}

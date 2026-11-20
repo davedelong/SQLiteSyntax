@@ -16,3 +16,10 @@ extension RecursiveCTE: SQLParsable {
         }
     }
 }
+
+extension RecursiveCTE {
+    /// Parses SQL text that consists of exactly one `RecursiveCTE`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try RecursiveCTE.parse(&p) }
+    }
+}

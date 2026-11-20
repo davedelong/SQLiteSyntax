@@ -140,3 +140,10 @@ extension SQLStatement.Statement: SQLParsable {
         }
     }
 }
+
+extension SQLStatement {
+    /// Parses SQL text that consists of exactly one `SQLStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try SQLStatement.parse(&p) }
+    }
+}

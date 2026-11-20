@@ -17,3 +17,10 @@ extension DropTableStatement: SQLParsable {
         }
     }
 }
+
+extension DropTableStatement {
+    /// Parses SQL text that consists of exactly one `DropTableStatement`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try DropTableStatement.parse(&p) }
+    }
+}

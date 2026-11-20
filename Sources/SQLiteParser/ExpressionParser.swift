@@ -10,9 +10,7 @@ extension SQLiteSyntax.Expression {
     /// Not yet supported: `WITHIN GROUP`, and a few forms `Expression` cannot represent
     /// (empty `IN ()`, `#name` parameters, `ESCAPE` on GLOB).
     public init(parsing sql: String) throws(ParseError) {
-        var parser = try Parser(sql)
-        self = try parser.parseExpression()
-        guard parser.isAtEnd else { throw parser.unexpected(expected: "end of expression") }
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
     }
 }
 

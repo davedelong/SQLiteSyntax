@@ -14,6 +14,18 @@ struct ParserEmitter {
     mutating func emit(_ decl: TypeDecl) {
         var out = e
         render(decl, into: &out)
+        if !decl.path.contains(".") {
+            // The public entry point for top-level types: parse a whole string.
+            out.line()
+            out.line("extension \(decl.path) {")
+            out.indent += 1
+            out.line("/// Parses SQL text that consists of exactly one `\(decl.path)`.")
+            out.line("public init(parsing sql: String) throws(ParseError) {")
+            out.line("    self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try \(decl.path).parse(&p) }")
+            out.line("}")
+            out.indent -= 1
+            out.line("}")
+        }
         e = out
     }
 

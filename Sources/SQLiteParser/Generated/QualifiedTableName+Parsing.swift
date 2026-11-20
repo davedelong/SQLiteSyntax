@@ -24,3 +24,10 @@ extension QualifiedTableName: SQLParsable {
         }
     }
 }
+
+extension QualifiedTableName {
+    /// Parses SQL text that consists of exactly one `QualifiedTableName`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try QualifiedTableName.parse(&p) }
+    }
+}

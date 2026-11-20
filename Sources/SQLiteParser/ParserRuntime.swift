@@ -26,6 +26,21 @@ final class ParserState {
 
 extension Parser {
 
+    // MARK: Entry points
+
+    /// Parses all of `sql` with `body` (a trailing `;` is allowed). If input remains, reports the
+    /// furthest problem seen, which is usually more useful than "expected end of input".
+    static func parseAll<T>(_ sql: String, _ body: (inout Parser) throws(ParseError) -> T) throws(ParseError) -> T {
+        var p = try Parser(sql)
+        let value = try body(&p)
+        _ = p.accept(symbol: ";")
+        guard p.isAtEnd else {
+            if let furthest = p.state.furthestError, furthest.offset > p.current.range.lowerBound { throw furthest }
+            throw p.unexpected(expected: "end of input")
+        }
+        return value
+    }
+
     // MARK: Fixed tokens
 
     /// Whether the current token is the grammar's fixed token `text`: a symbol, a keyword, or (for words

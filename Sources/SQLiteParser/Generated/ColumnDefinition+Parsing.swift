@@ -15,3 +15,10 @@ extension ColumnDefinition: SQLParsable {
         }
     }
 }
+
+extension ColumnDefinition {
+    /// Parses SQL text that consists of exactly one `ColumnDefinition`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try ColumnDefinition.parse(&p) }
+    }
+}

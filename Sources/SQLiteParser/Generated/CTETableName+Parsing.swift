@@ -14,3 +14,10 @@ extension CTETableName: SQLParsable {
         }
     }
 }
+
+extension CTETableName {
+    /// Parses SQL text that consists of exactly one `CTETableName`.
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try CTETableName.parse(&p) }
+    }
+}

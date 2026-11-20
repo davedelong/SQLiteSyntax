@@ -128,7 +128,13 @@ subqueries. 42 statements of every kind round-trip (`StatementParserTests`). Ori
 - Done when: `Expression(parsing:)` handles `(SELECT …)`, `EXISTS`, `IN (SELECT …)`, and
   statements parse via generated types.
 
-## Phase 6 — Statement-level API (1 day)
+## Phase 6 — Statement-level API ✅ done
+
+Done: every top-level generated type has a public `init(parsing:)` (e.g. `SQLStatementList(parsing:)`,
+`SelectStatement(parsing:)`, `ColumnConstraint(parsing:)`); a trailing `;` is allowed; leftover input
+reports the furthest problem seen. `Expression(parsing:)` uses the same entry point.
+`SQLStatementList.allStatements` skips empty statements. Covered by `PublicAPITests` (non-@testable).
+Original notes:
 
 - `SQLStatement(parsing:)` and a statement-list parser (`;`-separated, `EXPLAIN [QUERY PLAN]`).
 - Consistent error type and positions across expression and statement parsing.
