@@ -13,7 +13,8 @@ let usage = """
     With --grammar, reads an existing EBNF grammar instead (no docs checkout needed).
 
     With --codegen-config and --swift-output, also generates Swift types for the rules listed
-    in the config. Generated files in the output directory are replaced; other files are left alone.
+    in the config, and with --parser-output their parse functions (for the SQLiteParser module).
+    Generated files in the output directories are replaced; other files are left alone.
     """
 
 var docs: String?
@@ -21,6 +22,7 @@ var grammar: String?
 var output: String?
 var codegenConfig: String?
 var swiftOutput: String?
+var parserOutput: String?
 var verbose = false
 var arguments = CommandLine.arguments.dropFirst()
 while let argument = arguments.popFirst() {
@@ -30,6 +32,7 @@ while let argument = arguments.popFirst() {
         case "--output": output = arguments.popFirst()
         case "--codegen-config": codegenConfig = arguments.popFirst()
         case "--swift-output": swiftOutput = arguments.popFirst()
+        case "--parser-output": parserOutput = arguments.popFirst()
         case "--verbose", "-v": verbose = true
         case "--help", "-h": print(usage); exit(0)
         default:
@@ -74,17 +77,24 @@ do {
         let generated = SyntaxGenerator.generate(rules: rules, configuration: configuration)
         for warning in generated.warnings { log("warning: \(warning)") }
         if verbose { for note in generated.notes { log("note: \(note)") } }
-        let directory = URL(fileURLWithPath: swiftOutput)
-        let fm = FileManager.default
-        try fm.createDirectory(at: directory, withIntermediateDirectories: true)
-        // Remove files this tool generated earlier (recognised by their header), then write the new set.
-        for url in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) where url.pathExtension == "swift" {
-            if let text = try? String(contentsOf: url, encoding: .utf8), text.hasPrefix(SyntaxGenerator.header) {
-                try fm.removeItem(at: url)
+        func replaceGenerated(in path: String, with files: [String: String]) throws {
+            let directory = URL(fileURLWithPath: path)
+            let fm = FileManager.default
+            try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+            // Remove files this tool generated earlier (recognised by their header), then write the new set.
+            for url in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) where url.pathExtension == "swift" {
+                if let text = try? String(contentsOf: url, encoding: .utf8), text.hasPrefix(SyntaxGenerator.header) {
+                    try fm.removeItem(at: url)
+                }
+            }
+            for (name, source) in files.sorted(by: { $0.key < $1.key }) {
+                try source.write(to: directory.appendingPathComponent(name), atomically: true, encoding: .utf8)
             }
         }
-        for (name, source) in generated.files.sorted(by: { $0.key < $1.key }) {
-            try source.write(to: directory.appendingPathComponent(name), atomically: true, encoding: .utf8)
+        try replaceGenerated(in: swiftOutput, with: generated.files)
+        if let parserOutput {
+            try replaceGenerated(in: parserOutput, with: generated.parserFiles)
+            log("wrote \(generated.parserFiles.count) parser files to \(parserOutput)")
         }
         log("wrote \(generated.files.count) Swift files to \(swiftOutput)")
     }

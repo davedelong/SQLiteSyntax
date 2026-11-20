@@ -24,6 +24,8 @@ struct Field {
     var target: String? = nil
     /// Stored through the `Indirect` property wrapper to break a cycle between structs.
     var boxed = false
+    /// The grammar symbol of a stored token or reference (or of a list's items), e.g. `table-alias`.
+    var symbol: String? = nil
 }
 
 struct Case {
@@ -195,7 +197,7 @@ final class TypeBuilder {
                         let (name, type, target) = storage(for: innerStored[0], hint: hint, scope: &scope,
                                                            fallbackHint: storedCount == 1 ? hintForSingleChoice : nil)
                         let optionalType = type.hasSuffix("?") ? type : type + "?"
-                        fields.append(Field(name: name, type: optionalType, defaultValue: "nil", target: target))
+                        fields.append(Field(name: name, type: optionalType, defaultValue: "nil", target: target, symbol: innerStored[0].symbol))
                         var innerBody: [Template] = []
                         for n in innerItems {
                             if case .text(let t) = n { innerBody.append(.text(t)) }
@@ -218,13 +220,13 @@ final class TypeBuilder {
 
                 case .list(_, let sep, let nonEmpty, let leading):
                     let (name, type, _) = storage(for: item, hint: precedingKeywords, scope: &scope, fallbackHint: nil)
-                    fields.append(Field(name: name, type: type, defaultValue: nonEmpty ? nil : "[]", nonEmptyList: nonEmpty))
+                    fields.append(Field(name: name, type: type, defaultValue: nonEmpty ? nil : "[]", nonEmptyList: nonEmpty, symbol: item.symbol))
                     body.append(.list(name, separator: sep.isEmpty ? nil : sep.joined(separator: " "), nonEmpty: nonEmpty, leading: leading))
 
                 default:
                     let (name, type, target) = storage(for: item, hint: precedingKeywords, scope: &scope,
                                                        fallbackHint: storedCount == 1 ? hintForSingleChoice : nil)
-                    fields.append(Field(name: name, type: type, defaultValue: type.hasSuffix("?") ? "nil" : nil, target: target))
+                    fields.append(Field(name: name, type: type, defaultValue: type.hasSuffix("?") ? "nil" : nil, target: target, symbol: item.symbol))
                     body.append(.value(name))
             }
             precedingKeywords = []

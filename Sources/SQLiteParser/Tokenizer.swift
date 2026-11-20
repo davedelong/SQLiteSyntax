@@ -104,6 +104,23 @@ struct Tokenizer {
             }
         }
         tokens.append(Token(kind: .endOfInput, range: bytes.count..<bytes.count))
+        // tokenize.c: WINDOW is a keyword only before `name AS`; OVER only after `)` and before `(` or a
+        // name; FILTER only after `)` and before `(`. Elsewhere they are identifiers.
+        for i in tokens.indices {
+            guard case .keyword(let k) = tokens[i].kind, Keywords.contextual.contains(k) else { continue }
+            let previous = i > 0 ? tokens[i - 1] : nil
+            let next = tokens[min(i + 1, tokens.count - 1)], afterNext = tokens[min(i + 2, tokens.count - 1)]
+            let isName: (Token) -> Bool = { if case .identifier = $0.kind { return true } else { return false } }
+            let isKeyword: Bool
+            switch k {
+                case "WINDOW": isKeyword = isName(next) && afterNext.isKeyword("AS")
+                case "OVER": isKeyword = previous?.isSymbol(")") == true && (next.isSymbol("(") || isName(next))
+                default: isKeyword = previous?.isSymbol(")") == true && next.isSymbol("(")
+            }
+            if !isKeyword {
+                tokens[i].kind = .identifier(String(decoding: bytes[tokens[i].range], as: UTF8.self), quoted: false)
+            }
+        }
         return tokens
     }
 

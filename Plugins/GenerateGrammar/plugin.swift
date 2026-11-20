@@ -30,7 +30,9 @@ struct GenerateGrammar: CommandPlugin {
         let codegen = outputDirectory.appendingPathComponent("codegen.json")
         if FileManager.default.fileExists(atPath: codegen.path) {
             let swiftOutput = packageDirectory.appendingPathComponent("Sources/SQLiteSyntax/Generated")
-            toolArguments += ["--codegen-config", codegen.path, "--swift-output", swiftOutput.path]
+            let parserOutput = packageDirectory.appendingPathComponent("Sources/SQLiteParser/Generated")
+            toolArguments += ["--codegen-config", codegen.path, "--swift-output", swiftOutput.path,
+                              "--parser-output", parserOutput.path]
         }
         process.arguments = toolArguments + extractor.remainingArguments
         try process.run()

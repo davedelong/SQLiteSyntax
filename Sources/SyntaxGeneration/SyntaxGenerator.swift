@@ -11,6 +11,8 @@ public enum SyntaxGenerator {
         public var warnings: [String]
         /// Informational: types made `indirect` and fields boxed to break reference cycles.
         public var notes: [String] = []
+        /// File name -> Swift source of `parse(_:)` functions, for the SQLiteParser module.
+        public var parserFiles: [String: String] = [:]
     }
 
     /// The first line of every generated file; used to recognise files the generator owns.
@@ -106,6 +108,20 @@ public enum SyntaxGenerator {
                 files["\(namespace)+\(decl.name).swift"] = e.lines.joined(separator: "\n") + "\n"
             }
         }
-        return Output(files: files, warnings: warnings + builder.warnings, notes: notes)
+        var parserFiles: [String: String] = [:]
+        var declarations: [String: TypeDecl] = [:]
+        func register(_ d: TypeDecl) { declarations[d.path] = d; d.nested.forEach(register) }
+        decls.forEach(register)
+        for decl in decls {
+            var p = ParserEmitter()
+            p.declarations = declarations
+            p.e.line(header)
+            p.e.line()
+            p.e.line("import SQLiteSyntax")
+            p.e.line()
+            p.emit(decl)
+            parserFiles["\(decl.name)+Parsing.swift"] = p.e.lines.joined(separator: "\n") + "\n"
+        }
+        return Output(files: files, warnings: warnings + builder.warnings, notes: notes, parserFiles: parserFiles)
     }
 }

@@ -18,6 +18,15 @@ indirect enum Node: Equatable {
         return [self]
     }
 
+    /// The grammar symbol of a stored value, or of a list's items.
+    var symbol: String? {
+        switch self {
+            case .value(let symbol, _): return symbol
+            case .list(let element, _, _, _): return element.symbol
+            default: return nil
+        }
+    }
+
     /// Whether the node holds any data (as opposed to only fixed tokens).
     var isStored: Bool {
         switch self {

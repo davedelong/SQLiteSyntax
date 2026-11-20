@@ -74,7 +74,7 @@ struct ExpressionParserTests {
         }
     }
 
-    @Test(arguments: ["(SELECT 1)", "EXISTS (SELECT 1)", "NOT EXISTS (SELECT 1)", "a IN (SELECT b FROM t)", "a IN ()", "#x"])
+    @Test(arguments: ["a IN ()", "#x", "percentile(a) WITHIN GROUP (ORDER BY a)"])
     func unsupportedForms(_ text: String) {
         #expect(throws: ParseError.self) { try Expr(parsing: text) }
     }

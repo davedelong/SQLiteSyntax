@@ -22,6 +22,9 @@ struct SQLiteAgreementTests {
         "max(1, 2, 3)", "'a' COLLATE NOCASE = 'A'", "'a' = 'A' COLLATE NOCASE", "x'414243'", "0x10 + 1", "1_000 + 1",
         ".5 + 1", "1e3 + 1", "json('{\"a\":1}') -> '$.a'", "json('{\"a\":1}') ->> '$.a'", "1 = 1 AND 2 = 2 OR 3 = 4",
         "upper('a') || lower('B')", "iif(1, 'a', 'b')", "CURRENT_DATE IS NOT NULL", "'5' + 5 * '2'",
+        "(SELECT 1) + 1", "EXISTS (SELECT 1)", "NOT EXISTS (SELECT 1 WHERE 0)", "1 IN (SELECT 1 UNION SELECT 2)",
+        "(SELECT max(x) FROM (SELECT 1 AS x UNION ALL SELECT 2))", "(VALUES (3), (4)) * 2",
+        "(WITH c(n) AS (SELECT 5) SELECT n FROM c) - 1",
     ]
 
     @Test(arguments: constantExpressions)
@@ -90,6 +93,9 @@ struct SQLiteAgreementTests {
         "a IN t", "a IN main.t", "a IN json_each('[1]')", "? + :name + @at + $tcl + ?2", "a COLLATE NOCASE",
         "a LIKE b ESCAPE '\\'", "a REGEXP b", "a MATCH b", "CASE WHEN a THEN b END", "CAST(a AS NUMERIC(10, 2))",
         "RAISE(IGNORE)", "RAISE(FAIL, 'x')",
+        "a IN (SELECT b FROM t WHERE c > 1)", "EXISTS (SELECT 1 FROM t AS u WHERE u.a = t.a)",
+        "(SELECT count(*) FROM t LEFT JOIN t AS t2 ON t.a = t2.b)", "a NOT IN (SELECT b FROM t ORDER BY b LIMIT 3)",
+        "sum(a) OVER (PARTITION BY b ORDER BY c RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW EXCLUDE NO OTHERS)",
     ]
 
     @Test(arguments: columnExpressions)

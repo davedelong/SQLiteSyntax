@@ -101,7 +101,16 @@ each item). Original notes:
   (the extractor can already enumerate sentences) to cover every case automatically.
 - Done when: `Core/` contains only the intentionally hand-written types; all tests pass.
 
-## Phase 5 — Generate parsers (3–5 days)
+## Phase 5 — Generate parsers ✅ done
+
+Done: the generator emits `parse(_:)` for every generated type into `Sources/SQLiteParser/Generated/`
+(`--parser-output`), from the same templates as `build(using:)`. Runtime (`ParserRuntime.swift`):
+longest-match choice with (type, position) memoisation and furthest-error reporting; fixed tokens
+also match unreserved words (ROWID, STRICT); names use parse.y's `nm`/`ids` classes and exclude
+keywords that can come next (computed FIRST sets), approximating SQLite's keyword fallback; the
+tokenizer applies SQLite's context rules for WINDOW/OVER/FILTER. The expression parser uses the
+generated parsers for function arguments, FILTER, OVER, CAST types and RAISE, and now supports
+subqueries. 42 statements of every kind round-trip (`StatementParserTests`). Original notes:
 
 - Generator emits a parse function next to each `build(using:)`, from the same template:
   fixed tokens → expect; stored value → parse that type; flag → accept keywords;

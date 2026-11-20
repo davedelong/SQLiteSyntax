@@ -24,6 +24,8 @@ struct Parser {
     let source: String
     let tokens: [Token]
     var position = 0
+    /// Shared between copies: memoised results and the furthest error.
+    let state = ParserState()
 
     init(_ source: String) throws(ParseError) {
         self.source = source
