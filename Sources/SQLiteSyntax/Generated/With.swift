@@ -17,6 +17,7 @@ public struct With: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 8, 3), for: self)
         builder.add("WITH")
         if recursive { builder.add("RECURSIVE") }
         try builder.addList(commonTableExpressions.items, delimiter: ",")

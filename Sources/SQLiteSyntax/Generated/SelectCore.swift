@@ -21,6 +21,7 @@ public indirect enum SelectCore: Syntax {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
             case .select(let selection, let resultColumns, let source, let groupBy, let having, let window):
+                if window != nil { try builder.require(SQLiteVersion(3, 25, 0), for: self) }
                 builder.add("SELECT")
                 if let selection {
                     try builder.add(selection)
@@ -123,6 +124,7 @@ public indirect enum SelectCore: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 25, 0), for: self)
             try builder.add(windowName)
             builder.add("AS")
             try builder.add(windowDefinition)

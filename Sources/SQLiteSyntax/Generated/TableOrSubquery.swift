@@ -137,8 +137,10 @@ public indirect enum TableOrSubquery: Syntax {
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
                 case .indexHint(let indexHint):
+                    try builder.require(SQLiteVersion(3, 6, 4), for: self)
                     try builder.add(indexHint)
                 case .tableAlias(let `as`, let tableAlias, let indexHint):
+                    if indexHint != nil { try builder.require(SQLiteVersion(3, 6, 4), for: self) }
                     if `as` { builder.add("AS") }
                     try builder.add(tableAlias)
                     if let indexHint {

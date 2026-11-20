@@ -34,6 +34,7 @@ public struct BeginStatement: Syntax {
                 case .deferred:
                     builder.add("DEFERRED")
                 case .exclusive:
+                    try builder.require(SQLiteVersion(3, 0, 8), for: self)
                     builder.add("EXCLUSIVE")
                 case .immediate:
                     builder.add("IMMEDIATE")

@@ -17,6 +17,8 @@ public struct WindowDefinition: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if partitionBy != nil { try builder.require(SQLiteVersion(3, 25, 0), for: self) }
+        if frameSpec != nil { try builder.require(SQLiteVersion(3, 25, 0), for: self) }
         builder.add("(")
         if let baseWindowName {
             try builder.add(baseWindowName)

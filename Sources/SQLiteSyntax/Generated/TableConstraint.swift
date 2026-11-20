@@ -66,6 +66,7 @@ public struct TableConstraint: Syntax {
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
                 switch self {
                     case .primaryKeyAutoincrement(let indexedColumn):
+                        try builder.require(SQLiteVersion(3, 1, 0), for: self)
                         builder.add("PRIMARY", "KEY", "(")
                         try builder.add(indexedColumn)
                         builder.add("AUTOINCREMENT")

@@ -21,9 +21,13 @@ extension Syntax {
     
     public func validate() throws(SyntaxError) { }
     
-    public func sql() throws(SyntaxError) -> String {
+    /// The SQL for this syntax.
+    ///
+    /// - Parameter sqliteVersion: the SQLite release the SQL is for. Building throws
+    ///   `SyntaxError.unsupported` if the syntax needs a later release. nil (the default) checks nothing.
+    public func sql(sqliteVersion: SQLiteVersion? = nil) throws(SyntaxError) -> String {
         try validate()
-        var builder = SyntaxBuilder()
+        var builder = SyntaxBuilder(sqliteVersion: sqliteVersion)
         try self.build(using: &builder)
         return builder.sql
     }
@@ -39,6 +43,21 @@ extension Syntax {
 public struct SyntaxBuilder {
     
     private var terms: Array<String> = []
+
+    /// The SQLite release being built for; syntax introduced after it fails to build.
+    /// nil means the release is unknown, and nothing is checked.
+    public var sqliteVersion: SQLiteVersion?
+
+    public init(sqliteVersion: SQLiteVersion? = nil) {
+        self.sqliteVersion = sqliteVersion
+    }
+
+    /// Throws `SyntaxError.unsupported` if `version` is later than the release being built for.
+    public func require(_ version: SQLiteVersion, for syntax: any Syntax) throws(SyntaxError) {
+        if let sqliteVersion, sqliteVersion < version {
+            throw SyntaxError.unsupported(syntax, requires: version, sqliteVersion: sqliteVersion)
+        }
+    }
     
     var sql: String { terms.joined(separator: " ") }
     
@@ -85,7 +104,7 @@ public struct SyntaxBuilder {
         try second?.validate()
         
         if let first, let second {
-            var inner = SyntaxBuilder()
+            var inner = SyntaxBuilder(sqliteVersion: sqliteVersion)
             try first.build(using: &inner)
             
             terms.append(contentsOf: inner.terms.dropLast())
@@ -110,7 +129,7 @@ public struct SyntaxBuilder {
         for part in parts {
             guard let part else { continue }
             try part.validate()
-            var inner = SyntaxBuilder()
+            var inner = SyntaxBuilder(sqliteVersion: sqliteVersion)
             try part.build(using: &inner)
             names.append(inner.sql)
         }
@@ -138,4 +157,6 @@ public struct SyntaxBuilder {
 
 public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
+    /// The syntax needs a later SQLite release than the one being built for.
+    case unsupported(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
 }

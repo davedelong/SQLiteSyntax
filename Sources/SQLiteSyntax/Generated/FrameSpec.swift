@@ -16,6 +16,8 @@ public struct FrameSpec: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 25, 0), for: self)
+        if exclude != nil { try builder.require(SQLiteVersion(3, 28, 0), for: self) }
         try builder.add(unit)
         try builder.add(extent)
         if let exclude {
@@ -36,8 +38,10 @@ public struct FrameSpec: Syntax {
         case rows
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 25, 0), for: self)
             switch self {
                 case .groups:
+                    try builder.require(SQLiteVersion(3, 28, 0), for: self)
                     builder.add("GROUPS")
                 case .range:
                     builder.add("RANGE")
@@ -59,6 +63,7 @@ public struct FrameSpec: Syntax {
         case preceding(Expression)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 25, 0), for: self)
             switch self {
                 case .between(let start, let end):
                     builder.add("BETWEEN")
@@ -87,6 +92,7 @@ public struct FrameSpec: Syntax {
             case preceding(Expression)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 25, 0), for: self)
                 switch self {
                     case .currentRow:
                         builder.add("CURRENT", "ROW")
@@ -114,6 +120,7 @@ public struct FrameSpec: Syntax {
             case preceding(Expression)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 25, 0), for: self)
                 switch self {
                     case .currentRow:
                         builder.add("CURRENT", "ROW")
@@ -142,6 +149,7 @@ public struct FrameSpec: Syntax {
         case noOthers
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 28, 0), for: self)
             switch self {
                 case .group:
                     builder.add("GROUP")

@@ -20,6 +20,7 @@ public struct CreateViewStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if ifNotExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("CREATE")
         if let create {
             try builder.add(create)

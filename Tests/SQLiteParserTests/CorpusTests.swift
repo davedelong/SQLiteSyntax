@@ -55,7 +55,13 @@ struct CorpusTests {
                         parser = .accepted
                         if sqlite == .accepted {
                             let output = try parsed.sql()
-                            if Self.sqliteVerdict(output) != .accepted {
+                            // The linked SQLite accepted it, so building for its version must not object.
+                            if case .failure(let error) = Result(catching: { () throws(SyntaxError) in
+                                try parsed.sql(sqliteVersion: SQLiteVersion(number: sqlite3_libversion_number()))
+                            }) {
+                                roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
+                                                                 detail: "version check: \(error)"))
+                            } else if Self.sqliteVerdict(output) != .accepted {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
                                                                  detail: "SQLite rejects output: \(output)"))
                             } else if (try? SQLStatement(parsing: output).sql()) != output {

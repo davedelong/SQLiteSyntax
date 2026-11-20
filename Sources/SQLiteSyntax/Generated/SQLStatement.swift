@@ -25,6 +25,7 @@ public struct SQLStatement: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            if queryPlan { try builder.require(SQLiteVersion(3, 2, 6), for: self) }
             builder.add("EXPLAIN")
             if queryPlan { builder.add("QUERY", "PLAN") }
         }
@@ -102,8 +103,10 @@ public struct SQLStatement: Syntax {
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             switch self {
                 case .alterTableStatement(let alterTableStatement):
+                    try builder.require(SQLiteVersion(3, 1, 0), for: self)
                     try builder.add(alterTableStatement)
                 case .analyzeStatement(let analyzeStatement):
+                    try builder.require(SQLiteVersion(3, 2, 3), for: self)
                     try builder.add(analyzeStatement)
                 case .attachStatement(let attachStatement):
                     try builder.add(attachStatement)
@@ -120,6 +123,7 @@ public struct SQLStatement: Syntax {
                 case .createViewStatement(let createViewStatement):
                     try builder.add(createViewStatement)
                 case .createVirtualTableStatement(let createVirtualTableStatement):
+                    try builder.require(SQLiteVersion(3, 3, 7), for: self)
                     try builder.add(createVirtualTableStatement)
                 case .deleteStatement(let deleteStatement):
                     try builder.add(deleteStatement)
@@ -140,12 +144,15 @@ public struct SQLStatement: Syntax {
                 case .pragmaStatement(let pragmaStatement):
                     try builder.add(pragmaStatement)
                 case .reindexStatement(let reindexStatement):
+                    try builder.require(SQLiteVersion(3, 1, 0), for: self)
                     try builder.add(reindexStatement)
                 case .releaseStatement(let releaseStatement):
+                    try builder.require(SQLiteVersion(3, 6, 8), for: self)
                     try builder.add(releaseStatement)
                 case .rollbackStatement(let rollbackStatement):
                     try builder.add(rollbackStatement)
                 case .savepointStatement(let savepointStatement):
+                    try builder.require(SQLiteVersion(3, 6, 8), for: self)
                     try builder.add(savepointStatement)
                 case .selectStatement(let selectStatement):
                     try builder.add(selectStatement)

@@ -13,6 +13,23 @@ print(try statement.sql())          // SELECT a , b FROM t WHERE a > 1 ORDER BY 
 let expression = try Expression(parsing: "price * (1 + tax)")
 ```
 
+## Building for a SQLite release
+
+Pass the SQLite release you're targeting to get an error, not SQL that release can't parse:
+
+```swift
+import SQLite3
+
+let running = SQLiteVersion(number: sqlite3_libversion_number())
+let sql = try statement.sql(sqliteVersion: running)   // throws SyntaxError.unsupported if too new
+```
+
+The check covers the generated types: each type, case and optional part knows the release that introduced its
+keywords (the doc comments say "Since SQLite x.y.z"). Without a release (`sql()`), nothing is checked.
+Hand-written `Expression` syntax isn't checked yet, for example `->` and `IS DISTINCT FROM`. Syntax that
+arrived without a new keyword is checked against the earlier release that introduced its keywords, or isn't
+checked at all. See SQLiteSyntaxGenerator's README.
+
 ## Targets
 
 | Target | What it is |

@@ -10,6 +10,7 @@ public enum IndexHint: Syntax {
     case notIndexed
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 6, 4), for: self)
         switch self {
             case .indexedBy(let indexName):
                 builder.add("INDEXED", "BY")

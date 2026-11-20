@@ -14,6 +14,7 @@ public struct AggregateFunctionInvocation: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if filterClause != nil { try builder.require(SQLiteVersion(3, 25, 0), for: self) }
         try builder.add(aggregateFunc)
         builder.add("(")
         if let arguments {

@@ -16,6 +16,7 @@ public struct QualifiedTableName: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if indexHint != nil { try builder.require(SQLiteVersion(3, 6, 4), for: self) }
         if let schemaName {
             try builder.add(schemaName)
             builder.add(".")

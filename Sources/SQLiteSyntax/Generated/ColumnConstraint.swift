@@ -62,6 +62,7 @@ public struct ColumnConstraint: Syntax {
                     builder.add("NULL")
                     try builder.add(conflictClause)
                 case .primaryKey(let sortDirection, let conflictClause, let autoincrement):
+                    if autoincrement { try builder.require(SQLiteVersion(3, 1, 0), for: self) }
                     builder.add("PRIMARY", "KEY")
                     if let sortDirection {
                         try builder.add(sortDirection)
@@ -72,6 +73,7 @@ public struct ColumnConstraint: Syntax {
                     builder.add("UNIQUE")
                     try builder.add(conflictClause)
                 case .generated(let generatedAlways, let expression, let storage):
+                    if generatedAlways { try builder.require(SQLiteVersion(3, 31, 0), for: self) }
                     if generatedAlways { builder.add("GENERATED", "ALWAYS") }
                     builder.add("AS", "(")
                     try builder.add(expression)
@@ -125,6 +127,7 @@ public struct ColumnConstraint: Syntax {
                     case .stored:
                         builder.add("STORED")
                     case .virtual:
+                        try builder.require(SQLiteVersion(3, 3, 7), for: self)
                         builder.add("VIRTUAL")
                 }
             }

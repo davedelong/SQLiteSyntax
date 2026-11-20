@@ -16,6 +16,7 @@ public struct OrderingTerm: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if nulls != nil { try builder.require(SQLiteVersion(3, 30, 0), for: self) }
         try builder.add(expression)
         if let collationName {
             builder.add("COLLATE")
@@ -38,6 +39,7 @@ public struct OrderingTerm: Syntax {
         case last
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 30, 0), for: self)
             switch self {
                 case .first:
                     builder.add("FIRST")

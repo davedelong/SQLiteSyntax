@@ -25,6 +25,8 @@ public struct InsertStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if with != nil { try builder.require(SQLiteVersion(3, 8, 3), for: self) }
+        if returningClause != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
         if let with {
             try builder.add(with)
         }
@@ -112,6 +114,7 @@ public struct InsertStatement: Syntax {
                 case .defaultValues:
                     builder.add("DEFAULT", "VALUES")
                 case .rows(let values, let upsertClause):
+                    if upsertClause != nil { try builder.require(SQLiteVersion(3, 24, 0), for: self) }
                     try builder.add(values)
                     if let upsertClause {
                         try builder.add(upsertClause)

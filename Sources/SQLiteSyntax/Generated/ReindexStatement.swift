@@ -11,6 +11,7 @@ public struct ReindexStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 1, 0), for: self)
         builder.add("REINDEX")
         if let reindex {
             try builder.add(reindex)
@@ -27,6 +28,7 @@ public struct ReindexStatement: Syntax {
         case collationName(Name<Collation>)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 1, 0), for: self)
             switch self {
                 case .expressions:
                     builder.add("EXPRESSIONS")
@@ -49,6 +51,7 @@ public struct ReindexStatement: Syntax {
             case tableName(Name<Table>)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 1, 0), for: self)
                 switch self {
                     case .indexName(let indexName):
                         try builder.add(indexName)

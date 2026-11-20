@@ -17,6 +17,7 @@ public struct WindowFunctionInvocation: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 25, 0), for: self)
         try builder.add(windowFunc)
         builder.add("(")
         if let arguments {
@@ -47,6 +48,7 @@ public struct WindowFunctionInvocation: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 25, 0), for: self)
             switch self {
                 case .star:
                     builder.add("*")
@@ -64,6 +66,7 @@ public struct WindowFunctionInvocation: Syntax {
         case windowName(Name<Window>)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 25, 0), for: self)
             switch self {
                 case .windowDefinition(let windowDefinition):
                     try builder.add(windowDefinition)

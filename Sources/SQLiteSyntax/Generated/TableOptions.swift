@@ -30,6 +30,7 @@ public struct TableOptions: Syntax {
                 case .strict:
                     builder.add("STRICT")
                 case .withoutRowid:
+                    try builder.require(SQLiteVersion(3, 8, 2), for: self)
                     builder.add("WITHOUT", "ROWID")
             }
         }

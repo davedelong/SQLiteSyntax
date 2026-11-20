@@ -15,6 +15,7 @@ public struct UpsertClause: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 24, 0), for: self)
         try builder.addList(clauses.items)
     }
 
@@ -29,6 +30,7 @@ public struct UpsertClause: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 24, 0), for: self)
             builder.add("ON", "CONFLICT")
             try builder.add(onConflict)
             builder.add("DO")
@@ -50,6 +52,7 @@ public struct UpsertClause: Syntax {
             }
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 24, 0), for: self)
                 builder.add("(")
                 try builder.addList(indexedColumns.items, delimiter: ",")
                 builder.add(")")
@@ -77,6 +80,7 @@ public struct UpsertClause: Syntax {
             }
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 24, 0), for: self)
                 switch self {
                     case .nothing:
                         builder.add("NOTHING")
@@ -101,6 +105,7 @@ public struct UpsertClause: Syntax {
                 }
 
                 public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                    try builder.require(SQLiteVersion(3, 24, 0), for: self)
                     try builder.add(target)
                     builder.add("=")
                     try builder.add(expression)
@@ -114,6 +119,7 @@ public struct UpsertClause: Syntax {
                     case columnNameList(ColumnNameList)
 
                     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                        try builder.require(SQLiteVersion(3, 24, 0), for: self)
                         switch self {
                             case .columnName(let columnName):
                                 try builder.add(columnName)

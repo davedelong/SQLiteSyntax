@@ -11,6 +11,7 @@ public struct SavepointStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 6, 8), for: self)
         builder.add("SAVEPOINT")
         try builder.add(savepointName)
     }

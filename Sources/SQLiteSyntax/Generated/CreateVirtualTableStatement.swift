@@ -19,6 +19,7 @@ public struct CreateVirtualTableStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 3, 7), for: self)
         builder.add("CREATE", "VIRTUAL", "TABLE")
         if ifNotExists { builder.add("IF", "NOT", "EXISTS") }
         if let schemaName {
@@ -40,6 +41,7 @@ public struct CreateVirtualTableStatement: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 3, 7), for: self)
             builder.add("(")
             if let moduleArguments {
                 try builder.addList(moduleArguments.items, delimiter: ",")

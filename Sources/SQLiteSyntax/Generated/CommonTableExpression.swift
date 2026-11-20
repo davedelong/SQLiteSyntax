@@ -14,6 +14,7 @@ public struct CommonTableExpression: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if materialized != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
         try builder.add(cteTableName)
         builder.add("AS")
         try builder.add(materialized)
@@ -33,6 +34,7 @@ public struct CommonTableExpression: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 35, 0), for: self)
             if not { builder.add("NOT") }
             builder.add("MATERIALIZED")
         }

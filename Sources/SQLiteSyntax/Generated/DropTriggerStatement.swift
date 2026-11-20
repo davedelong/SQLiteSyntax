@@ -14,6 +14,7 @@ public struct DropTriggerStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if ifExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("DROP", "TRIGGER")
         if ifExists { builder.add("IF", "EXISTS") }
         if let schemaName {

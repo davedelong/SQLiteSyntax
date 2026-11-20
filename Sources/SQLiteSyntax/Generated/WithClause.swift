@@ -17,6 +17,7 @@ public struct WithClause: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 8, 3), for: self)
         builder.add("WITH")
         if recursive { builder.add("RECURSIVE") }
         try builder.addList(tables.items, delimiter: ",")
@@ -36,6 +37,8 @@ public struct WithClause: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 8, 3), for: self)
+            if `as` != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
             try builder.add(cteTableName)
             builder.add("AS")
             try builder.add(`as`)
@@ -55,6 +58,7 @@ public struct WithClause: Syntax {
             }
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 35, 0), for: self)
                 if not { builder.add("NOT") }
                 builder.add("MATERIALIZED")
             }

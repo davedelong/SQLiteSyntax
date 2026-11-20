@@ -11,6 +11,7 @@ public struct AnalyzeStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 2, 3), for: self)
         builder.add("ANALYZE")
         if let analyze {
             try builder.add(analyze)
@@ -25,6 +26,7 @@ public struct AnalyzeStatement: Syntax {
         case schemaName(schemaName: Name<Schema>, tableOrIndexName: Name<Any>? = nil)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 2, 3), for: self)
             switch self {
                 case .indexOrTableName(let indexOrTableName):
                     try builder.add(indexOrTableName)

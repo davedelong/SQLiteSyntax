@@ -15,6 +15,7 @@ public struct ReturningClause: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 35, 0), for: self)
         builder.add("RETURNING")
         try builder.addList(returning.items, delimiter: ",")
     }
@@ -27,6 +28,7 @@ public struct ReturningClause: Syntax {
         case expression(expression: Expression, columnAlias: ColumnAlias? = nil)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 35, 0), for: self)
             switch self {
                 case .star:
                     builder.add("*")
@@ -47,6 +49,7 @@ public struct ReturningClause: Syntax {
             }
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 35, 0), for: self)
                 if `as` { builder.add("AS") }
                 try builder.add(columnAlias)
             }

@@ -12,6 +12,7 @@ public struct RollbackStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if to != nil { try builder.require(SQLiteVersion(3, 1, 0), for: self) }
         builder.add("ROLLBACK")
         if transaction { builder.add("TRANSACTION") }
         try builder.add(to)
@@ -31,6 +32,8 @@ public struct RollbackStatement: Syntax {
         }
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 1, 0), for: self)
+            if savepoint { try builder.require(SQLiteVersion(3, 6, 8), for: self) }
             builder.add("TO")
             if savepoint { builder.add("SAVEPOINT") }
             try builder.add(savepointName)

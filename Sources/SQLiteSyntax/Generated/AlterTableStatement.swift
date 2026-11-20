@@ -15,6 +15,7 @@ public struct AlterTableStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 1, 0), for: self)
         builder.add("ALTER", "TABLE")
         if let schemaName {
             try builder.add(schemaName)
@@ -40,11 +41,14 @@ public struct AlterTableStatement: Syntax {
         case rename(Rename)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+            try builder.require(SQLiteVersion(3, 1, 0), for: self)
             switch self {
                 case .add(let add):
+                    try builder.require(SQLiteVersion(3, 2, 0), for: self)
                     builder.add("ADD")
                     try builder.add(add)
                 case .alter(let column, let columnName, let change):
+                    if column { try builder.require(SQLiteVersion(3, 2, 0), for: self) }
                     builder.add("ALTER")
                     if column { builder.add("COLUMN") }
                     try builder.add(columnName)
@@ -66,6 +70,7 @@ public struct AlterTableStatement: Syntax {
             case check(constraintName: Name<Any>? = nil, check: Expression, conflictClause: ConflictClause? = nil)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 2, 0), for: self)
                 switch self {
                     case .columnDefinition(let column, let columnDefinition):
                         if column { builder.add("COLUMN") }
@@ -93,6 +98,7 @@ public struct AlterTableStatement: Syntax {
             case setNotNull(ConflictClause? = nil)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 1, 0), for: self)
                 switch self {
                     case .dropNotNull:
                         builder.add("DROP", "NOT", "NULL")
@@ -115,11 +121,13 @@ public struct AlterTableStatement: Syntax {
             case columnName(column: Bool = false, columnName: Name<Column>)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 1, 0), for: self)
                 switch self {
                     case .constraint(let constraintName):
                         builder.add("CONSTRAINT")
                         try builder.add(constraintName)
                     case .columnName(let column, let columnName):
+                        if column { try builder.require(SQLiteVersion(3, 2, 0), for: self) }
                         if column { builder.add("COLUMN") }
                         try builder.add(columnName)
                 }
@@ -136,11 +144,13 @@ public struct AlterTableStatement: Syntax {
             case column(column: Bool = false, columnName: Name<Column>, newColumnName: Name<Column>)
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+                try builder.require(SQLiteVersion(3, 1, 0), for: self)
                 switch self {
                     case .table(let newTableName):
                         builder.add("TO")
                         try builder.add(newTableName)
                     case .column(let column, let columnName, let newColumnName):
+                        if column { try builder.require(SQLiteVersion(3, 2, 0), for: self) }
                         if column { builder.add("COLUMN") }
                         try builder.add(columnName)
                         builder.add("TO")

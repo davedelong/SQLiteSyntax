@@ -16,6 +16,7 @@ public struct SimpleSelectStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if with != nil { try builder.require(SQLiteVersion(3, 8, 3), for: self) }
         if let with {
             try builder.add(with)
         }

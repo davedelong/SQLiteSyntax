@@ -10,6 +10,7 @@ public enum OverClause: Syntax {
     case windowName(Name<Window>)
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.require(SQLiteVersion(3, 25, 0), for: self)
         builder.add("OVER")
         switch self {
             case .windowDefinition(let windowDefinition):

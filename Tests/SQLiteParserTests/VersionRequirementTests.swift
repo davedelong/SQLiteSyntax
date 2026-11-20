@@ -1,0 +1,82 @@
+import Foundation
+import SQLite3
+import Testing
+import SQLiteSyntax
+@testable import SQLiteParser
+
+/// Building for a SQLite release fails for syntax that release can't parse.
+struct VersionRequirementTests {
+
+    @Test func versionsParseAndCompare() {
+        #expect(SQLiteVersion(number: 3_035_000) == SQLiteVersion(3, 35, 0))
+        #expect(SQLiteVersion(3, 35, 0).number == 3_035_000)
+        #expect(SQLiteVersion("3.35.0") == SQLiteVersion(3, 35))
+        #expect(SQLiteVersion("3.9") == SQLiteVersion(3, 9, 0))
+        #expect(SQLiteVersion(3, 9, 0) < SQLiteVersion(3, 10, 0))
+        #expect(SQLiteVersion("3") == nil && SQLiteVersion("3.x") == nil && SQLiteVersion("3.1.2.3") == nil && SQLiteVersion("3.-1") == nil)
+        #expect(SQLiteVersion(3, 8, 3).description == "3.8.3")
+    }
+
+    /// (SQL, the first release that can parse it).
+    static let cases: [(String, SQLiteVersion)] = [
+        ("SELECT a FROM t", SQLiteVersion(3, 0, 0)),
+        ("SELECT a FROM t INDEXED BY i", SQLiteVersion(3, 6, 4)),
+        ("WITH c AS (SELECT 1) SELECT * FROM c", SQLiteVersion(3, 8, 3)),
+        ("CREATE TABLE t (a INTEGER PRIMARY KEY) WITHOUT ROWID", SQLiteVersion(3, 8, 2)),
+        ("INSERT INTO t VALUES (1) ON CONFLICT DO NOTHING", SQLiteVersion(3, 24, 0)),
+        ("SELECT a FROM t WINDOW w AS (ORDER BY a)", SQLiteVersion(3, 25, 0)),
+        ("SELECT a FROM t ORDER BY a NULLS LAST", SQLiteVersion(3, 30, 0)),
+        ("CREATE TABLE t (a, b AS (a * 2) STORED, CHECK (b > 0))", SQLiteVersion(3, 0, 0)),   // keywords say baseline (see README)
+        ("DELETE FROM t RETURNING *", SQLiteVersion(3, 35, 0)),
+        ("WITH c AS MATERIALIZED (SELECT 1) SELECT * FROM c", SQLiteVersion(3, 35, 0)),
+    ]
+
+    @Test(arguments: cases)
+    func buildingRequiresTheReleaseThatIntroducedTheSyntax(_ sql: String, _ required: SQLiteVersion) throws {
+        let statement = try SQLStatement(parsing: sql)
+        #expect(throws: Never.self) { try statement.sql(sqliteVersion: required) }
+        #expect(throws: Never.self) { try statement.sql() }   // no release given: nothing is checked
+        guard required > SQLiteVersion(3, 0, 0) else { return }
+        let earlier = SQLiteVersion(required.major, required.minor - 1, 99)
+        do {
+            _ = try statement.sql(sqliteVersion: earlier)
+            Issue.record("\(sql) built for \(earlier)")
+        } catch .unsupported(_, let requires, let sqliteVersion) {
+            #expect(requires == required)
+            #expect(sqliteVersion == earlier)
+        } catch {
+            Issue.record("unexpected \(error)")
+        }
+    }
+
+    /// `b GENERATED ALWAYS AS (…)` parses with `GENERATED ALWAYS` as b's type name (both are keywords that
+    /// can be names), so the generated column, and its 3.31.0 requirement, are missed. SQLite reads them as
+    /// keywords because they can start a column constraint there.
+    @Test func generatedAlwaysIsMisparsedAsATypeName() throws {
+        let statement = try SQLStatement(parsing: "CREATE TABLE t (a, b GENERATED ALWAYS AS (a * 2))")
+        withKnownIssue("type names take keywords that could start a column constraint") {
+            #expect(throws: SyntaxError.self) { try statement.sql(sqliteVersion: SQLiteVersion(3, 30, 0)) }
+        }
+        // A real type name in front doesn't help: the type name takes the keywords too.
+        let typed = try SQLStatement(parsing: "CREATE TABLE t (a, b INT GENERATED ALWAYS AS (a * 2))")
+        withKnownIssue("same: INT GENERATED ALWAYS becomes the type name") {
+            #expect(throws: SyntaxError.self) { try typed.sql(sqliteVersion: SQLiteVersion(3, 30, 0)) }
+        }
+    }
+
+    @Test func theCheckReachesNestedValues() throws {
+        // RETURNING is deep inside: SQLStatement -> DeleteStatement -> ReturningClause.
+        let statement = try SQLStatement(parsing: "EXPLAIN DELETE FROM t RETURNING a")
+        #expect(throws: SyntaxError.self) { try statement.sql(sqliteVersion: SQLiteVersion(3, 34, 1)) }
+        // Including names built through a separate builder (`schema.table`).
+        let builder = SyntaxBuilder(sqliteVersion: SQLiteVersion(3, 20, 0))
+        #expect(builder.sqliteVersion == SQLiteVersion(3, 20, 0))
+    }
+
+    /// Everything the linked SQLite accepts builds for that SQLite's own version.
+    @Test(arguments: StatementParserTests.statements)
+    func statementsSQLiteAcceptsBuildForItsVersion(_ sql: String) throws {
+        let linked = SQLiteVersion(number: sqlite3_libversion_number())
+        #expect(throws: Never.self) { try SQLStatement(parsing: sql).sql(sqliteVersion: linked) }
+    }
+}

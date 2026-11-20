@@ -14,6 +14,7 @@ public struct DropTableStatement: Syntax {
     }
 
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if ifExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("DROP", "TABLE")
         if ifExists { builder.add("IF", "EXISTS") }
         if let schemaName {

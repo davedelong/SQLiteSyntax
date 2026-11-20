@@ -80,6 +80,7 @@ public struct ForeignKeyClause: Syntax {
                     case .cascade:
                         builder.add("CASCADE")
                     case .noAction:
+                        try builder.require(SQLiteVersion(3, 6, 19), for: self)
                         builder.add("NO", "ACTION")
                     case .restrict:
                         builder.add("RESTRICT")
