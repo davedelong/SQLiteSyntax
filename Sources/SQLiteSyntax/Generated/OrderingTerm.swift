@@ -5,6 +5,7 @@ public struct OrderingTerm: Syntax {
     public var expression: Expression
     public var collationName: Name<Collation>? = nil
     public var sortDirection: SortDirection? = nil
+    /// Since SQLite 3.30.0.
     public var nulls: Nulls? = nil
 
     public init(expression: Expression, collationName: Name<Collation>? = nil, sortDirection: SortDirection? = nil, nulls: Nulls? = nil) {

@@ -2,9 +2,11 @@
 
 /// `delete-stmt ::= [ with-prefix ] 'DELETE' 'FROM' qualified-table-name [ 'WHERE' expr ] [ returning-clause ]`
 public struct DeleteStatement: Syntax {
+    /// Since SQLite 3.8.3.
     public var with: With? = nil
     public var qualifiedTableName: QualifiedTableName
     public var `where`: Expression? = nil
+    /// Since SQLite 3.35.0.
     public var returningClause: ReturningClause? = nil
 
     public init(with: With? = nil, qualifiedTableName: QualifiedTableName, where: Expression? = nil, returningClause: ReturningClause? = nil) {

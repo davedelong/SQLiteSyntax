@@ -3,6 +3,7 @@
 /// `create-trigger-stmt ::= 'CREATE' [ ( 'TEMP' | 'TEMPORARY' ) ] 'TRIGGER' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] trigger-name [ ( 'AFTER' | 'BEFORE' | 'INSTEAD' 'OF' ) ] ( 'DELETE' | 'INSERT' | 'UPDATE' [ 'OF' column-name { ',' column-name } ] ) 'ON' [ schema-name '.' ] table-name [ ( 'FOR' 'EACH' 'ROW' [ 'WHEN' expr ] | 'WHEN' expr ) ] 'BEGIN' ( delete-stmt | insert-stmt | select-stmt | update-stmt ) ';' { ( delete-stmt | insert-stmt | select-stmt | update-stmt ) ';' } 'END'`
 public struct CreateTriggerStatement: Syntax {
     public var create: Create? = nil
+    /// Since SQLite 3.3.0.
     public var ifNotExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var triggerName: Name<Trigger>

@@ -3,6 +3,7 @@
 /// `common-table-expression ::= cte-table-name 'AS' [ [ 'NOT' ] 'MATERIALIZED' ] '(' select-stmt ')'`
 public struct CommonTableExpression: Syntax {
     public var cteTableName: CTETableName
+    /// Since SQLite 3.35.0.
     public var materialized: Materialized? = nil
     public var selectStatement: SelectStatement
 
@@ -22,6 +23,8 @@ public struct CommonTableExpression: Syntax {
     }
 
     /// `[ 'NOT' ] 'MATERIALIZED'`
+    ///
+    /// Since SQLite 3.35.0.
     public struct Materialized: Syntax {
         public var not: Bool = false
 

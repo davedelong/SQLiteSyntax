@@ -3,6 +3,7 @@
 /// `create-table-stmt ::= 'CREATE' [ ( 'TEMP' | 'TEMPORARY' ) ] 'TABLE' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] table-name ( '(' column-def { ',' column-def } { ',' table-constraint } ')' [ table-options ] | 'AS' select-stmt )`
 public struct CreateTableStatement: Syntax {
     public var create: Create? = nil
+    /// Since SQLite 3.3.0.
     public var ifNotExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var tableName: Name<Table>

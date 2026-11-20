@@ -2,6 +2,7 @@
 
 /// `drop-trigger-stmt ::= 'DROP' 'TRIGGER' [ 'IF' 'EXISTS' ] [ schema-name '.' ] trigger-name`
 public struct DropTriggerStatement: Syntax {
+    /// Since SQLite 3.3.0.
     public var ifExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var triggerName: Name<Trigger>

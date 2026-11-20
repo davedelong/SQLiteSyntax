@@ -2,6 +2,7 @@
 
 /// `drop-index-stmt ::= 'DROP' 'INDEX' [ 'IF' 'EXISTS' ] [ schema-name '.' ] index-name`
 public struct DropIndexStatement: Syntax {
+    /// Since SQLite 3.3.0.
     public var ifExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var indexName: Name<Index>

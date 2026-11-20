@@ -3,6 +3,7 @@
 /// `create-view-stmt ::= 'CREATE' [ ( 'TEMP' | 'TEMPORARY' ) ] 'VIEW' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] view-name [ column-name-list ] 'AS' select-stmt`
 public struct CreateViewStatement: Syntax {
     public var create: Create? = nil
+    /// Since SQLite 3.3.0.
     public var ifNotExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var viewName: Name<View>

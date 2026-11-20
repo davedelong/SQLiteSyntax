@@ -2,6 +2,7 @@
 
 /// `drop-table-stmt ::= 'DROP' 'TABLE' [ 'IF' 'EXISTS' ] [ schema-name '.' ] table-name`
 public struct DropTableStatement: Syntax {
+    /// Since SQLite 3.3.0.
     public var ifExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var tableName: Name<Table>

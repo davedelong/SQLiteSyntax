@@ -2,6 +2,7 @@
 
 /// `drop-view-stmt ::= 'DROP' 'VIEW' [ 'IF' 'EXISTS' ] [ schema-name '.' ] view-name`
 public struct DropViewStatement: Syntax {
+    /// Since SQLite 3.3.0.
     public var ifExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var viewName: Name<View>

@@ -2,12 +2,14 @@
 
 /// `update-stmt ::= [ with-prefix ] 'UPDATE' [ 'OR' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ] qualified-table-name 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) ] [ 'WHERE' expr ] [ returning-clause ]`
 public struct UpdateStatement: Syntax {
+    /// Since SQLite 3.8.3.
     public var with: With? = nil
     public var or: Or? = nil
     public var qualifiedTableName: QualifiedTableName
     public var set: List<SetElement>
     public var from: From? = nil
     public var `where`: Expression? = nil
+    /// Since SQLite 3.35.0.
     public var returningClause: ReturningClause? = nil
 
     public init(with: With? = nil, or: Or? = nil, qualifiedTableName: QualifiedTableName, set: List<SetElement>, from: From? = nil, where: Expression? = nil, returningClause: ReturningClause? = nil) {

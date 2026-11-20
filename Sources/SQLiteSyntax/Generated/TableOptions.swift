@@ -21,6 +21,8 @@ public struct TableOptions: Syntax {
         /// `'STRICT'`
         case strict
         /// `'WITHOUT' 'ROWID'`
+        ///
+        /// Since SQLite 3.8.2.
         case withoutRowid
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

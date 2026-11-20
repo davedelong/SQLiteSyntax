@@ -2,6 +2,7 @@
 
 /// `insert-stmt ::= [ with-prefix ] ( 'INSERT' [ 'OR' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ] | 'REPLACE' ) 'INTO' [ schema-name '.' ] table-name [ 'AS' alias ] [ column-name-list ] ( 'DEFAULT' 'VALUES' | ( values-clause | select-stmt ) [ upsert-clause ] ) [ returning-clause ]`
 public struct InsertStatement: Syntax {
+    /// Since SQLite 3.8.3.
     public var with: With? = nil
     public var action: Action
     public var schemaName: Name<Schema>? = nil
@@ -9,6 +10,7 @@ public struct InsertStatement: Syntax {
     public var alias: Name<Table>? = nil
     public var columnNameList: ColumnNameList? = nil
     public var source: Source
+    /// Since SQLite 3.35.0.
     public var returningClause: ReturningClause? = nil
 
     public init(with: With? = nil, action: Action, schemaName: Name<Schema>? = nil, tableName: Name<Table>, alias: Name<Table>? = nil, columnNameList: ColumnNameList? = nil, source: Source, returningClause: ReturningClause? = nil) {
@@ -101,6 +103,8 @@ public struct InsertStatement: Syntax {
         /// `'DEFAULT' 'VALUES'`
         case defaultValues
         /// `( values-clause | select-stmt ) [ upsert-clause ]`
+        ///
+        /// - `upsertClause`: since SQLite 3.24.0.
         case rows(values: Values, upsertClause: UpsertClause? = nil)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

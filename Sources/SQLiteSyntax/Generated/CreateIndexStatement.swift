@@ -3,6 +3,7 @@
 /// `create-index-stmt ::= 'CREATE' [ 'UNIQUE' ] 'INDEX' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] index-name 'ON' table-name '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ]`
 public struct CreateIndexStatement: Syntax {
     public var unique: Bool = false
+    /// Since SQLite 3.3.0.
     public var ifNotExists: Bool = false
     public var schemaName: Name<Schema>? = nil
     public var indexName: Name<Index>

@@ -5,6 +5,7 @@ public struct QualifiedTableName: Syntax {
     public var schemaName: Name<Schema>? = nil
     public var tableName: Name<Table>
     public var alias: Name<Table>? = nil
+    /// Since SQLite 3.6.4.
     public var indexHint: IndexHint? = nil
 
     public init(schemaName: Name<Schema>? = nil, tableName: Name<Table>, alias: Name<Table>? = nil, indexHint: IndexHint? = nil) {

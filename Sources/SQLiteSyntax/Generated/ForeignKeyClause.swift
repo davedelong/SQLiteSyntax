@@ -65,6 +65,8 @@ public struct ForeignKeyClause: Syntax {
             /// `'CASCADE'`
             case cascade
             /// `'NO' 'ACTION'`
+            ///
+            /// Since SQLite 3.6.19.
             case noAction
             /// `'RESTRICT'`
             case restrict

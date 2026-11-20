@@ -23,6 +23,8 @@ public struct BeginStatement: Syntax {
         /// `'DEFERRED'`
         case deferred
         /// `'EXCLUSIVE'`
+        ///
+        /// Since SQLite 3.0.8.
         case exclusive
         /// `'IMMEDIATE'`
         case immediate

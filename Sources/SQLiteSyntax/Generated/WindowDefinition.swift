@@ -3,8 +3,10 @@
 /// `window-defn ::= '(' [ base-window-name ] [ 'PARTITION' 'BY' expr { ',' expr } ] [ order-by-clause ] [ frame-spec ] ')'`
 public struct WindowDefinition: Syntax {
     public var baseWindowName: Name<Window>? = nil
+    /// Since SQLite 3.25.0.
     public var partitionBy: List<Expression>? = nil
     public var orderBy: OrderBy? = nil
+    /// Since SQLite 3.25.0.
     public var frameSpec: FrameSpec? = nil
 
     public init(baseWindowName: Name<Window>? = nil, partitionBy: List<Expression>? = nil, orderBy: OrderBy? = nil, frameSpec: FrameSpec? = nil) {

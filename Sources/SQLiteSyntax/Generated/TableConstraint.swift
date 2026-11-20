@@ -48,6 +48,8 @@ public struct TableConstraint: Syntax {
         /// `( 'PRIMARY' 'KEY' '(' indexed-column 'AUTOINCREMENT' | ( 'PRIMARY' 'KEY' | 'UNIQUE' ) '(' indexed-column { ',' indexed-column } )`
         public enum Columns: Syntax {
             /// `'PRIMARY' 'KEY' '(' indexed-column 'AUTOINCREMENT'`
+            ///
+            /// Since SQLite 3.1.0.
             case primaryKeyAutoincrement(IndexedColumn)
             /// `( 'PRIMARY' 'KEY' | 'UNIQUE' ) '(' indexed-column { ',' indexed-column }`
             case list(kind: Kind, indexedColumns: List<IndexedColumn>)

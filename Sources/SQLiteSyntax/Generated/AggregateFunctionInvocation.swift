@@ -4,6 +4,7 @@
 public struct AggregateFunctionInvocation: Syntax {
     public var aggregateFunc: Name<Function>
     public var arguments: Arguments? = nil
+    /// Since SQLite 3.25.0.
     public var filterClause: FilterClause? = nil
 
     public init(aggregateFunc: Name<Function>, arguments: Arguments? = nil, filterClause: FilterClause? = nil) {

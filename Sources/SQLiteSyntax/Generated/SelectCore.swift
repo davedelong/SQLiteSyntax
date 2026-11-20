@@ -3,6 +3,8 @@
 /// `select-core ::= ( 'SELECT' [ ( 'ALL' | 'DISTINCT' ) ] result-column { ',' result-column } [ ( 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) [ 'WHERE' expr ] | 'WHERE' expr ) ] [ 'GROUP' 'BY' expr { ',' expr } ] [ 'HAVING' expr ] [ 'WINDOW' window-name 'AS' window-defn { ',' window-name 'AS' window-defn } ] | values-clause )`
 public indirect enum SelectCore: Syntax {
     /// `'SELECT' [ ( 'ALL' | 'DISTINCT' ) ] result-column { ',' result-column } [ ( 'FROM' ( join-clause | table-or-subquery { ',' table-or-subquery } ) [ 'WHERE' expr ] | 'WHERE' expr ) ] [ 'GROUP' 'BY' expr { ',' expr } ] [ 'HAVING' expr ] [ 'WINDOW' window-name 'AS' window-defn { ',' window-name 'AS' window-defn } ]`
+    ///
+    /// - `window`: since SQLite 3.25.0.
     case select(selection: Selection? = nil, resultColumns: List<ResultColumn>, source: Source? = nil, groupBy: List<Expression>? = nil, having: Expression? = nil, window: List<WindowElement>? = nil)
     /// `values-clause`
     case valuesClause(ValuesClause)

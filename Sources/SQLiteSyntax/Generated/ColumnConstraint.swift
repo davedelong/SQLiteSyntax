@@ -31,10 +31,14 @@ public struct ColumnConstraint: Syntax {
         /// `'NULL' conflict-clause`
         case null(ConflictClause? = nil)
         /// `'PRIMARY' 'KEY' [ ( 'ASC' | 'DESC' ) ] conflict-clause [ 'AUTOINCREMENT' ]`
+        ///
+        /// - `autoincrement`: since SQLite 3.1.0.
         case primaryKey(sortDirection: SortDirection? = nil, conflictClause: ConflictClause? = nil, autoincrement: Bool = false)
         /// `'UNIQUE' conflict-clause`
         case unique(ConflictClause? = nil)
         /// `[ 'GENERATED' 'ALWAYS' ] 'AS' '(' expr ')' [ ( 'STORED' | 'VIRTUAL' ) ]`
+        ///
+        /// - `generatedAlways`: since SQLite 3.31.0.
         case generated(generatedAlways: Bool = false, expression: Expression, storage: Storage? = nil)
         /// `foreign-key-clause`
         case foreignKey(ForeignKeyClause)
@@ -112,6 +116,8 @@ public struct ColumnConstraint: Syntax {
             /// `'STORED'`
             case stored
             /// `'VIRTUAL'`
+            ///
+            /// Since SQLite 3.3.7.
             case virtual
 
             public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

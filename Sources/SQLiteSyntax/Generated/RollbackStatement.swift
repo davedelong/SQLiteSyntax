@@ -3,6 +3,7 @@
 /// `rollback-stmt ::= 'ROLLBACK' [ 'TRANSACTION' ] [ 'TO' [ 'SAVEPOINT' ] savepoint-name ]`
 public struct RollbackStatement: Syntax {
     public var transaction: Bool = false
+    /// Since SQLite 3.1.0.
     public var to: To? = nil
 
     public init(transaction: Bool = false, to: To? = nil) {
@@ -17,7 +18,10 @@ public struct RollbackStatement: Syntax {
     }
 
     /// `'TO' [ 'SAVEPOINT' ] savepoint-name`
+    ///
+    /// Since SQLite 3.1.0.
     public struct To: Syntax {
+        /// Since SQLite 3.6.8.
         public var savepoint: Bool = false
         public var savepointName: Name<Savepoint>
 

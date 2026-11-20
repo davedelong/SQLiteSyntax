@@ -2,6 +2,7 @@
 
 /// `select-stmt ::= [ with-prefix ] select-core { compound-operator select-core } [ order-by-clause ] [ limit-clause ]`
 public struct SelectStatement: Syntax {
+    /// Since SQLite 3.8.3.
     public var with: With? = nil
     public var selectCore: SelectCore
     public var compounds: [CompoundsElement] = []

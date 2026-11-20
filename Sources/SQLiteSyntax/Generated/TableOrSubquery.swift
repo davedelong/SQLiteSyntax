@@ -126,8 +126,12 @@ public indirect enum TableOrSubquery: Syntax {
     /// `( index-hint | [ 'AS' ] table-alias [ index-hint ] )`
     public enum Suffix: Syntax {
         /// `index-hint`
+        ///
+        /// Since SQLite 3.6.4.
         case indexHint(IndexHint)
         /// `[ 'AS' ] table-alias [ index-hint ]`
+        ///
+        /// - `indexHint`: since SQLite 3.6.4.
         case tableAlias(as: Bool = false, tableAlias: Name<Table>, indexHint: IndexHint? = nil)
 
         public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

@@ -2,6 +2,7 @@
 
 /// `simple-select-stmt ::= [ with-prefix ] select-core [ order-by-clause ] [ limit-clause ]`
 public struct SimpleSelectStatement: Syntax {
+    /// Since SQLite 3.8.3.
     public var with: With? = nil
     public var selectCore: SelectCore
     public var orderBy: OrderBy? = nil

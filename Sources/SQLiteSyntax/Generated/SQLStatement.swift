@@ -17,6 +17,7 @@ public struct SQLStatement: Syntax {
 
     /// `'EXPLAIN' [ 'QUERY' 'PLAN' ]`
     public struct Explain: Syntax {
+        /// Since SQLite 3.2.6.
         public var queryPlan: Bool = false
 
         public init(queryPlan: Bool = false) {
@@ -32,8 +33,12 @@ public struct SQLStatement: Syntax {
     /// `( alter-table-stmt | analyze-stmt | attach-stmt | begin-stmt | commit-stmt | create-index-stmt | create-table-stmt | create-trigger-stmt | create-view-stmt | create-virtual-table-stmt | delete-stmt | delete-stmt-limited | detach-stmt | drop-index-stmt | drop-table-stmt | drop-trigger-stmt | drop-view-stmt | insert-stmt | pragma-stmt | reindex-stmt | release-stmt | rollback-stmt | savepoint-stmt | select-stmt | update-stmt | update-stmt-limited | vacuum-stmt )`
     public enum Statement: Syntax {
         /// `alter-table-stmt`
+        ///
+        /// Since SQLite 3.1.0.
         case alterTableStatement(AlterTableStatement)
         /// `analyze-stmt`
+        ///
+        /// Since SQLite 3.2.3.
         case analyzeStatement(AnalyzeStatement)
         /// `attach-stmt`
         case attachStatement(AttachStatement)
@@ -50,6 +55,8 @@ public struct SQLStatement: Syntax {
         /// `create-view-stmt`
         case createViewStatement(CreateViewStatement)
         /// `create-virtual-table-stmt`
+        ///
+        /// Since SQLite 3.3.7.
         case createVirtualTableStatement(CreateVirtualTableStatement)
         /// `delete-stmt`
         case deleteStatement(DeleteStatement)
@@ -70,12 +77,18 @@ public struct SQLStatement: Syntax {
         /// `pragma-stmt`
         case pragmaStatement(PragmaStatement)
         /// `reindex-stmt`
+        ///
+        /// Since SQLite 3.1.0.
         case reindexStatement(ReindexStatement)
         /// `release-stmt`
+        ///
+        /// Since SQLite 3.6.8.
         case releaseStatement(ReleaseStatement)
         /// `rollback-stmt`
         case rollbackStatement(RollbackStatement)
         /// `savepoint-stmt`
+        ///
+        /// Since SQLite 3.6.8.
         case savepointStatement(SavepointStatement)
         /// `select-stmt`
         case selectStatement(SelectStatement)
