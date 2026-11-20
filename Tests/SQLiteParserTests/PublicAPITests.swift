@@ -11,6 +11,14 @@ struct PublicAPITests {
         #expect(try Expression(parsing: "price * (1 + tax)").sql() == "price * ( 1 + tax )")
     }
 
+    @Test func qualifiedNamesPrintWithoutSpaces() throws {
+        #expect(try SQLStatement(parsing: "SELECT t.*, main.t.a FROM main.t WHERE a IN main.u").sql()
+                == "SELECT t.* , main.t.a FROM main.t WHERE a IN main.u")
+        #expect(try SQLStatement(parsing: "CREATE INDEX main.i ON t (a)").sql() == "CREATE INDEX main.i ON t ( a )")
+        #expect(try SQLStatement(parsing: "PRAGMA main.journal_mode = WAL").sql() == "PRAGMA main.journal_mode = WAL")
+        #expect(try Expression(parsing: "CAST(a AS INT)").sql() == "CAST ( a AS INT )")
+    }
+
     @Test func nullIsExplicit() throws {
         let value: Expression? = nil                      // Swift nil, not SQL NULL
         #expect(value.map { _ in true } == nil)

@@ -60,80 +60,50 @@ public struct SyntaxBuilder {
     }
     
     var sql: String { terms.joined(separator: " ") }
-    
+
+    /// Set after a `.`, so the next term joins it: `schema` `.` `table` reads `schema.table`.
+    private var joinsNext = false
+
     mutating func add(_ terms: String?...) {
         self.add(terms)
     }
-    
+
+    /// Adds fixed tokens. A `.` joins the terms on either side (qualified names: `main.t.a`, `t.*`).
     mutating func add(_ terms: Array<String?>?) {
         for term in terms ?? [] {
-            if let term, term.isEmpty == false { self.terms.append(term) }
+            guard let term, term.isEmpty == false else { continue }
+            if (term == "." || joinsNext), let last = self.terms.indices.last {
+                self.terms[last] += term
+            } else {
+                self.terms.append(term)
+            }
+            joinsNext = term == "."
         }
     }
-    
-    mutating func addAlias(name: Name<Schema>? = nil, _ part: (any Syntax)?) throws(SyntaxError) {
-        if let part {
-            add("AS")
-            try add(first: name, second: part)
-        }
+
+    /// Validates and adds a syntax value; nothing if it's nil.
+    mutating func add(_ part: (any Syntax)?) throws(SyntaxError) {
+        guard let part else { return }
+        try part.validate()
+        try part.build(using: &self)
     }
-    
-    @_disfavoredOverload
-    mutating func add(name: Name<Schema>? = nil, _ part: (any Syntax)?) throws(SyntaxError) {
-        try add(first: name, second: part)
-    }
-    
+
     mutating func add<T: Syntax>(group: T?) throws(SyntaxError) {
         guard let group else { return }
         add("(")
         try add(group)
         add(")")
     }
-    
+
+    /// Adds a list; nothing if it's nil or empty.
     mutating func add<T: Syntax>(_ list: List<T>?) throws(SyntaxError) {
-        if let list, list.items.isEmpty { return }
-        try add(name: nil, list)
+        guard let list, list.items.isEmpty == false else { return }
+        try add(list as any Syntax)
     }
-    
+
     mutating func add<T: Syntax>(_ list: List<T>) throws(SyntaxError) {
-        try add(name: nil, list)
-    }
-    
-    private mutating func add(first: (any Syntax)?, second: (any Syntax)?) throws(SyntaxError) {
-        try first?.validate()
-        try second?.validate()
-        
-        if let first, let second {
-            var inner = SyntaxBuilder(sqliteVersion: sqliteVersion)
-            try first.build(using: &inner)
-            
-            terms.append(contentsOf: inner.terms.dropLast())
-            let finalName = inner.terms.last!
-            inner.terms.removeAll()
-            
-            try second.build(using: &inner)
-            let firstName = inner.terms.first!
-            
-            terms.append(finalName + "." + firstName)
-            terms.append(contentsOf: inner.terms.dropFirst())
-        } else if let first {
-            try first.build(using: &self)
-        } else if let second {
-            try second.build(using: &self)
-        }
-    }
-    
-    /// Adds the present parts as one dot-separated term, e.g. `schema.table.column`.
-    mutating func addQualified(_ parts: (any Syntax)?...) throws(SyntaxError) {
-        var names: Array<String> = []
-        for part in parts {
-            guard let part else { continue }
-            try part.validate()
-            var inner = SyntaxBuilder(sqliteVersion: sqliteVersion)
-            try part.build(using: &inner)
-            names.append(inner.sql)
-        }
-        if names.isEmpty == false { terms.append(names.joined(separator: ".")) }
+        guard list.items.isEmpty == false else { return }
+        try add(list as any Syntax)
     }
 
     mutating func addList<S: Syntax>(_ list: Array<S>, delimiter: String? = nil) throws(SyntaxError) {

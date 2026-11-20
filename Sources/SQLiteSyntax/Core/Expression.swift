@@ -53,7 +53,9 @@ public indirect enum Expression: Syntax {
             case .bindParameter(let p):
                 try builder.add(p)
             case .columnName(let s, let t, let c):
-                try builder.addQualified(s, t, c)
+                if let s { try builder.add(s); builder.add(".") }
+                if let t { try builder.add(t); builder.add(".") }
+                try builder.add(c)
             case .unaryOperator(.negate, .literalValue(.integer(let i))) where i >= 0:
                 builder.add("-" + Literals.integer(i))          // prints as the literal it parses back as
             case .unaryOperator(.negate, .literalValue(.real(let d))) where d.sign == .plus && !d.isNaN:
@@ -77,7 +79,8 @@ public indirect enum Expression: Syntax {
             case .cast(let val, as: let type):
                 builder.add("CAST", "(")
                 try builder.add(val)
-                try builder.addAlias(type)
+                builder.add("AS")
+                try builder.add(type)
                 builder.add(")")
             case .collate(let expr, let name):
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.collate)
@@ -144,12 +147,14 @@ public indirect enum Expression: Syntax {
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 if negated { builder.add("NOT") }
                 builder.add("IN")
-                try builder.add(name: schema, table)
+                if let schema { try builder.add(schema); builder.add(".") }
+                try builder.add(table)
             case .inTableFunction(let expr, negated: let negated, let schema, let function, let args):
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 if negated { builder.add("NOT") }
                 builder.add("IN")
-                try builder.add(name: schema, function)
+                if let schema { try builder.add(schema); builder.add(".") }
+                try builder.add(function)
                 builder.add("(")
                 try builder.addList(args, delimiter: ",")
                 builder.add(")")
