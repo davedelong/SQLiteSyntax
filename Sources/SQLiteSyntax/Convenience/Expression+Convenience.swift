@@ -123,11 +123,11 @@ extension Expression: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral, E
     }
     
     public init(integerLiteral value: Int) {
-        self = .literalValue(.number(Decimal(value)))
+        self = .literalValue(.integer(Int64(value)))
     }
     
     public init(floatLiteral value: Double) {
-        self = .literalValue(.number(Decimal(value)))
+        self = .literalValue(.real(value))
     }
     
     public init(nilLiteral: ()) {

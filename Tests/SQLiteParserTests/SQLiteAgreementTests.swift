@@ -20,7 +20,7 @@ struct SQLiteAgreementTests {
         "CASE 1 WHEN 1 THEN 'one' ELSE 'other' END", "CASE WHEN 1 > 2 THEN 'a' WHEN 2 > 1 THEN 'b' END",
         "CAST('12' AS INTEGER) + 1", "CAST(3.7 AS INT)", "abs(-5) + length('hello')", "coalesce(NULL, 2, 3)",
         "max(1, 2, 3)", "'a' COLLATE NOCASE = 'A'", "'a' = 'A' COLLATE NOCASE", "x'414243'", "0x10 + 1", "1_000 + 1",
-        ".5 + 1", "1.5e3 + 0.5", "json('{\"a\":1}') -> '$.a'", "json('{\"a\":1}') ->> '$.a'", "1 = 1 AND 2 = 2 OR 3 = 4",
+        ".5 + 1", "1e3 + 1", "json('{\"a\":1}') -> '$.a'", "json('{\"a\":1}') ->> '$.a'", "1 = 1 AND 2 = 2 OR 3 = 4",
         "upper('a') || lower('B')", "iif(1, 'a', 'b')", "CURRENT_DATE IS NOT NULL", "'5' + 5 * '2'",
     ]
 
@@ -34,16 +34,30 @@ struct SQLiteAgreementTests {
         #expect(db.evaluate(try expression.sql()) == expected, "sql() changes the meaning of: \(text)")
     }
 
-    /// `LiteralValue.number(Decimal)` cannot tell `1`, `1.0` and `1e3` apart, so a REAL literal written
-    /// without a fractional part comes back out as an INTEGER and can change results.
-    @Test func realLiteralsKeepTheirType() throws {
+    /// INTEGER and REAL literals keep their type through parse → `sql()`, so results don't change.
+    @Test(arguments: ["1e3 + 1", "1.0 / 2", "typeof(2.0)", "typeof(1)", "typeof(1e3)", "typeof(9223372036854775807)",
+                      "typeof(9223372036854775808)", "0x7FFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFF", "-9223372036854775808",
+                      "1.5e-7 * 2", "0.1 + 0.2", "1e308 * 10", "1_000.000_5"])
+    func numericLiteralsKeepTheirType(_ text: String) throws {
         let db = Database()
-        let cases = try ["1e3 + 1", "1.0 / 2", "typeof(2.0)"].map { ($0, try Expr(parsing: $0).sql()) }
-        withKnownIssue("SQLiteSyntax.LiteralValue loses the INTEGER/REAL distinction") {
-            for (text, output) in cases {
-                #expect(db.evaluate(output) == db.evaluate(text), "\(text) became \(output)")
-            }
-        }
+        let output = try Expr(parsing: text).sql()
+        #expect(db.evaluate(output) == db.evaluate(text), "\(text) became \(output)")
+    }
+
+    @Test func numericLiteralRendering() throws {
+        #expect(try LiteralValue.real(1).sql() == "1.0")
+        #expect(try LiteralValue.real(1e16).sql() == "1e+16")
+        #expect(try LiteralValue.real(.infinity).sql() == "9e999")
+        #expect(try LiteralValue.real(-.infinity).sql() == "-9e999")
+        #expect(try LiteralValue.real(.nan).sql() == "NULL")
+        #expect(try LiteralValue.integer(42).sql() == "42")
+        #expect(try LiteralValue.integer(.min).sql() == "(-9223372036854775807 - 1)")
+        let db = Database()
+        #expect(db.evaluate(try LiteralValue.integer(.min).sql()) == "integer -9223372036854775808")
+        #expect(db.evaluate(try LiteralValue.real(.infinity).sql()) == "real Inf")
+        // Swift literals map to the matching SQLite type.
+        let one: Expr = 1, half: Expr = 0.5, whole: Expr = 2.0
+        #expect(try [one.sql(), half.sql(), whole.sql()] == ["1", "0.5", "2.0"])
     }
 
     /// Names that are keywords, contain special characters, or start with a digit are double-quoted,

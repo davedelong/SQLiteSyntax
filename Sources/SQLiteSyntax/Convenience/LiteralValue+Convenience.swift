@@ -18,11 +18,11 @@ extension LiteralValue: ExpressibleByStringLiteral, ExpressibleByBooleanLiteral,
     }
     
     public init(integerLiteral value: Int) {
-        self = .number(Decimal(value))
+        self = .integer(Int64(value))
     }
     
     public init(floatLiteral value: Double) {
-        self = .number(Decimal(value))
+        self = .real(value)
     }
     
     public init(nilLiteral: ()) {

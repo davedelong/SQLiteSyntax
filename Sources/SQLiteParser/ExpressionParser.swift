@@ -175,7 +175,7 @@ extension Parser {
         switch token.kind {
             case .number(let text):
                 _ = advance()
-                return .literalValue(.number(try number(text, token: token)))
+                return .literalValue(try numericLiteral(text, token: token))
             case .string(let s):
                 _ = advance()
                 return .literalValue(.string(s))
@@ -194,7 +194,14 @@ extension Parser {
                 try expect(symbol: ")")
                 return .expressionList(List(items))
             case .symbol("-"):
-                _ = advance(); return .unaryOperator(.negate, try parseExpression(Precedence.unary))
+                _ = advance()
+                // Like SQLite (expr.c codeInteger), minus applied directly to 9223372036854775808 is the
+                // smallest INTEGER rather than the negation of an out-of-range (REAL) literal.
+                if case .number(let text) = current.kind, text.replacingOccurrences(of: "_", with: "") == "9223372036854775808" {
+                    _ = advance()
+                    return .literalValue(.integer(.min))
+                }
+                return .unaryOperator(.negate, try parseExpression(Precedence.unary))
             case .symbol("+"):
                 _ = advance(); return .unaryOperator(.plus, try parseExpression(Precedence.unary))
             case .symbol("~"):
@@ -468,6 +475,21 @@ extension Parser {
     }
 
     // MARK: Literal values
+
+    /// A numeric literal as SQLite reads it (tokenize.c): INTEGER unless it has a "." or an exponent;
+    /// hex is 64-bit two's complement; a decimal integer too large for 64 bits is REAL.
+    func numericLiteral(_ text: String, token: Token) throws(ParseError) -> LiteralValue {
+        let digits = text.replacingOccurrences(of: "_", with: "")
+        if digits.hasPrefix("0x") || digits.hasPrefix("0X") {
+            guard let value = UInt64(digits.dropFirst(2), radix: 16) else { throw error("hex literal too big", at: token) }
+            return .integer(Int64(bitPattern: value))
+        }
+        if !digits.contains(where: { $0 == "." || $0 == "e" || $0 == "E" }), let value = Int64(digits) {
+            return .integer(value)
+        }
+        guard let value = Double(digits.hasPrefix(".") ? "0" + digits : digits) else { throw error("malformed number", at: token) }
+        return .real(value)
+    }
 
     func number(_ text: String, token: Token) throws(ParseError) -> Decimal {
         let digits = text.replacingOccurrences(of: "_", with: "")

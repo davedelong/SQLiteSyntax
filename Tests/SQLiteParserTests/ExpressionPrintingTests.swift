@@ -69,7 +69,8 @@ struct SeededRandom {
         switch next(6) {
             case 0: return .literalValue(.string(["a", "b", "ab", "A"][next(4)]))
             case 1: return .literalValue(.null)
-            default: return .literalValue(.number(Decimal(next(10))))
+            case 2: return .literalValue(.real([0.5, 1.0, 2.5, 1e3][next(4)]))
+            default: return .literalValue(.integer(Int64(next(10))))
         }
     }
 

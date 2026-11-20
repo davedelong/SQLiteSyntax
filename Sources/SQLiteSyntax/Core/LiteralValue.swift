@@ -9,7 +9,10 @@ import Foundation
 
 public enum LiteralValue: Syntax {
     
-    case number(Decimal)
+    /// An INTEGER literal, e.g. `1`, `-5`, `0x10`.
+    case integer(Int64)
+    /// A REAL literal, e.g. `1.0`, `0.5`, `1e3`. Always written so SQLite reads it as REAL.
+    case real(Double)
     case string(String)
     case blob(Data)
     case null
@@ -21,8 +24,10 @@ public enum LiteralValue: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
-            case .number(let d):
-                builder.add(d.description)
+            case .integer(let i):
+                builder.add(Literals.integer(i))
+            case .real(let d):
+                builder.add(Literals.real(d))
             case .string(let s):
                 builder.add(Literals.string(s))
             case .blob(let d):

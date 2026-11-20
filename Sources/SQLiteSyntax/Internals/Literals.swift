@@ -20,6 +20,19 @@ internal enum Literals {
         return "'" + final + "'"
     }
     
+    static func integer(_ i: Int64) -> String {
+        // -9223372036854775808 would be read as the negation of an out-of-range (REAL) literal.
+        i == .min ? "(-9223372036854775807 - 1)" : String(i)
+    }
+    
+    static func real(_ d: Double) -> String {
+        // Swift's description is the shortest text that reads back as the same Double, and always
+        // contains "." or an exponent ("1.0", "0.1", "1e+16"), so SQLite reads it as REAL.
+        if d.isNaN { return "NULL" }                    // SQLite stores NaN as NULL
+        if d.isInfinite { return d < 0 ? "-9e999" : "9e999" }   // SQLite's spelling of ±Inf
+        return d.description
+    }
+    
     static func identifier(_ s: String) -> String {
         // An identifier is quoted with double quotes ("). A double quote within it is written as two
         // double quotes. (Single quotes would make it a string literal.)

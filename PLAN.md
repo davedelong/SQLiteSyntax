@@ -12,7 +12,7 @@ whole grammar, and work in both directions — building SQL (`sql()`) and parsin
 | Type generation (`SyntaxGeneration`, `Grammar/codegen.json`) | Prototype. 10 rules generated into `Sources/SQLiteSyntax/Generated` (internal `Generated` namespace). 59 of 66 rules compile in a scratch run; the SELECT family crashes the compiler (reference cycle). |
 | Expression parser (`SQLiteParser`) | Prototype. Full expression grammar except subqueries and `WITHIN GROUP`; agrees with SQLite on all tested inputs and all 147 keywords. |
 | Hand-written fixes | Done: `FILTER … WHERE`, `t.a` dots, blob zero-padding, identifier quoting, operator parentheses. |
-| Known issues | 3: REAL literals print as INTEGER (`1.0` → `1`). |
+| Known issues | None. |
 | Uncommitted | Everything since "first pass at generating an ebnf". |
 
 ## Phase 0 — Commit (now)
@@ -21,7 +21,11 @@ whole grammar, and work in both directions — building SQL (`sql()`) and parsin
 - Decide later (before tagging a release) whether the tooling moves to its own package; the
   Gramophone/Flexer branch dependencies block versioned consumers. See "Open decisions".
 
-## Phase 1 — Literal fidelity (½–1 day)
+## Phase 1 — Literal fidelity ✅ done
+
+Done: `LiteralValue.number(Decimal)` was replaced by `.integer(Int64)` and `.real(Double)`; the
+parser follows SQLite's INTEGER/REAL rules (including hex and `-9223372036854775808`), and
+`numericLiteralsKeepTheirType` checks results against SQLite. Original notes:
 
 `LiteralValue.number(Decimal)` cannot distinguish `1`, `1.0`, `1e3`, so REAL literals become
 INTEGER and results change (`1.0 / 2` → `1 / 2` = 0).
@@ -123,7 +127,7 @@ From the full scratch run: ~84 unmapped-token warnings, 78 fallback names, 4 dup
 1. **Tooling package split.** Keep the grammar tooling in this package (current) or move it to a
    sibling package so library consumers never fetch Gramophone/Flexer/swift-markdown and the
    library can be tagged. Needed before the first release tag.
-2. **`LiteralValue` shape** (Phase 1): typed `.integer`/`.real` vs preserved spelling.
+2. ~~**`LiteralValue` shape**~~ — decided: typed `.integer(Int64)` / `.real(Double)`.
 3. **Generated naming policy** (Phase 3–4): match existing hand-written names, or accept
    grammar-derived names and update the `Convenience/` layer.
 4. **Where generated parsers live** (Phase 5): `SQLiteParser` (planned) vs alongside the types.
