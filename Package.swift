@@ -72,6 +72,10 @@ let package = Package(
             )
         ),
         .testTarget(
+            name: "SyntaxGenerationTests",
+            dependencies: ["SyntaxGeneration", "GrammarExtraction"]
+        ),
+        .testTarget(
             name: "GrammarExtractionTests",
             dependencies: ["GrammarExtraction", .product(name: "Gramophone", package: "Gramophone")],
             resources: [.copy("Fixtures")]

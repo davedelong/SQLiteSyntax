@@ -19,6 +19,11 @@ struct Field {
     var type: String
     var defaultValue: String?
     var nonEmptyList = false
+    /// The path of the generated type this field stores inline (not through a list), if any.
+    /// Used to find reference cycles.
+    var target: String? = nil
+    /// Stored through the `Indirect` property wrapper to break a cycle between structs.
+    var boxed = false
 }
 
 struct Case {
@@ -40,6 +45,8 @@ final class TypeDecl {
     var kind: Kind = .structure(fields: [], body: [])
     var nested: [TypeDecl] = []
     var grammar: String
+    /// Emitted as `indirect enum` because the type is part of a reference cycle.
+    var isIndirect = false
 
     init(name: String, path: String, grammar: String) {
         self.name = name
@@ -172,10 +179,10 @@ final class TypeBuilder {
                     if singleNonOptional, let index = innerItems.firstIndex(of: innerStored[0]) {
                         let leading = Naming.keywordWords(innerItems[..<index].flatMap(\.allTexts))
                         let hint = leading.isEmpty ? precedingKeywords : leading
-                        let (name, type) = storage(for: innerStored[0], hint: hint, scope: &scope,
-                                                   fallbackHint: storedCount == 1 ? hintForSingleChoice : nil)
+                        let (name, type, target) = storage(for: innerStored[0], hint: hint, scope: &scope,
+                                                           fallbackHint: storedCount == 1 ? hintForSingleChoice : nil)
                         let optionalType = type.hasSuffix("?") ? type : type + "?"
-                        fields.append(Field(name: name, type: optionalType, defaultValue: "nil"))
+                        fields.append(Field(name: name, type: optionalType, defaultValue: "nil", target: target))
                         var innerBody: [Template] = []
                         for n in innerItems {
                             if case .text(let t) = n { innerBody.append(.text(t)) }
@@ -191,19 +198,19 @@ final class TypeBuilder {
                                                        : Naming.lowerCamel(leading)
                         let name = uniqueName(proposed, scope: &scope)
                         let nested = nestedStruct(named: nestedTypeName(forMember: name, in: scope.owner), items: innerItems, in: scope.owner)
-                        fields.append(Field(name: name, type: nested.name + "?", defaultValue: "nil"))
+                        fields.append(Field(name: name, type: nested.name + "?", defaultValue: "nil", target: nested.path))
                         body.append(.value(name))
                     }
 
                 case .list(_, let sep, let nonEmpty):
-                    let (name, type) = storage(for: item, hint: precedingKeywords, scope: &scope, fallbackHint: nil)
+                    let (name, type, _) = storage(for: item, hint: precedingKeywords, scope: &scope, fallbackHint: nil)
                     fields.append(Field(name: name, type: type, defaultValue: nonEmpty ? nil : "[]", nonEmptyList: nonEmpty))
                     body.append(.list(name, separator: sep.isEmpty ? nil : sep.joined(separator: " "), nonEmpty: nonEmpty))
 
                 default:
-                    let (name, type) = storage(for: item, hint: precedingKeywords, scope: &scope,
-                                               fallbackHint: storedCount == 1 ? hintForSingleChoice : nil)
-                    fields.append(Field(name: name, type: type, defaultValue: type.hasSuffix("?") ? "nil" : nil))
+                    let (name, type, target) = storage(for: item, hint: precedingKeywords, scope: &scope,
+                                                       fallbackHint: storedCount == 1 ? hintForSingleChoice : nil)
+                    fields.append(Field(name: name, type: type, defaultValue: type.hasSuffix("?") ? "nil" : nil, target: target))
                     body.append(.value(name))
             }
             precedingKeywords = []
@@ -211,17 +218,19 @@ final class TypeBuilder {
         return (fields, body)
     }
 
-    /// The member name and Swift type that store one node, creating nested types as needed.
-    func storage(for node: Node, hint: [String], scope: inout Scope, fallbackHint: String?) -> (String, String) {
+    /// The member name and Swift type that store one node, creating nested types as needed, and the
+    /// path of the generated type stored inline (for cycle detection).
+    func storage(for node: Node, hint: [String], scope: inout Scope, fallbackHint: String?) -> (String, String, String?) {
         switch node {
             case .value(let symbol, let isReference):
                 let type = valueType(symbol: symbol, isReference: isReference)
                 let base = isReference ? Naming.lowerFirst(baseName(type)) : Naming.lowerCamel(Naming.words(symbol))
-                return (uniqueName(base, scope: &scope), type)
+                let target = isReference && generatedRules.contains(symbol) ? typeName(forRule: symbol) : nil
+                return (uniqueName(base, scope: &scope), type, target)
 
             case .choice(let alternatives):
                 if let existing = keywordEnum(for: alternatives) {
-                    return (uniqueName(Naming.lowerFirst(existing), scope: &scope), existing)
+                    return (uniqueName(Naming.lowerFirst(existing), scope: &scope), existing, nil)
                 }
                 let proposed = !hint.isEmpty ? Naming.lowerCamel(hint) : (fallbackHint ?? fallbackName(scope: &scope))
                 let name = uniqueName(proposed, scope: &scope)
@@ -230,7 +239,7 @@ final class TypeBuilder {
                                       grammar: node.ebnf)
                 nested.kind = enumeration(alternatives, in: nested, prefix: [], suffix: [])
                 scope.owner.nested.append(nested)
-                return (name, nested.name)
+                return (name, nested.name, nested.path)
 
             case .list(let element, _, let nonEmpty):
                 let elementType: String
@@ -251,12 +260,13 @@ final class TypeBuilder {
                     elementType = elementName
                 }
                 let name = uniqueName(proposed, scope: &scope)
-                return (name, nonEmpty ? "List<\(elementType)>" : "[\(elementType)]")
+                // Lists store their elements on the heap, so they never close a cycle.
+                return (name, nonEmpty ? "List<\(elementType)>" : "[\(elementType)]", nil)
 
             case .sequence(let items):
                 let name = uniqueName(!hint.isEmpty ? Naming.lowerCamel(hint) : fallbackName(scope: &scope), scope: &scope)
                 let nested = nestedStruct(named: nestedTypeName(forMember: name, in: scope.owner), items: items, in: scope.owner)
-                return (name, nested.name)
+                return (name, nested.name, nested.path)
 
             case .optional, .text:
                 fatalError("handled by members(_:scope:)")

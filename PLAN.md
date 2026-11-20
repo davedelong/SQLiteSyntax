@@ -9,7 +9,7 @@ whole grammar, and work in both directions — building SQL (`sql()`) and parsin
 | Piece | State |
 |---|---|
 | Grammar extraction (`GrammarExtraction`, `sqlite-grammar`, `generate-grammar` plugin) | Done. 71 diagrams → `Grammar/sqlite.ebnf`, each rule verified equal to its diagram, written/read with Gramophone, round-trip checked. |
-| Type generation (`SyntaxGeneration`, `Grammar/codegen.json`) | Prototype. 10 rules generated into `Sources/SQLiteSyntax/Generated` (internal `Generated` namespace). 59 of 66 rules compile in a scratch run; the SELECT family crashes the compiler (reference cycle). |
+| Type generation (`SyntaxGeneration`, `Grammar/codegen.json`) | Prototype. 10 rules generated into `Sources/SQLiteSyntax/Generated` (internal `Generated` namespace). All 66 rules (SELECT family included) generate and compile in a scratch run; reference cycles are broken with `indirect enum`. |
 | Expression parser (`SQLiteParser`) | Prototype. Full expression grammar except subqueries and `WITHIN GROUP`; agrees with SQLite on all tested inputs and all 147 keywords. |
 | Hand-written fixes | Done: `FILTER … WHERE`, `t.a` dots, blob zero-padding, identifier quoting, operator parentheses. |
 | Known issues | None. |
@@ -37,7 +37,15 @@ INTEGER and results change (`1.0 / 2` → `1 / 2` = 0).
 - Parser: produce the new cases.
 - Done when: `realLiteralsKeepTheirType` passes without `withKnownIssue`.
 
-## Phase 2 — Generator: recursive types (1–2 days)
+## Phase 2 — Generator: recursive types ✅ done
+
+Done: `SyntaxGeneration/Recursion.swift` finds cycles of inline references (Tarjan SCCs; lists and
+arrays don't count) and marks every enum on a cycle `indirect`. A struct-only cycle boxes one field
+at a time with the generated `@Indirect` property wrapper (a one-case `indirect enum`) until none
+remain. For SQLite's grammar, five enums become indirect (`TableOrSubquery`, `SelectStatement.Option`
+and its nested `From` chain) and no fields need boxing. All 66 rules compile; SELECT statements built
+with them (subquery, CTE, compound, VALUES) are accepted by SQLite (scratch run).
+`SyntaxGenerationTests/RecursionTests` covers both strategies. Original notes:
 
 The SELECT rules reference each other (`select-stmt` → `table-or-subquery` → `select-stmt`)
 as plain structs; Swift needs indirection, and today the compiler crashes instead of erroring.
@@ -104,6 +112,8 @@ From the full scratch run: ~84 unmapped-token warnings, 78 fallback names, 4 dup
 - Extract SQL from SQLite's test suite (`sqlite/test/*.test`: `execsql {…}`, `catchsql {…}`),
   de-duplicate, and run each through our parser and `sqlite3_prepare` against a permissive
   schema (only syntax errors count).
+- Known so far: SQLite rejects `ORDER BY`/`LIMIT` after a `VALUES` clause (explicit check in
+  parse.y), although the select-stmt diagram allows it.
 - Classify every disagreement: diagram vs parse.y differences (e.g. legacy `NULL` column
   constraint, `DEFAULT identifier`) to document or support; bugs to fix.
 - Also round-trip each accepted statement: parse → `sql()` → SQLite accepts → parse again equal.

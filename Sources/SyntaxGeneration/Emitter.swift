@@ -27,7 +27,7 @@ struct Emitter {
                 block("struct \(decl.name): Syntax") { e in
                     for f in fields {
                         let value = f.defaultValue.map { " = \($0)" } ?? ""
-                        e.line("var \(Naming.identifier(f.name)): \(f.type)\(value)")
+                        e.line("\(f.boxed ? "@Indirect " : "")var \(Naming.identifier(f.name)): \(f.type)\(value)")
                     }
                     let nonEmpty = fields.filter(\.nonEmptyList)
                     if !nonEmpty.isEmpty {
@@ -48,7 +48,7 @@ struct Emitter {
 
             case .enumeration(let cases, let prefix, let suffix):
                 let conformances = cases.allSatisfy(\.payload.isEmpty) ? "Syntax, CaseIterable" : "Syntax"
-                block("enum \(decl.name): \(conformances)") { e in
+                block("\(decl.isIndirect ? "indirect " : "")enum \(decl.name): \(conformances)") { e in
                     for c in cases {
                         e.line("/// `\(c.grammar)`")
                         if c.payload.isEmpty {

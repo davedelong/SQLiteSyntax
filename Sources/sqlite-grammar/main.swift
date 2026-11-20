@@ -73,6 +73,7 @@ do {
                                                      from: Data(contentsOf: URL(fileURLWithPath: codegenConfig)))
         let generated = SyntaxGenerator.generate(rules: rules, configuration: configuration)
         for warning in generated.warnings { log("warning: \(warning)") }
+        if verbose { for note in generated.notes { log("note: \(note)") } }
         let directory = URL(fileURLWithPath: swiftOutput)
         let fm = FileManager.default
         try fm.createDirectory(at: directory, withIntermediateDirectories: true)
