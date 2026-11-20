@@ -2,6 +2,8 @@
 struct Emitter {
     var lines: [String] = []
     var indent = 0
+    /// `"public "` or `""`.
+    var access = ""
 
     mutating func line(_ s: String = "") {
         lines.append(s.isEmpty ? "" : String(repeating: "    ", count: indent) + s)
@@ -24,22 +26,32 @@ struct Emitter {
         line("/// `\(decl.grammar)`")
         switch decl.kind {
             case .structure(let fields, let body):
-                block("struct \(decl.name): Syntax") { e in
+                block("\(access)struct \(decl.name): Syntax") { e in
                     for f in fields {
                         let value = f.defaultValue.map { " = \($0)" } ?? ""
-                        e.line("\(f.boxed ? "@Indirect " : "")var \(Naming.identifier(f.name)): \(f.type)\(value)")
+                        e.line("\(f.boxed ? "@Indirect " : "")\(e.access)var \(Naming.identifier(f.name)): \(f.type)\(value)")
+                    }
+                    if !e.access.isEmpty {
+                        // The implicit memberwise initialiser is internal; spell out a public one.
+                        e.line()
+                        let parameters = fields.map { f in
+                            "\(f.name): \(f.type)" + (f.defaultValue.map { " = \($0)" } ?? "")
+                        }
+                        e.block("\(e.access)init(\(parameters.joined(separator: ", ")))") { e in
+                            for f in fields { e.line("self.\(Naming.identifier(f.name)) = \(Naming.identifier(f.name))") }
+                        }
                     }
                     let nonEmpty = fields.filter(\.nonEmptyList)
                     if !nonEmpty.isEmpty {
                         e.line()
-                        e.block("func validate() throws(SyntaxError)") { e in
+                        e.block("\(e.access)func validate() throws(SyntaxError)") { e in
                             for f in nonEmpty {
                                 e.line("try require(!\(Naming.identifier(f.name)).isEmpty, reason: \"\(decl.name).\(f.name) must not be empty\")")
                             }
                         }
                     }
                     e.line()
-                    e.block("func build(using builder: inout SyntaxBuilder) throws(SyntaxError)") { e in
+                    e.block("\(e.access)func build(using builder: inout SyntaxBuilder) throws(SyntaxError)") { e in
                         if body.isEmpty { e.line("// nothing to emit") }
                         e.emit(body)
                     }
@@ -48,7 +60,7 @@ struct Emitter {
 
             case .enumeration(let cases, let prefix, let suffix):
                 let conformances = cases.allSatisfy(\.payload.isEmpty) ? "Syntax, CaseIterable" : "Syntax"
-                block("\(decl.isIndirect ? "indirect " : "")enum \(decl.name): \(conformances)") { e in
+                block("\(access)\(decl.isIndirect ? "indirect " : "")enum \(decl.name): \(conformances)") { e in
                     for c in cases {
                         e.line("/// `\(c.grammar)`")
                         if c.payload.isEmpty {
@@ -64,7 +76,7 @@ struct Emitter {
                     let validating = cases.filter { $0.payload.contains(where: \.nonEmptyList) }
                     if !validating.isEmpty {
                         e.line()
-                        e.block("func validate() throws(SyntaxError)") { e in
+                        e.block("\(e.access)func validate() throws(SyntaxError)") { e in
                             e.block("switch self") { e in
                                 for c in validating {
                                     e.line("case \(Emitter.pattern(c)):")
@@ -80,7 +92,7 @@ struct Emitter {
                         }
                     }
                     e.line()
-                    e.block("func build(using builder: inout SyntaxBuilder) throws(SyntaxError)") { e in
+                    e.block("\(e.access)func build(using builder: inout SyntaxBuilder) throws(SyntaxError)") { e in
                         if !prefix.isEmpty { e.line("builder.add(\(Emitter.quoted(prefix)))") }
                         e.block("switch self") { e in
                             for c in cases {
@@ -114,10 +126,17 @@ struct Emitter {
                     line("if \(Naming.identifier(name)) { builder.add(\(Emitter.quoted(texts))) }")
                 case .optional(let name, let inner):
                     block("if let \(Naming.identifier(name))") { e in e.emit(inner) }
-                case .list(let name, let separator, let nonEmpty):
+                case .list(let name, let separator, let nonEmpty, let leading):
                     let items = Naming.identifier(name) + (nonEmpty ? ".items" : "")
-                    let delimiter = separator.map { ", delimiter: \(Emitter.quoted([$0]))" } ?? ""
-                    line("try builder.addList(\(items)\(delimiter))")
+                    if leading, let separator {
+                        block("for item in \(items)") { e in
+                            e.line("builder.add(\(Emitter.quoted([separator])))")
+                            e.line("try builder.add(item)")
+                        }
+                    } else {
+                        let delimiter = separator.map { ", delimiter: \(Emitter.quoted([$0]))" } ?? ""
+                        line("try builder.addList(\(items)\(delimiter))")
+                    }
             }
         }
     }

@@ -57,39 +57,54 @@ public enum SyntaxGenerator {
         }
 
         var files: [String: String] = [:]
-        files["\(configuration.namespace).swift"] = """
-            \(header)
+        let access = configuration.isPublic ? "public " : ""
+        let namespace = configuration.namespace
+        let indirect = """
+            /// Stores a value in an indirect enum case, breaking a reference cycle between structs
+            /// (which would otherwise have infinite size) while keeping value semantics.
+            @propertyWrapper
+            \(access)enum Indirect<Value: Sendable>: Sendable {
+                indirect case value(Value)
 
-            /// Types generated from SQLite's syntax diagrams. See Grammar/codegen.json.
-            enum \(configuration.namespace) {}
+                \(access)init(wrappedValue: Value) { self = .value(wrappedValue) }
 
-            extension \(configuration.namespace) {
-                /// Stores a value in an indirect enum case, breaking a reference cycle between structs
-                /// (which would otherwise have infinite size) while keeping value semantics.
-                @propertyWrapper
-                enum Indirect<Value: Sendable>: Sendable {
-                    indirect case value(Value)
-
-                    init(wrappedValue: Value) { self = .value(wrappedValue) }
-
-                    var wrappedValue: Value {
-                        get { switch self { case .value(let v): return v } }
-                        set { self = .value(newValue) }
-                    }
+                \(access)var wrappedValue: Value {
+                    get { switch self { case .value(let v): return v } }
+                    set { self = .value(newValue) }
                 }
             }
-
             """
+        if namespace.isEmpty {
+            files["GeneratedSupport.swift"] = "\(header)\n\n\(indirect)\n"
+        } else {
+            files["\(namespace).swift"] = """
+                \(header)
+
+                /// Types generated from SQLite's syntax diagrams. See Grammar/codegen.json.
+                \(access)enum \(namespace) {}
+
+                extension \(namespace) {
+                \(indirect.split(separator: "\n", omittingEmptySubsequences: false).map { $0.isEmpty ? "" : "    " + $0 }.joined(separator: "\n"))
+                }
+
+                """
+        }
         let decls = lowered.map { rule, node in
             builder.declaration(forRule: rule.name, node: node, grammar: "\(rule.name) ::= \(rule.expression.ebnf)")
         }
         let notes = Recursion.resolve(decls)
         for decl in decls {
             var e = Emitter()
+            e.access = access
             e.line(header)
             e.line()
-            e.block("extension \(configuration.namespace)") { e in e.emit(decl) }
-            files["\(configuration.namespace)+\(decl.name).swift"] = e.lines.joined(separator: "\n") + "\n"
+            if namespace.isEmpty {
+                e.emit(decl)
+                files["\(decl.name).swift"] = e.lines.joined(separator: "\n") + "\n"
+            } else {
+                e.block("extension \(namespace)") { e in e.emit(decl) }
+                files["\(namespace)+\(decl.name).swift"] = e.lines.joined(separator: "\n") + "\n"
+            }
         }
         return Output(files: files, warnings: warnings + builder.warnings, notes: notes)
     }

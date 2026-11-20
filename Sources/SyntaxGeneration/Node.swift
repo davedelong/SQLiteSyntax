@@ -9,8 +9,9 @@ indirect enum Node: Equatable {
     case sequence([Node])
     case optional(Node)
     case choice([Node])
-    /// `x { sep x }` (non-empty, with separator) or `{ x }` (possibly empty).
-    case list(Node, separator: [String], nonEmpty: Bool)
+    /// `x { sep x }` (non-empty, with separator), `{ x }` (possibly empty), or `{ sep x }`
+    /// (possibly empty, separator written before every item: `leading`).
+    case list(Node, separator: [String], nonEmpty: Bool, leading: Bool = false)
 
     var items: [Node] {
         if case .sequence(let items) = self { return items }
@@ -43,9 +44,9 @@ indirect enum Node: Equatable {
             case .sequence(let items): return items.map(\.ebnf).joined(separator: " ")
             case .optional(let n): return "[ \(n.ebnf) ]"
             case .choice(let alternatives): return "( " + alternatives.map(\.ebnf).joined(separator: " | ") + " )"
-            case .list(let e, let sep, let nonEmpty):
+            case .list(let e, let sep, let nonEmpty, let leading):
                 let s = sep.map { "'\($0)' " }.joined()
-                return nonEmpty ? "\(e.ebnf) { \(s)\(e.ebnf) }" : "{ \(e.ebnf) }"
+                return nonEmpty ? "\(e.ebnf) { \(s)\(e.ebnf) }" : leading ? "{ \(s)\(e.ebnf) }" : "{ \(e.ebnf) }"
         }
     }
 }
@@ -77,6 +78,13 @@ func lower(_ e: GrammarExpression, kinds: [String: GrammarRule.SymbolKind]) -> N
             if kinds[s] == .reference { return .value(symbol: s, isReference: true) }
             return isFixedToken(s) ? .text([s]) : .value(symbol: s, isReference: false)
         case .repetition(let body):
+            // { sep x }: a list of x with the separator before each item.
+            let bodyParts = parts(body)
+            if bodyParts.count >= 2, bodyParts.dropLast().allSatisfy({ isFixed($0, kinds) }),
+               case .symbol(let last) = bodyParts.last!, !isFixed(bodyParts.last!, kinds) {
+                let sep = bodyParts.dropLast().compactMap { if case .symbol(let s) = $0 { return s } else { return nil } }
+                return .list(lower(.symbol(last), kinds: kinds), separator: sep, nonEmpty: false, leading: true)
+            }
             return .list(lower(body, kinds: kinds), separator: [], nonEmpty: false)
         case .choice(let items):
             if items.contains(.empty) {

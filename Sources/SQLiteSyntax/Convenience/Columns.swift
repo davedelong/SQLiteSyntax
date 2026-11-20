@@ -1,39 +1,37 @@
 //
-//  File.swift
+//  Columns.swift
 //  SQLiteSyntax
-//
-//  Created by Dave DeLong on 4/29/25.
 //
 
 import Foundation
 
+extension ForeignKeyClause {
+    /// What happens to a referencing row when the referenced row is deleted or updated.
+    public typealias Action = ActionsElement.Action
+}
+
 extension ColumnDefinition {
     
     public static func primaryKey(_ name: Name<Column>, type: TypeName, autoincrement: Bool = false) -> Self {
-        let def = ColumnDefinition(name: name, typeName: type, constraints: [
-            .init(name: nil, constraint: .notNull(.none)),
-            .init(name: nil, constraint: .primaryKey(nil, .none, autoincrement: autoincrement))
+        ColumnDefinition(name: name, typeName: type, constraints: [
+            .notNull,
+            .init(constraint: .primaryKey(autoincrement: autoincrement))
         ])
-        return def
     }
     
     public static func foreignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, type: TypeName? = nil, canBeNull: Bool, onUpdate: ForeignKeyClause.Action? = nil, onDelete: ForeignKeyClause.Action? = nil) -> Self {
-        
-        var clause = ForeignKeyClause(references: references, referencedColumns: [column], conditions: [])
-        if let onUpdate { clause.conditions?.append(.onUpdate(onUpdate)) }
-        if let onDelete { clause.conditions?.append(.onDelete(onDelete)) }
-        
-        var def = ColumnDefinition(name: name, typeName: type, constraints: [
-            .init(name: nil, constraint: .foreignKey(clause))
-        ])
+        var clause = ForeignKeyClause(foreignTable: references, columns: ColumnNameList(columnNames: [column]))
+        if let onUpdate { clause.actions.append(.on(on: .update, action: onUpdate)) }
+        if let onDelete { clause.actions.append(.on(on: .delete, action: onDelete)) }
+        var definition = ColumnDefinition(name: name, typeName: type, constraints: [.init(constraint: .foreignKey(clause))])
         if canBeNull == false {
-            def.constraints?.append(.init(name: nil, constraint: .notNull(.none)))
+            definition.constraints.append(.notNull)
         }
-        return def
+        return definition
     }
     
     public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true) {
-        self.init(name, type: type, canBeNull: canBeNull, defaultValue: ColumnConstraint.DefaultValue?.none)
+        self.init(name, type: type, canBeNull: canBeNull, defaultValue: ColumnConstraint.Constraint.Default?.none)
     }
     
     @_disfavoredOverload
@@ -43,34 +41,28 @@ extension ColumnDefinition {
     
     @_disfavoredOverload
     public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: LiteralValue? = nil) {
-        self.init(name, type: type, canBeNull: canBeNull, defaultValue: defaultValue.map { .expression(.literalValue($0)) })
+        self.init(name, type: type, canBeNull: canBeNull, defaultValue: defaultValue.map { ColumnConstraint.Constraint.Default.literalValue($0) })
     }
     
     @_disfavoredOverload
-    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: ColumnConstraint.DefaultValue? = nil) {
-        self.init(name: name, typeName: type, constraints: nil)
-        var constraints = Array<ColumnConstraint>()
+    public init(_ name: Name<Column>, type: TypeName, canBeNull: Bool = true, defaultValue: ColumnConstraint.Constraint.Default? = nil) {
+        self.init(name: name, typeName: type)
         if canBeNull == false {
-            constraints.append(.init(name: nil, constraint: .notNull(.none)))
+            constraints.append(.notNull)
         }
         if let defaultValue {
-            constraints.append(.init(name: nil, constraint: .default(defaultValue)))
-        }
-        if constraints.isEmpty == false {
-            self.constraints = List(constraints)
+            constraints.append(.init(constraint: .default(defaultValue)))
         }
     }
-    
 }
 
 extension ColumnConstraint {
     
     public static var notNull: Self {
-        return .init(name: nil, constraint: .notNull(.none))
+        .init(constraint: .notNull())
     }
     
     public static var unique: Self {
-        return .init(name: nil, constraint: .unique(.none))
+        .init(constraint: .unique())
     }
-    
 }

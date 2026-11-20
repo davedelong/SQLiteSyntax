@@ -162,8 +162,7 @@ extension Parser {
         if accept(symbol: "(") {
             let arguments = current.isSymbol(")") ? [] : try parseExpressionList()
             try expect(symbol: ")")
-            let args: [FunctionArgument] = arguments.isEmpty ? [.wildcard(nil)] : [.expression(distinct: false, List(arguments), nil)]
-            return .inTableFunction(left, negated: negated, schema, Name<Function>(value: first), List(args))
+            return .inTableFunction(left, negated: negated, schema, Name<Function>(value: first), arguments)
         }
         return .inTable(left, negated: negated, schema, Name<Table>(value: first))
     }
@@ -293,17 +292,15 @@ extension Parser {
 
     mutating func parseFunctionCall(name: String) throws(ParseError) -> Expr {
         try expect(symbol: "(")
-        let argument: FunctionArgument
+        var arguments: FunctionArguments? = nil     // nil: f()
         if accept(symbol: "*") {
-            argument = .wildcard(Wildcard())
-        } else if current.isSymbol(")") {
-            argument = .wildcard(nil)       // f(): the empty argument list
-        } else {
+            arguments = .star
+        } else if !current.isSymbol(")") {
             let distinct = accept(keyword: "DISTINCT")
             if !distinct { _ = accept(keyword: "ALL") }
-            let arguments = try parseExpressionList()
+            let expressions = try parseExpressionList()
             let orderBy = current.isKeyword("ORDER") ? try parseOrderBy() : nil
-            argument = .expression(distinct: distinct, List(arguments), orderBy)
+            arguments = .arguments(distinct: distinct, expressions: List(expressions), orderBy: orderBy)
         }
         try expect(symbol: ")")
         if current.isKeyword("WITHIN") { throw error("WITHIN GROUP is not supported yet") }
@@ -320,7 +317,7 @@ extension Parser {
         if accept(keyword: "OVER") {
             over = try parseOver()
         }
-        return .function(Name<Function>(value: name), List([argument]), filter, over)
+        return .function(Name<Function>(value: name), arguments, filter, over)
     }
 
     mutating func parseOrderBy() throws(ParseError) -> OrderBy {
@@ -354,19 +351,19 @@ extension Parser {
         let orderBy = current.isKeyword("ORDER") ? try parseOrderBy() : nil
         let frame = ["RANGE", "ROWS", "GROUPS"].contains(current.keyword ?? "") ? try parseFrameSpec() : nil
         try expect(symbol: ")")
-        return .expression(base, partitionBy: partition, orderBy: orderBy, frameSpec: frame)
+        return .windowDefinition(WindowDefinition(baseWindowName: base, partitionBy: partition, orderBy: orderBy, frameSpec: frame))
     }
 
     mutating func parseFrameSpec() throws(ParseError) -> FrameSpec {
-        let target: FrameSpec.Target
+        let unit: FrameSpec.Unit
         switch advance().keyword {
-            case "RANGE": target = .range
-            case "ROWS": target = .rows
-            default: target = .groups
+            case "RANGE": unit = .range
+            case "ROWS": unit = .rows
+            default: unit = .groups
         }
-        let scope: FrameSpec.Scope
+        let scope: FrameSpec.Extent
         if accept(keyword: "BETWEEN") {
-            let lower: FrameSpec.Scope.LowerBound
+            let lower: FrameSpec.Extent.Start
             if accept(keywords: "UNBOUNDED", "PRECEDING") { lower = .unboundedPreceding }
             else if accept(keywords: "CURRENT", "ROW") { lower = .currentRow }
             else {
@@ -375,7 +372,7 @@ extension Parser {
                 else { try expect(keyword: "FOLLOWING"); lower = .following(e) }
             }
             try expect(keyword: "AND")
-            let upper: FrameSpec.Scope.UpperBound
+            let upper: FrameSpec.Extent.End
             if accept(keywords: "UNBOUNDED", "FOLLOWING") { upper = .unboundedFollowing }
             else if accept(keywords: "CURRENT", "ROW") { upper = .currentRow }
             else {
@@ -383,7 +380,7 @@ extension Parser {
                 if accept(keyword: "PRECEDING") { upper = .preceding(e) }
                 else { try expect(keyword: "FOLLOWING"); upper = .following(e) }
             }
-            scope = .between(lower, upper)
+            scope = .between(start: lower, end: upper)
         } else if accept(keywords: "UNBOUNDED", "PRECEDING") {
             scope = .unboundedPreceding
         } else if accept(keywords: "CURRENT", "ROW") {
@@ -400,7 +397,7 @@ extension Parser {
             else if accept(keyword: "GROUP") { exclude = .group }
             else { try expect(keyword: "TIES"); exclude = .ties }
         }
-        return FrameSpec(target: target, scope: scope, exclude: exclude)
+        return FrameSpec(unit: unit, extent: scope, exclude: exclude)
     }
 
     // MARK: CASE, CAST, RAISE
@@ -435,22 +432,21 @@ extension Parser {
         }
         var arguments: TypeName.Arguments?
         if accept(symbol: "(") {
-            let a = try parseSignedNumber()
-            arguments = accept(symbol: ",") ? .two(a, try parseSignedNumber()) : .one(a)
+            let size = try parseSignedNumber()
+            arguments = TypeName.Arguments(size: size, scale: accept(symbol: ",") ? try parseSignedNumber() : nil)
             try expect(symbol: ")")
         }
         try expect(symbol: ")")
         return .cast(value, as: TypeName(names: List(names), arguments: arguments))
     }
 
-    mutating func parseSignedNumber() throws(ParseError) -> Decimal {
-        let negative = accept(symbol: "-")
-        if !negative { _ = accept(symbol: "+") }
+    mutating func parseSignedNumber() throws(ParseError) -> SignedNumber {
+        var sign: SignedNumber.Sign?
+        if accept(symbol: "-") { sign = .minus } else if accept(symbol: "+") { sign = .plus }
         let token = current
         guard case .number(let text) = token.kind else { throw unexpected(expected: "a number") }
         _ = advance()
-        let value = try number(text, token: token)
-        return negative ? -value : value
+        return SignedNumber(sign: sign, numericLiteral: NumericLiteral(try number(text, token: token)))
     }
 
     mutating func parseRaise() throws(ParseError) -> Expr {
@@ -464,9 +460,9 @@ extension Parser {
             try expect(symbol: ",")
             let message = try parseExpression()
             switch kind.keyword {
-                case "ROLLBACK": result = .rollback(message)
-                case "ABORT": result = .abort(message)
-                case "FAIL": result = .fail(message)
+                case "ROLLBACK": result = .raise(action: .rollback, expression: message)
+                case "ABORT": result = .raise(action: .abort, expression: message)
+                case "FAIL": result = .raise(action: .fail, expression: message)
                 default: throw error("expected IGNORE, ROLLBACK, ABORT or FAIL", at: kind)
             }
         }

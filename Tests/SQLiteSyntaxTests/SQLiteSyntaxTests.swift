@@ -2,38 +2,29 @@ import Testing
 @testable import SQLiteSyntax
 
 @Test func createTable() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    let create = CreateTableStatement(temporary: false,
-                                      ifNotExists: true,
+    let create = CreateTableStatement(ifNotExists: true,
                                       tableName: "Test",
-                                      contents: .columns([
+                                      definition: .columns(columnDefinitions: [
                                         .init(name: "id",
                                               typeName: .init(names: [.init(value: "INT")]),
                                               constraints: [
-                                                .init(name: nil, constraint: .primaryKey(nil, .abort, autoincrement: true))
+                                                .init(constraint: .primaryKey(conflictClause: .abort, autoincrement: true))
                                               ])
-                                      ], [], nil))
+                                      ]))
     
     let sql = try create.sql()
     #expect(sql == "CREATE TABLE IF NOT EXISTS Test ( id INT PRIMARY KEY ON CONFLICT ABORT AUTOINCREMENT )")
 }
 
 @Test func invalidTable() async throws {
-    let create = CreateTableStatement(temporary: false,
-                                      ifNotExists: false,
-                                      tableName: "Test",
-                                      contents: .columns([], [], nil))
+    let create = CreateTableStatement(tableName: "Test", definition: .columns(columnDefinitions: []))
     
     #expect(throws: SyntaxError.self, performing: { try create.sql() })
 }
 
 @Test func specialTableName() async throws {
-    let create = CreateTableStatement(temporary: false,
-                                      ifNotExists: false,
-                                      tableName: "BEGIN",
-                                      contents: .columns([
-                                        .init(name: "END", constraints: nil)
-                                      ], [], []))
+    let create = CreateTableStatement(tableName: "BEGIN",
+                                      definition: .columns(columnDefinitions: [.init(name: "END")]))
     
     let sql = try create.sql()
     #expect(sql == #"CREATE TABLE "BEGIN" ( "END" )"#)
@@ -73,22 +64,13 @@ import Testing
 }
 
 @Test func insert() async throws {
-    let insert = InsertStatement(action: .insert(.none),
+    let insert = InsertStatement(action: .insert(),
                                  tableName: "Test",
-                                 columns: [
-                                    "greeting",
-                                    "target"
-                                 ],
-                                 values: .values([
-                                    Group(contents: [
-                                        "Hello",
-                                        "World"
-                                    ]),
-                                    Group(contents: [
-                                        "Goodnight",
-                                        "Moon"
-                                    ])
-                                 ], nil))
+                                 columnNameList: ["greeting", "target"],
+                                 source: .rows(values: .valuesClause(ValuesClause(values: [
+                                    ["Hello", "World"],
+                                    ["Goodnight", "Moon"],
+                                 ]))))
     
     let sql = try insert.sql()
     #expect(sql == "INSERT INTO Test ( greeting , target ) VALUES ( 'Hello' , 'World' ) , ( 'Goodnight' , 'Moon' )")

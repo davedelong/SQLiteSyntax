@@ -70,10 +70,6 @@ public struct SyntaxBuilder {
         add(")")
     }
     
-    mutating func add(name: Name<Table>? = nil, _ wildcard: Wildcard) throws(SyntaxError) {
-        try add(first: name, second: wildcard)
-    }
-    
     mutating func add<T: Syntax>(_ list: List<T>?) throws(SyntaxError) {
         if let list, list.items.isEmpty { return }
         try add(name: nil, list)

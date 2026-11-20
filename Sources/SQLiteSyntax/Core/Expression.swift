@@ -14,7 +14,8 @@ public indirect enum Expression: Syntax {
     case columnName(Name<Schema>?, Name<Table>?, Name<Column>)
     case unaryOperator(UnaryOperator, Expression)
     case binaryOperator(Expression, BinaryOperator, Expression)
-    case function(Name<Function>, List<FunctionArgument>, FilterClause?, OverClause?)
+    /// `name ( arguments ) [ filter ] [ over ]`; `nil` arguments is `name ( )`.
+    case function(Name<Function>, FunctionArguments?, FilterClause?, OverClause?)
     case expressionList(List<Expression>)
     case cast(Expression, as: TypeName)
     case collate(Expression, Name<Collation>)
@@ -29,7 +30,7 @@ public indirect enum Expression: Syntax {
     case inStatement(Expression, negated: Bool, SelectStatement)
     case inExpression(Expression, negated: Bool, List<Expression>)
     case inTable(Expression, negated: Bool, Name<Schema>?, Name<Table>?)
-    case inTableFunction(Expression, negated: Bool, Name<Schema>?, Name<Function>, List<FunctionArgument>)
+    case inTableFunction(Expression, negated: Bool, Name<Schema>?, Name<Function>, [Expression])
     case select(SelectStatement)
     case exists(negated: Bool, SelectStatement)
     case when(Expression?, Array<(when: Expression, then: Expression)>, else: Expression?)
@@ -62,7 +63,9 @@ public indirect enum Expression: Syntax {
                 try builder.addOperand(right, minimum: op.precedence + 1)
             case .function(let name, let args, let filter, let over):
                 try builder.add(name)
-                try builder.add(group: args)
+                builder.add("(")
+                try builder.add(args)
+                builder.add(")")
                 try builder.add(filter)
                 try builder.add(over)
             case .expressionList(let list):
@@ -142,7 +145,9 @@ public indirect enum Expression: Syntax {
                 if negated { builder.add("NOT") }
                 builder.add("IN")
                 try builder.add(name: schema, function)
-                try builder.add(group: args)
+                builder.add("(")
+                try builder.addList(args, delimiter: ",")
+                builder.add(")")
             case .select(let select):
                 try builder.add(group: select)
             case .exists(negated: let negated, let select):

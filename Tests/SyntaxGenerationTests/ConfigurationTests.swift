@@ -14,7 +14,7 @@ struct ConfigurationTests {
         let output = SyntaxGenerator.generate(rules: rules, configuration: configuration)
         #expect(output.warnings.isEmpty, "\(output.warnings.joined(separator: "\n"))")
         // Helper rules are recognised where diagrams draw them inline.
-        let select = try #require(output.files["Generated+SelectStatement.swift"])
+        let select = try #require(output.files["SelectStatement.swift"])
         #expect(select.contains("var limit: Limit?") && select.contains("var orderBy: OrderBy?"))
     }
 }

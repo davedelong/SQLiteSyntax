@@ -77,7 +77,16 @@ From the full scratch run: ~84 unmapped-token warnings, 78 fallback names, 4 dup
   (not overrides) where the same fix recurs.
 - Done when: a full generation run prints no warnings.
 
-## Phase 4 — Migrate to generated types (3–5 days)
+## Phase 4 — Migrate to generated types ✅ done
+
+Done: generated types are public, top-level, with public memberwise initialisers (`codegen.json`
+`"namespace": ""`, `"public": true`). 60 hand-written types were deleted; `Core/` keeps only
+`Expression`, `LiteralValue`, `BindParameter`, `Name`, `List`, `Group`, operators, `SortDirection`,
+`Syntax`, and the token types `NumericLiteral`/`ModuleArgument`. `Expression` now uses the generated
+`FunctionArguments`, `FilterClause`, `OverClause`, `TypeName`, `RaiseFunction`, `SelectStatement`.
+The `Convenience/` layer keeps its API (`Table.Create`, `Select.star(from:)`, `ColumnDefinition.primaryKey`…)
+and the original tests pass with unchanged SQL. Generator: `{ sep x }` becomes `[X]` (separator before
+each item). Original notes:
 
 - Make generated types public with public memberwise initialisers; drop the `Generated`
   namespace as each type replaces its hand-written original.

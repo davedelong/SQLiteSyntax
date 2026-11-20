@@ -197,7 +197,17 @@
         "CreateTableStatement.Definition.columns.option": "tableConstraints",
         "InsertStatement.Source.rows.option": "values",
         "DeleteStatementLimited.limit": "limiting",
-        "ColumnConstraint.Constraint.generated.as": "expression"
+        "ColumnConstraint.Constraint.generated.as": "expression",
+        "OrderBy.orderBy": "terms",
+        "FunctionArguments.orderBy": "arguments",
+        "ResultColumn.tableName": "star",
+        "SelectCore.select.select": "selection",
+        "ColumnConstraint.Constraint.foreignKeyClause": "foreignKey",
+        "ColumnDefinition.columnName": "name",
+        "ColumnDefinition.columnConstraints": "constraints",
+        "ForeignKeyClause.columnNameList": "columns",
+        "CommonTableExpression.as": "materialized",
+        "Limit.Offset.expression": "comma"
     },
     "extraRules": [
         "limit_clause = 'LIMIT', expr, [(',', expr) | ('OFFSET', expr)];",
@@ -205,5 +215,7 @@
         "values_clause = 'VALUES', '(', expr, {',', expr}, ')', {',', '(', expr, {',', expr}, ')'};",
         "with_prefix = 'WITH', ['RECURSIVE'], common_table_expression, {',', common_table_expression};",
         "index_hint = ('INDEXED', 'BY', index_name) | ('NOT', 'INDEXED');"
-    ]
+    ],
+    "namespace": "",
+    "public": true
 }

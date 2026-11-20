@@ -10,8 +10,8 @@ indirect enum Template {
     case flag(String, [String])
     /// `if let name { … }`: an optional group with fixed tokens around one stored value.
     case optional(String, [Template])
-    /// A list of `Syntax` values joined by a separator.
-    case list(String, separator: String?, nonEmpty: Bool)
+    /// A list of `Syntax` values joined by a separator (or, if `leading`, with it before each value).
+    case list(String, separator: String?, nonEmpty: Bool, leading: Bool = false)
 }
 
 struct Field {
@@ -199,8 +199,8 @@ final class TypeBuilder {
                         var innerBody: [Template] = []
                         for n in innerItems {
                             if case .text(let t) = n { innerBody.append(.text(t)) }
-                            else if case .list(_, let sep, let nonEmpty) = n {
-                                innerBody.append(.list(name, separator: sep.isEmpty ? nil : sep.joined(separator: " "), nonEmpty: nonEmpty))
+                            else if case .list(_, let sep, let nonEmpty, let leading) = n {
+                                innerBody.append(.list(name, separator: sep.isEmpty ? nil : sep.joined(separator: " "), nonEmpty: nonEmpty, leading: leading))
                             } else { innerBody.append(.value(name)) }
                         }
                         body.append(.optional(name, innerBody))
@@ -216,10 +216,10 @@ final class TypeBuilder {
                         body.append(.value(name))
                     }
 
-                case .list(_, let sep, let nonEmpty):
+                case .list(_, let sep, let nonEmpty, let leading):
                     let (name, type, _) = storage(for: item, hint: precedingKeywords, scope: &scope, fallbackHint: nil)
                     fields.append(Field(name: name, type: type, defaultValue: nonEmpty ? nil : "[]", nonEmptyList: nonEmpty))
-                    body.append(.list(name, separator: sep.isEmpty ? nil : sep.joined(separator: " "), nonEmpty: nonEmpty))
+                    body.append(.list(name, separator: sep.isEmpty ? nil : sep.joined(separator: " "), nonEmpty: nonEmpty, leading: leading))
 
                 default:
                     let (name, type, target) = storage(for: item, hint: precedingKeywords, scope: &scope,
@@ -257,7 +257,7 @@ final class TypeBuilder {
                 scope.owner.nested.append(nested)
                 return (name, nested.name, nested.path)
 
-            case .list(let element, _, let nonEmpty):
+            case .list(let element, _, let nonEmpty, _):
                 let elementType: String
                 let name: String
                 if case .value(let symbol, let isReference) = element {
