@@ -29,7 +29,11 @@ public struct Name<T>: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         var needsEscaping = value.contains(where: \.isProbablySpecial)
-        needsEscaping = needsEscaping || SQLiteKeywords.all.contains(value.uppercased())
+        // A keyword is quoted, except a word of a declared type that SQLite reads as an identifier anyway:
+        // SQLite dequotes a type as a whole, so `"always" "generated"` would become just `always`.
+        let upper = value.uppercased()
+        let plainTypeWord = T.self == TypeWord.self && SQLiteKeywords.fallbackToIdentifier.contains(upper)
+        needsEscaping = needsEscaping || (SQLiteKeywords.all.contains(upper) && !plainTypeWord)
         // An unquoted name cannot be empty or start with a digit (it would read as a number).
         needsEscaping = needsEscaping || value.isEmpty || value.first!.isNumber
         
@@ -52,6 +56,8 @@ extension Name: ExpressibleByUnicodeScalarLiteral, ExpressibleByExtendedGrapheme
 
 public protocol NamedStructure { }
 
+/// A word of a column's declared type, e.g. `VARCHAR` or each word of `DOUBLE PRECISION`.
+public enum TypeWord: NamedStructure { }
 public enum Table: NamedStructure { }
 public enum Schema: NamedStructure { }
 public enum Column: NamedStructure { }

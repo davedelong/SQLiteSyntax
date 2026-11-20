@@ -50,12 +50,19 @@ struct ColumnDefinitionTests {
         // What we print means the same to SQLite (its type text keeps our quoting and spacing).
         func plain(_ type: String) -> String { type.lowercased().filter { !" \"()".contains($0) } }
         let reprinted = try Self.sqlite(column.sql())
-        // Keyword words in a type name are printed quoted (`"always" "generated"`), and SQLite dequotes a
-        // type as a whole, keeping only the first quoted word.
-        withKnownIssue("quoted keyword words in a type name") {
-            #expect(plain(reprinted.type) == plain(expected.type))
-        } when: { definition == "a always generated" }
+        #expect(plain(reprinted.type) == plain(expected.type))
         #expect(reprinted.generated == expected.generated)
+    }
+
+    /// SQLite dequotes a declared type as a whole (`"always" "generated"` becomes `always`), so words it
+    /// reads as identifiers are printed plain; other keywords still need quotes.
+    @Test func typeWordsArePrintedAsSQLiteReadsThem() throws {
+        #expect(try ColumnDefinition(parsing: "a always generated").sql() == "a always generated")
+        #expect(try TypeName(names: ["DOUBLE", "precision"]).sql() == "DOUBLE precision")
+        #expect(try TypeName(names: ["primary"]).sql() == "\"primary\"")
+        #expect(try TypeName(names: ["my type"]).sql() == "\"my type\"")
+        // Elsewhere keywords are still quoted.
+        #expect(try Name<Column>("always").sql() == "\"always\"")
     }
 
     @Test func generatedAlwaysMovesFromTheTypeNameToTheConstraint() throws {
