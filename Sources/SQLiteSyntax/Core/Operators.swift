@@ -21,34 +21,35 @@ public enum UnaryOperator: Syntax {
         fatalError()
     }
     
-    internal func build(using builder: inout SyntaxBuilder, argument: any Syntax) throws(SyntaxError) {
+    /// Prints the operator with its operand, parenthesized if it binds less tightly than the operator.
+    internal func build(using builder: inout SyntaxBuilder, operand: Expression) throws(SyntaxError) {
         switch self {
             case .bitwiseNot:
                 builder.add("~")
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
             case .plus:
                 builder.add("+")
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
             case .negate:
                 builder.add("-")
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
             case .collate(let name):
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
                 builder.add("COLLATE")
                 try builder.add(name)
             case .escape(let name):
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
                 builder.add("ESCAPE")
                 try builder.add(name)
             case .isNull:
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
                 builder.add("IS", "NULL")
             case .notNull:
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
                 builder.add("NOT", "NULL")
             case .not:
                 builder.add("NOT")
-                try builder.add(argument)
+                try builder.addOperand(operand, minimum: precedence)
         }
     }
 }

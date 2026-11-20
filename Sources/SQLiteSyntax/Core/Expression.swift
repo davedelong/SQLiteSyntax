@@ -59,8 +59,7 @@ public indirect enum Expression: Syntax {
             case .unaryOperator(.negate, .literalValue(.real(let d))) where d.sign == .plus && !d.isNaN:
                 builder.add("-" + Literals.real(d))
             case .unaryOperator(let o, let e):
-                let argument: any Syntax = e.precedence < o.precedence ? Group(contents: e) : e
-                try o.build(using: &builder, argument: argument)
+                try o.build(using: &builder, operand: e)
             case .binaryOperator(let left, let op, let right):
                 // All binary operators are left-associative: an equal-precedence right operand needs parentheses.
                 try builder.addOperand(left, minimum: op.precedence)
