@@ -23,16 +23,23 @@ public struct CodegenConfiguration: Decodable, Sendable {
     /// The namespace enum generated types are nested in.
     public var namespace: String
 
-    enum CodingKeys: String, CodingKey { case rules, references, tokens, keywordEnums, names, namespace }
+    /// Helper rules in the grammar file's EBNF format (Gramophone syntax, `_` for `-`), generated like
+    /// diagram rules. Wherever a diagram contains a fragment with exactly the same syntax, it references
+    /// the helper instead, so repeated fragments (e.g. `LIMIT …`) share one type.
+    public var extraRules: String
+
+    enum CodingKeys: String, CodingKey { case rules, references, tokens, keywordEnums, names, namespace, extraRules }
 
     public init(rules: [String], references: [String: String] = [:], tokens: [String: String] = [:],
-                keywordEnums: [String: String] = [:], names: [String: String] = [:], namespace: String = "Generated") {
+                keywordEnums: [String: String] = [:], names: [String: String] = [:], namespace: String = "Generated",
+                extraRules: String = "") {
         self.rules = rules
         self.references = references
         self.tokens = tokens
         self.keywordEnums = keywordEnums
         self.names = names
         self.namespace = namespace
+        self.extraRules = extraRules
     }
 
     public init(from decoder: any Decoder) throws {
@@ -43,5 +50,11 @@ public struct CodegenConfiguration: Decodable, Sendable {
         keywordEnums = try c.decodeIfPresent([String: String].self, forKey: .keywordEnums) ?? [:]
         names = try c.decodeIfPresent([String: String].self, forKey: .names) ?? [:]
         namespace = try c.decodeIfPresent(String.self, forKey: .namespace) ?? "Generated"
+        // A string, or an array of lines (easier to read in JSON).
+        if let lines = try? c.decodeIfPresent([String].self, forKey: .extraRules) {
+            extraRules = lines.joined(separator: "\n")
+        } else {
+            extraRules = try c.decodeIfPresent(String.self, forKey: .extraRules) ?? ""
+        }
     }
 }

@@ -35,9 +35,9 @@ extension Generated {
 
             func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
                 switch self {
-                    case .check(let expression):
+                    case .check(let check):
                         builder.add("CHECK", "(")
-                        try builder.add(expression)
+                        try builder.add(check)
                         builder.add(")")
                     case .collate(let collationName):
                         builder.add("COLLATE")

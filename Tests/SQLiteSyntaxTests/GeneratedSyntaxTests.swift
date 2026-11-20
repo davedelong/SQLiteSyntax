@@ -64,8 +64,8 @@ struct GeneratedSyntaxTests {
     }
 
     @Test func emptyUsingListIsRejected() {
-        // `sql()` does not validate the top-level value (existing library behavior), so call validate() directly.
-        #expect(throws: SyntaxError.self) { try G.JoinConstraint.using([]).validate() }
+        // The list lives in the nested ColumnNameList, which is validated when it is built.
+        #expect(throws: SyntaxError.self) { try G.JoinConstraint.using(G.ColumnNameList(columnNames: [])).sql() }
     }
 
     // MARK: Same output as the hand-written types
@@ -77,7 +77,7 @@ struct GeneratedSyntaxTests {
                 == FrameSpec(target: .groups, scope: .between(.unboundedPreceding, .following(2)), exclude: .noOthers).sql())
         #expect(try G.CompoundOperator.union(all: true).sql() == CompoundOperator.unionAll.sql())
         #expect(try G.JoinConstraint.on(a).sql() == JoinConstraint.on(a).sql())
-        #expect(try G.FilterClause(expression: a).sql() == FilterClause(where: a).sql())
+        #expect(try G.FilterClause(where: a).sql() == FilterClause(where: a).sql())
     }
 
     // MARK: Hand-written fixes found by the generated types
@@ -173,7 +173,7 @@ struct GeneratedSyntaxTests {
         for kind in [nil] + G.JoinOperator.Kind.allCases {
             expectAccepted("SELECT * FROM t \(try G.JoinOperator.join(natural: true, kind: kind).sql()) u")
             let on = G.JoinConstraint.on(.binaryOperator(.columnName(nil, "t", "a"), .equals, .columnName(nil, "u", "a")))
-            let using = G.JoinConstraint.using(["a"])
+            let using = G.JoinConstraint.using(G.ColumnNameList(columnNames: ["a"]))
             for constraint in [on, using] {
                 expectAccepted("SELECT * FROM t \(try G.JoinOperator.join(kind: kind).sql()) u \(try constraint.sql())")
             }
@@ -182,13 +182,13 @@ struct GeneratedSyntaxTests {
 
     @Test func filterClauseIncludesWhere() throws {
         // The grammar is `'FILTER' '(' 'WHERE' expr ')'`.
-        #expect(try G.FilterClause(expression: a).sql() == "FILTER ( WHERE a )")
+        #expect(try G.FilterClause(where: a).sql() == "FILTER ( WHERE a )")
     }
 
     @Test func compoundOperatorsAndFiltersParse() throws {
         for op in [G.CompoundOperator.except, .intersect, .union(), .union(all: true)] {
             expectAccepted("SELECT a FROM t \(try op.sql()) SELECT b FROM u")
         }
-        expectAccepted("SELECT count(*) \(try G.FilterClause(expression: .binaryOperator(a, .greaterThan, 1)).sql()) FROM t")
+        expectAccepted("SELECT count(*) \(try G.FilterClause(where: .binaryOperator(a, .greaterThan, 1)).sql()) FROM t")
     }
 }

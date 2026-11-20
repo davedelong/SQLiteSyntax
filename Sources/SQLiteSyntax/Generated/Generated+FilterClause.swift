@@ -3,11 +3,11 @@
 extension Generated {
     /// `filter-clause ::= 'FILTER' '(' 'WHERE' expr ')'`
     struct FilterClause: Syntax {
-        var expression: Expression
+        var `where`: Expression
 
         func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
             builder.add("FILTER", "(", "WHERE")
-            try builder.add(expression)
+            try builder.add(`where`)
             builder.add(")")
         }
     }

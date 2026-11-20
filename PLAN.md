@@ -57,7 +57,15 @@ as plain structs; Swift needs indirection, and today the compiler crashes instea
 - Done when: generating all 66 non-hand-written rules (the scratch config) compiles and the
   `GeneratedSyntaxTests` pattern passes for the SELECT family.
 
-## Phase 3 — Generator: complete the configuration (1–2 days)
+## Phase 3 — Generator: complete the configuration ✅ done
+
+Done: all 67 diagram rules (everything except the hand-written `expr`, `literal-value`,
+`numeric-literal`, and `comment-syntax`) plus 5 helper rules generate into `Generated/` and compile
+with zero warnings (`ConfigurationTests`). New generator features: rule recognition (a fragment with
+exactly another rule's syntax references that rule, e.g. select-stmt → select-core,
+`( col, … )` → column-name-list), helper rules in `codegen.json` (`extraRules`: `Limit`,
+`OrderBy`, `With`, `ValuesClause`, `IndexHint`), and better default names (nearest keywords,
+first value, acronyms). Original notes:
 
 From the full scratch run: ~84 unmapped-token warnings, 78 fallback names, 4 duplicate members.
 

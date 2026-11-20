@@ -55,7 +55,9 @@ struct RecursionTests {
         let output = SyntaxGenerator.generate(rules: rules, configuration: CodegenConfiguration(
             rules: names, references: ["expr": "Expression", "literal-value": "LiteralValue", "numeric-literal": "NumericLiteral"]))
         #expect(output.notes.contains("indirect enum TableOrSubquery"))
-        #expect(output.notes.contains { $0.hasPrefix("indirect enum SelectStatement.") })
+        // select-stmt draws select-core inline; recognition makes it reference SelectCore instead.
+        #expect(output.notes.contains("indirect enum SelectCore"))
+        #expect(!output.notes.contains { $0.hasPrefix("indirect enum SelectStatement.") })
         #expect(!output.notes.contains { $0.hasPrefix("boxed field") })
     }
 

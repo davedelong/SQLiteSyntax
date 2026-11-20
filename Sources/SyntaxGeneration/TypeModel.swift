@@ -128,18 +128,24 @@ final class TypeBuilder {
         if scope.used.contains(name) {
             var n = 2
             while scope.used.contains("\(name)\(n)") { n += 1 }
-            warnings.append("\(scope.path).\(name)\(n): duplicate member name; consider an override")
-            name = "\(name)\(n)"
+            let numbered = "\(name)\(n)"
+            if let override = configuration.names["\(scope.path).\(numbered)"] {
+                name = override
+            } else {
+                warnings.append("\(scope.path).\(numbered): duplicate member name; consider an override")
+                name = numbered
+            }
         }
         scope.used.insert(name)
         return name
     }
 
-    func fallbackName(scope: inout Scope) -> String {
+    func fallbackName(scope: inout Scope, for node: Node? = nil) -> String {
         scope.fallbackCount += 1
         let proposed = scope.fallbackCount == 1 ? "option" : "option\(scope.fallbackCount)"
         if configuration.names["\(scope.path).\(proposed)"] == nil {
-            warnings.append("\(scope.path).\(proposed): no name could be derived; add an override to codegen.json")
+            let context = node.map { "  — for: \($0.ebnf)" } ?? ""
+            warnings.append("\(scope.path).\(proposed): no name could be derived; add an override to codegen.json\(context)")
         }
         return proposed
     }
@@ -163,7 +169,14 @@ final class TypeBuilder {
             switch item {
                 case .text(let t):
                     body.append(.text(t))
-                    precedingKeywords = Naming.keywordWords(t)
+                    // Name what follows after the closest keywords: `FILTER ( WHERE expr` -> `where`,
+                    // `CHECK ( expr` -> `check`.
+                    let afterPunctuation = t.reversed().prefix { Naming.keywordWords([$0]).count > 0 }.reversed()
+                    precedingKeywords = Naming.keywordWords(afterPunctuation.isEmpty ? t : Array(afterPunctuation))
+                    if afterPunctuation.isEmpty, let lastWordIndex = t.lastIndex(where: { !Naming.keywordWords([$0]).isEmpty }) {
+                        let run = t[...lastWordIndex].reversed().prefix { !Naming.keywordWords([$0]).isEmpty }.reversed()
+                        precedingKeywords = Naming.keywordWords(Array(run))
+                    }
                     continue
 
                 case .optional(let inner) where !inner.isStored:
@@ -194,8 +207,9 @@ final class TypeBuilder {
                     } else {
                         // several stored values in an optional group: a nested struct
                         let leading = Naming.keywordWords(innerItems.prefix { !$0.isStored }.flatMap(\.allTexts))
-                        let proposed = leading.isEmpty ? (precedingKeywords.isEmpty ? fallbackName(scope: &scope) : Naming.lowerCamel(precedingKeywords))
-                                                       : Naming.lowerCamel(leading)
+                        let proposed = !leading.isEmpty ? Naming.lowerCamel(leading)
+                            : !precedingKeywords.isEmpty ? Naming.lowerCamel(precedingKeywords)
+                            : firstValueName(innerItems) ?? fallbackName(scope: &scope, for: item)
                         let name = uniqueName(proposed, scope: &scope)
                         let nested = nestedStruct(named: nestedTypeName(forMember: name, in: scope.owner), items: innerItems, in: scope.owner)
                         fields.append(Field(name: name, type: nested.name + "?", defaultValue: "nil", target: nested.path))
@@ -224,7 +238,9 @@ final class TypeBuilder {
         switch node {
             case .value(let symbol, let isReference):
                 let type = valueType(symbol: symbol, isReference: isReference)
-                let base = isReference ? Naming.lowerFirst(baseName(type)) : Naming.lowerCamel(Naming.words(symbol))
+                var base = isReference ? Naming.lowerFirst(baseName(type)) : Naming.lowerCamel(Naming.words(symbol))
+                // `expression` says nothing; `WHERE expr` -> `where`, `HAVING expr` -> `having`.
+                if baseName(type) == "Expression", !hint.isEmpty { base = Naming.lowerCamel(hint) }
                 let target = isReference && generatedRules.contains(symbol) ? typeName(forRule: symbol) : nil
                 return (uniqueName(base, scope: &scope), type, target)
 
@@ -232,7 +248,7 @@ final class TypeBuilder {
                 if let existing = keywordEnum(for: alternatives) {
                     return (uniqueName(Naming.lowerFirst(existing), scope: &scope), existing, nil)
                 }
-                let proposed = !hint.isEmpty ? Naming.lowerCamel(hint) : (fallbackHint ?? fallbackName(scope: &scope))
+                let proposed = !hint.isEmpty ? Naming.lowerCamel(hint) : (fallbackHint ?? fallbackName(scope: &scope, for: node))
                 let name = uniqueName(proposed, scope: &scope)
                 let nested = TypeDecl(name: nestedTypeName(forMember: name, in: scope.owner),
                                       path: "\(scope.owner.path).\(nestedTypeName(forMember: name, in: scope.owner))",
@@ -243,13 +259,16 @@ final class TypeBuilder {
 
             case .list(let element, _, let nonEmpty):
                 let elementType: String
-                let proposed: String
+                let name: String
                 if case .value(let symbol, let isReference) = element {
                     elementType = valueType(symbol: symbol, isReference: isReference)
-                    proposed = (isReference ? Naming.lowerFirst(baseName(elementType)) : Naming.lowerCamel(Naming.words(symbol))) + "s"
+                    // A multi-word clause names the list (`GROUP BY` -> `groupBy`); otherwise the element type does.
+                    let proposed = hint.count > 1 ? Naming.lowerCamel(hint)
+                        : (isReference ? Naming.lowerFirst(baseName(elementType)) : Naming.lowerCamel(Naming.words(symbol))) + "s"
+                    name = uniqueName(proposed, scope: &scope)
                 } else {
-                    proposed = !hint.isEmpty ? Naming.lowerCamel(hint) : fallbackName(scope: &scope)
-                    let elementName = nestedTypeName(forMember: proposed + "Element", in: scope.owner)
+                    name = uniqueName(!hint.isEmpty ? Naming.lowerCamel(hint) : fallbackName(scope: &scope, for: node), scope: &scope)
+                    let elementName = nestedTypeName(forMember: name + "Element", in: scope.owner)
                     if case .choice(let alternatives) = element {
                         let nested = TypeDecl(name: elementName, path: "\(scope.owner.path).\(elementName)", grammar: element.ebnf)
                         nested.kind = enumeration(alternatives, in: nested, prefix: [], suffix: [])
@@ -259,12 +278,11 @@ final class TypeBuilder {
                     }
                     elementType = elementName
                 }
-                let name = uniqueName(proposed, scope: &scope)
                 // Lists store their elements on the heap, so they never close a cycle.
                 return (name, nonEmpty ? "List<\(elementType)>" : "[\(elementType)]", nil)
 
             case .sequence(let items):
-                let name = uniqueName(!hint.isEmpty ? Naming.lowerCamel(hint) : fallbackName(scope: &scope), scope: &scope)
+                let name = uniqueName(!hint.isEmpty ? Naming.lowerCamel(hint) : fallbackName(scope: &scope, for: node), scope: &scope)
                 let nested = nestedStruct(named: nestedTypeName(forMember: name, in: scope.owner), items: items, in: scope.owner)
                 return (name, nested.name, nested.path)
 
@@ -296,13 +314,31 @@ final class TypeBuilder {
                 let type = valueType(symbol: symbol, isReference: isReference)
                 proposed = isReference ? Naming.lowerFirst(baseName(type)) : Naming.lowerCamel(Naming.words(symbol))
             }
+            if proposed == nil { proposed = firstValueName(items) }
             if proposed == nil { proposed = Naming.name(forTexts: alternative.allTexts) }
-            let caseName = uniqueName(proposed ?? fallbackName(scope: &caseScope), scope: &caseScope)
+            let caseName = uniqueName(proposed ?? fallbackName(scope: &caseScope, for: alternative), scope: &caseScope)
             var payloadScope = Scope(owner: decl, path: "\(decl.path).\(caseName)")
             let (payload, body) = members(items, scope: &payloadScope, hintForSingleChoice: caseName)
             cases.append(Case(name: caseName, payload: payload, body: body, grammar: alternative.ebnf))
         }
         return .enumeration(cases: cases, prefix: prefix, suffix: suffix)
+    }
+
+    /// The member name of the first value in a sequence, preferring required values over optional ones,
+    /// e.g. `expr [ [ 'AS' ] column-alias ]` -> `expression`, `[ 'AS' ] column-alias` -> `columnAlias`.
+    func firstValueName(_ items: [Node]) -> String? {
+        func name(_ n: Node) -> String? {
+            guard case .value(let symbol, let isReference) = n else { return nil }
+            if isReference {
+                // Mapped references (e.g. `expr` -> `Expression`) are named after their type.
+                if generatedRules.contains(symbol) { return Naming.lowerFirst(typeName(forRule: symbol)) }
+                if let mapped = configuration.references[symbol] { return Naming.lowerFirst(baseName(mapped)) }
+            }
+            return Naming.lowerCamel(Naming.words(symbol))
+        }
+        if let required = items.lazy.compactMap(name).first { return required }
+        for case .optional(let inner) in items { if let n = inner.items.lazy.compactMap(name).first { return n } }
+        return nil
     }
 
     func keywordEnum(for alternatives: [Node]) -> String? {

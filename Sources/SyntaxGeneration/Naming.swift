@@ -18,8 +18,14 @@ enum Naming {
         w.prefix(1).uppercased() + w.dropFirst()
     }
 
+    /// `Expression` -> `expression`, `SQLStatement` -> `sqlStatement`, `CTETableName` -> `cteTableName`.
     static func lowerFirst(_ s: String) -> String {
-        s.prefix(1).lowercased() + s.dropFirst()
+        let chars = Array(s)
+        var upper = 0
+        while upper < chars.count, chars[upper].isUppercase { upper += 1 }
+        // In a leading acronym, the last capital starts the next word (unless the acronym ends the name).
+        let count = upper > 1 && upper < chars.count ? upper - 1 : max(upper, 1)
+        return String(chars.prefix(count)).lowercased() + String(chars.dropFirst(count))
     }
 
     /// Keyword words from fixed tokens, skipping punctuation.
