@@ -11,7 +11,7 @@ extension ColumnDefinition: SQLParsable {
                 return value
             }
             let constraints = p.repeated(separator: []) { (p: inout Parser) throws(ParseError) -> ColumnConstraint in try ColumnConstraint.parse(&p) }
-            return ColumnDefinition(name: name, typeName: typeName, constraints: constraints)
+            return ColumnDefinition(name: name, typeName: typeName, constraints: constraints).adjustedAfterParsing()
         }
     }
 }

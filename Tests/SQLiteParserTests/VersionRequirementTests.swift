@@ -27,6 +27,8 @@ struct VersionRequirementTests {
         ("SELECT a FROM t WINDOW w AS (ORDER BY a)", SQLiteVersion(3, 25, 0)),
         ("SELECT a FROM t ORDER BY a NULLS LAST", SQLiteVersion(3, 30, 0)),
         ("CREATE TABLE t (a, b AS (a * 2) STORED, CHECK (b > 0))", SQLiteVersion(3, 0, 0)),   // keywords say baseline (see README)
+        ("CREATE TABLE t (a, b GENERATED ALWAYS AS (a * 2))", SQLiteVersion(3, 31, 0)),
+        ("CREATE TABLE t (a, b INT GENERATED ALWAYS AS (a * 2) STORED)", SQLiteVersion(3, 31, 0)),
         ("DELETE FROM t RETURNING *", SQLiteVersion(3, 35, 0)),
         ("WITH c AS MATERIALIZED (SELECT 1) SELECT * FROM c", SQLiteVersion(3, 35, 0)),
     ]
@@ -46,21 +48,6 @@ struct VersionRequirementTests {
             #expect(sqliteVersion == earlier)
         } catch {
             Issue.record("unexpected \(error)")
-        }
-    }
-
-    /// `b GENERATED ALWAYS AS (…)` parses with `GENERATED ALWAYS` as b's type name (both are keywords that
-    /// can be names), so the generated column, and its 3.31.0 requirement, are missed. SQLite reads them as
-    /// keywords because they can start a column constraint there.
-    @Test func generatedAlwaysIsMisparsedAsATypeName() throws {
-        let statement = try SQLStatement(parsing: "CREATE TABLE t (a, b GENERATED ALWAYS AS (a * 2))")
-        withKnownIssue("type names take keywords that could start a column constraint") {
-            #expect(throws: SyntaxError.self) { try statement.sql(sqliteVersion: SQLiteVersion(3, 30, 0)) }
-        }
-        // A real type name in front doesn't help: the type name takes the keywords too.
-        let typed = try SQLStatement(parsing: "CREATE TABLE t (a, b INT GENERATED ALWAYS AS (a * 2))")
-        withKnownIssue("same: INT GENERATED ALWAYS becomes the type name") {
-            #expect(throws: SyntaxError.self) { try typed.sql(sqliteVersion: SQLiteVersion(3, 30, 0)) }
         }
     }
 
