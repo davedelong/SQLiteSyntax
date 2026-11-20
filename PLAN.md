@@ -7,6 +7,8 @@ whole grammar, and work in both directions — building SQL (`sql()`) and parsin
 ## Where things stand (2026-11-20)
 
 This table is the starting point of the plan. Phases 0–8 are now done; each phase below says what it changed.
+Since then the generator (`GrammarExtraction`, `SyntaxGeneration`, `sqlite-grammar`, the plugin,
+`Grammar/codegen.json` and `Grammar/sqlite.ebnf`) has moved to the sibling `SQLiteSyntaxGenerator` package.
 
 | Piece | State |
 |---|---|
@@ -144,7 +146,7 @@ Original notes:
 ## Phase 7 — Corpus agreement testing ✅ done
 
 Done: `CorpusTests` (opt-in) checks 47,745 statements from SQLite's test suite: 99.81% agreement,
-0 round-trip failures. Every remaining disagreement is classified in `Grammar/CORPUS.md`. Fixes it
+0 round-trip failures. Every remaining disagreement is classified in `CORPUS.md`. Fixes it
 drove: grammar patches for parse.y syntax missing from the diagrams (`codegen.json` `grammarPatches`),
 required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JOIN_KW names, empty
 `IN ()`, negative numeric literals round-trip, `Int64.min` spelled plainly. Original notes:
@@ -175,15 +177,14 @@ required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JO
 
 ## Open decisions
 
-1. **Tooling package split.** Keep the grammar tooling in this package (current) or move it to a
-   sibling package so library consumers never fetch Gramophone/Flexer/swift-markdown and the
-   library can be tagged. Needed before the first release tag.
+1. ~~**Tooling package split**~~ — done: the generator lives in the sibling `SQLiteSyntaxGenerator`
+   package, so this package has no dependencies.
 2. ~~**`LiteralValue` shape**~~ — decided: typed `.integer(Int64)` / `.real(Double)`.
 3. **Generated naming policy** (Phase 3–4): match existing hand-written names, or accept
    grammar-derived names and update the `Convenience/` layer.
 4. ~~**Where generated parsers live**~~ — decided: `SQLiteParser/Generated`.
 5. ~~**Grammar authority for validation**~~ — decided: the diagrams, plus targeted `grammarPatches`
-   for parse.y syntax that matters in practice (see `Grammar/CORPUS.md`); rarer legacy forms are
+   for parse.y syntax that matters in practice (see `CORPUS.md`); rarer legacy forms are
    documented, not supported.
 
 ## Rough total

@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// A `numeric-literal` token. Used by generated types (see Grammar/codegen.json `tokens`).
+/// A `numeric-literal` token. Used by generated types (see `tokens` in SQLiteSyntaxGenerator/Grammar/codegen.json).
 public struct NumericLiteral: Syntax, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
     public var value: Decimal
 
