@@ -190,13 +190,20 @@ public indirect enum Expression: Syntax {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
     }
 
-    /// Parses SQL text that consists of comma-separated expressions, e.g. `a, b + 1, max(c)`.
+    /// Parses SQL text that consists of expressions separated by semicolons, e.g. `a + 1; max(b, c); 'x'`.
     ///
-    /// Empty input gives an empty array. A trailing `;` is allowed, as in `init(parsing:)`.
+    /// Empty items (`a;;b`, a trailing `;`) are skipped, as in `SQLStatementList`, so empty input gives
+    /// an empty array.
     public static func parseAll(_ sql: String) throws(ParseError) -> [Self] {
         try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) -> [Self] in
-            if p.isAtEnd || p.current.isSymbol(";") { return [] }
-            return try p.parseExpressionList()
+            var expressions: [Self] = []
+            while !p.isAtEnd {
+                if p.accept(symbol: ";") { continue }
+                expressions.append(try Self.parse(&p))
+                // Anything but `;` here is left for parseAll to report.
+                guard p.current.isSymbol(";") else { break }
+            }
+            return expressions
         }
     }
 }

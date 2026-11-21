@@ -93,13 +93,15 @@ struct PublicAPITests {
     }
 
     @Test func parseAllExpressions() throws {
-        #expect(try Expression.parseAll("a, b + 1, max(c, d), (SELECT 1), x IN (1, 2)").map { try $0.sql() }
-                == ["a", "b + 1", "max ( c , d )", "( SELECT 1 )", "x IN ( 1 , 2 )"])
-        #expect(try Expression.parseAll("42;").map { try $0.sql() } == ["42"])
-        #expect(try Expression.parseAll("").isEmpty)
-        #expect(try Expression.parseAll("  -- nothing here\n").isEmpty)
-        #expect(try Expression.parseAll(";").isEmpty)
-        for bad in ["a,", ", a", "a b", "a,,b", "a; b"] {
+        func sql(_ text: String) throws -> [String] { try Expression.parseAll(text).map { try $0.sql() } }
+        #expect(try sql("a + 1; max(b, c); (SELECT 1); x IN (1, 2)")
+                == ["a + 1", "max ( b , c )", "( SELECT 1 )", "x IN ( 1 , 2 )"])
+        #expect(try sql("42;") == ["42"])
+        #expect(try sql("a;;b;\n; -- done\n") == ["a", "b"])
+        #expect(try sql("CASE WHEN a THEN ';' END; b") == ["CASE WHEN a THEN ';' END", "b"])
+        #expect(try sql("").isEmpty)
+        #expect(try sql("  /* nothing */ ").isEmpty)
+        for bad in ["a, b", "a b", "a; +", "a;)"] {
             #expect(throws: ParseError.self, "\(bad)") { try Expression.parseAll(bad) }
         }
     }
