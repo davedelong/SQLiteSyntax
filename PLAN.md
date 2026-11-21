@@ -185,8 +185,11 @@ required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JO
 1. ~~**Tooling package split**~~ — done: the generator lives in the sibling `SQLiteSyntaxGenerator`
    package, so this package has no dependencies.
 2. ~~**`LiteralValue` shape**~~ — decided: typed `.integer(Int64)` / `.real(Double)`.
-3. **Generated naming policy** (Phase 3–4): match existing hand-written names, or accept
-   grammar-derived names and update the `Convenience/` layer.
+3. ~~**Generated naming policy**~~ — decided: names come from the grammar, rewritten by `nameWords`
+   rules in codegen.json (drop "Clause", "SQL" in capitals, "Def" → "Definition"); `names` overrides
+   cover what the grammar can't name well (placeholders like `option`, misleading names) and the few
+   places a shorter name reads better (`.with`, `ColumnDefinition.name`, `OrderBy.terms`). The
+   generator warns about overrides that match nothing.
 4. ~~**Where generated parsers live**~~ — decided: first `SQLiteParser/Generated`; now `SQLiteSyntax/Generated/Parser`, with the parser folded into the one library.
 5. ~~**Grammar authority for validation**~~ — decided: the diagrams, plus targeted `grammarPatches`
    for parse.y syntax that matters in practice (see `CORPUS.md`); rarer legacy forms are
