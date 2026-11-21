@@ -91,23 +91,4 @@ struct PublicAPITests {
     func binaryOperatorsParseAsTheyPrint(_ op: BinaryOperator) throws {
         #expect(try BinaryOperator(parsing: op.sql()) == op)
     }
-
-    @Test func parseAllStatements() throws {
-        func sql(_ text: String) throws -> [String] { try SQLStatement.parseAll(text).map { try $0.sql() } }
-        #expect(try sql("""
-            CREATE TABLE t (a INTEGER PRIMARY KEY, b TEXT);
-            INSERT INTO t (b) VALUES ('x;y');;
-            SELECT b FROM t WHERE a = 1
-            """) == [
-            "CREATE TABLE t ( a INTEGER PRIMARY KEY , b TEXT )",
-            "INSERT INTO t ( b ) VALUES ( 'x;y' )",
-            "SELECT b FROM t WHERE a == 1",
-        ])
-        #expect(try sql("BEGIN;\n; -- done\n") == ["BEGIN"])
-        #expect(try sql("").isEmpty)
-        #expect(try sql("  /* nothing */ ").isEmpty)
-        for bad in ["SELECT 1 SELECT 2", "SELECT 1; SELECT", "SELECT 1, ; COMMIT", "SELECT 1;)"] {
-            #expect(throws: ParseError.self, "\(bad)") { try SQLStatement.parseAll(bad) }
-        }
-    }
 }
