@@ -20,7 +20,7 @@ commit history.
 Every `Syntax` value can:
 
 - **build SQL** for a target release (`sql(sqliteVersion:)`, by default the linked SQLite), throwing
-  `SyntaxError.unsupportedVersion` for syntax that release can't run, `unsupportedOption` for syntax its compile-time options leave out (a missing `ENABLE_…` or a set `OMIT_…`), and `invalidSyntax` for values SQLite
+  `SyntaxError.unsupportedVersion` for syntax that release can't run, `unsupportedOption` / `disallowedOption` for syntax its compile-time options leave out (a missing `ENABLE_…`, a set `OMIT_…`), and `invalidSyntax` for values SQLite
   would misread (raw text that isn't one token, NUL characters, incomplete names, …);
 - **parse** with `init(parsing:)`;
 - report its **`minimumRequiredVersion`**.

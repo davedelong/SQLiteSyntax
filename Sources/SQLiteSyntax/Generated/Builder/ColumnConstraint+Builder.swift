@@ -44,7 +44,7 @@ extension ColumnConstraint.Constraint {
                 try builder.add(conflict)
             case .generated(let generatedAlways, let expression, let storage):
                 try builder.require(SQLiteVersion(3, 31, 0), for: self)
-                try builder.disallow(SQLiteOption(name: "OMIT_GENERATED_COLUMNS", value: nil), for: self)
+                try builder.disallow(.omitGeneratedColumns, for: self)
                 if generatedAlways { try builder.require(SQLiteVersion(3, 31, 0), for: self) }
                 if generatedAlways { builder.add("GENERATED", "ALWAYS") }
                 builder.add("AS", "(")

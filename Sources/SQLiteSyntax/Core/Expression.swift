@@ -272,10 +272,3 @@ extension SyntaxBuilder {
         }
     }
 }
-
-extension SQLiteOption {
-    /// `SQLITE_OMIT_SUBQUERY`: no subqueries, `EXISTS` or `IN`.
-    static let omitSubquery = SQLiteOption(name: "OMIT_SUBQUERY", value: nil)
-    /// `SQLITE_OMIT_CAST`: no `CAST`.
-    static let omitCast = SQLiteOption(name: "OMIT_CAST", value: nil)
-}

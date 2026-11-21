@@ -20,7 +20,7 @@ extension CreateTableStatement {
 
 extension CreateTableStatement.Create {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.disallow(SQLiteOption(name: "OMIT_TEMPDB", value: nil), for: self)
+        try builder.disallow(.omitTempdb, for: self)
         switch self {
             case .temp:
                 builder.add("TEMP")

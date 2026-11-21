@@ -3,7 +3,7 @@
 extension Over {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.require(SQLiteVersion(3, 25, 0), for: self)
-        try builder.disallow(SQLiteOption(name: "OMIT_WINDOWFUNC", value: nil), for: self)
+        try builder.disallow(.omitWindowfunc, for: self)
         builder.add("OVER")
         switch self {
             case .windowDefinition(let windowDefinition):

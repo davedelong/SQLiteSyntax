@@ -88,7 +88,7 @@ import SQLiteSyntax
             do {
                 _ = try statement.sql(sqliteVersion: nil, options: [option])
                 Issue.record("\(sql) built with \(option.name)")
-            } catch .unsupportedOption(_, requires: let reported, current: _) {
+            } catch .disallowedOption(_, disallowed: let reported, current: _) {
                 #expect(reported == option)
             } catch {
                 Issue.record("unexpected \(error)")

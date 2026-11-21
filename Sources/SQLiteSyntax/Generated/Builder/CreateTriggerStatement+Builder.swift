@@ -2,7 +2,7 @@
 
 extension CreateTriggerStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.disallow(SQLiteOption(name: "OMIT_TRIGGER", value: nil), for: self)
+        try builder.disallow(.omitTrigger, for: self)
         if ifNotExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("CREATE")
         if let create {
@@ -38,7 +38,7 @@ extension CreateTriggerStatement {
 
 extension CreateTriggerStatement.Create {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.disallow(SQLiteOption(name: "OMIT_TEMPDB", value: nil), for: self)
+        try builder.disallow(.omitTempdb, for: self)
         switch self {
             case .temp:
                 builder.add("TEMP")

@@ -66,7 +66,7 @@ extension Syntax {
     ///     release. nil checks nothing.
     ///   - options: the compile-time options that SQLite was built with: by default the linked SQLite's
     ///     (`SQLiteOption.linkedOptions`). Building throws `SyntaxError.unsupportedOption` if the syntax needs
-    ///     one that's missing, or one of them leaves it out (`OMIT_…`). nil checks nothing.
+    ///     one that's missing, and `disallowedOption` if one of them leaves it out (`OMIT_…`). nil checks nothing.
     public func sql(sqliteVersion: SQLiteVersion? = .linked,
                     options: Set<SQLiteOption>? = SQLiteOption.linkedOptions) throws(SyntaxError) -> String {
         try validate()
@@ -131,11 +131,11 @@ public struct SyntaxBuilder {
     }
 
     /// Records that the syntax being built is left out by `option` (an `OMIT_…` option), and throws
-    /// `SyntaxError.unsupportedOption` if the options being built for include it.
+    /// `SyntaxError.disallowedOption` if the options being built for include it.
     public mutating func disallow(_ option: SQLiteOption, for syntax: any Syntax) throws(SyntaxError) {
         disallowedOptions.insert(option)
         if let options, options.contains(option) == true {
-            throw SyntaxError.unsupportedOption(syntax, requires: option, current: options)
+            throw SyntaxError.disallowedOption(syntax, disallowed: option, current: options)
         }
     }
 
@@ -213,6 +213,8 @@ public enum SyntaxError: Error {
     case unsupportedVersion(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
     /// The syntax needs different SQLite options than the ones currently available.
     case unsupportedOption(any Syntax, requires: SQLiteOption, current: Set<SQLiteOption>)
+    /// The syntax is left out by a compile-time option (`OMIT_…`) the SQLite being built for has.
+    case disallowedOption(any Syntax, disallowed: SQLiteOption, current: Set<SQLiteOption>)
     /// The syntax is nested too deeply to build with the stack this thread has left. (It doesn't carry
     /// the syntax: describing a value that deep would overflow the stack too.)
     case nestedTooDeeply
