@@ -1,6 +1,6 @@
 import Testing
 import SQLite3
-@testable import SQLiteSyntax   // SQLiteOption(name:value:) is internal
+import SQLiteSyntax
 
 /// Syntax that only exists when SQLite is compiled with an option: building checks it against the options
 /// being built for (by default the linked SQLite's), as it checks versions.
@@ -53,7 +53,7 @@ import SQLite3
         #expect(statement.requiredOptions == [.updateDeleteLimit])
     }
 
-    static func omit(_ name: String) -> SQLiteOption { SQLiteOption(name: "OMIT_" + name, value: nil) }
+    static func omit(_ name: String) -> SQLiteOption { SQLiteOption(name: "OMIT_" + name) }
 
     /// Syntax parse.y leaves out with `SQLITE_OMIT_…`: building for a SQLite with any of those options throws.
     static let omittedSyntax: [(String, [String])] = [

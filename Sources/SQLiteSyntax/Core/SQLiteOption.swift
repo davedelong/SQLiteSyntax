@@ -35,6 +35,14 @@ public struct SQLiteOption: Hashable, Sendable {
     public let name: String
     public let value: String?
 
+    /// An option as `sqlite3_compileoption_get` reports it: its name without the `SQLITE_` prefix (e.g.
+    /// `"OMIT_CTE"`, `"ENABLE_FTS5"`) and, for options with one, its value (`"THREADSAFE"`, `"2"`). Options
+    /// compare by name alone.
+    public init(name: String, value: String? = nil) {
+        self.name = name
+        self.value = value
+    }
+
     public func hash(into hasher: inout Hasher) {
         hasher.combine(name)
     }
