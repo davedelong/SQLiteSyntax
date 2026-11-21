@@ -10,7 +10,7 @@ commit history.
 
 | Piece | Where | State |
 |---|---|---|
-| Grammar extraction | `SQLiteSyntaxGenerator` (`GrammarExtraction`, `sqlite-grammar`, `generate-grammar` plugin) | 71 diagrams → `Grammar/sqlite.ebnf`, each rule checked against its diagram. |
+| Grammar extraction | `SQLiteSyntaxGenerator` (`GrammarExtraction`, `sqlite-grammar` tool) | 71 diagrams → `Grammar/sqlite.ebnf`, each rule checked against its diagram. |
 | Type generation | `SQLiteSyntaxGenerator` (`SyntaxGeneration`, `Grammar/codegen.json`) | 62 rules plus 5 helper rules (`extraRules`) → `Generated/` here, with no warnings. Also generates the precedence and keyword tables from `src/parse.y` and `tool/mkkeywordhash.c`. |
 | Generated types | `Sources/SQLiteSyntax/Generated/` | Three files per type: `Base/` (the type), `Builder/` (`build(using:)`), `Parser/` (`parse(_:)`). Each type, case and optional part knows the release that introduced it. |
 | Hand-written types | `Core/` | `Expression`, `LiteralValue`, `NumericLiteral`, `BindParameter`, `Name`, `List`, `ModuleArgument`, the operators, `SortDirection`, `SQLiteVersion`, `Syntax`/`SyntaxBuilder`, and the restriction checks (`Restrictions.swift`). |
