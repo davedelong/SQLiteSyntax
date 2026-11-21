@@ -1,0 +1,41 @@
+//
+//  SQLiteOptions.swift
+//  SQLiteSyntax
+//
+//  Created by Dave DeLong on 11/21/26.
+//
+
+import SQLite3
+
+public struct SQLiteOption: Hashable, Sendable {
+
+    public static let orderedSetAggregates = SQLiteOption(name: "ENABLE_ORDERED_SET_AGGREGATES", value: nil)
+
+    public static func ==(lhs: Self, rhs: Self) -> Bool {
+        return lhs.name == rhs.name
+    }
+
+    public static let linkedOptions: Set<SQLiteOption> = {
+        var options: Set<SQLiteOption> = []
+        var i: Int32 = 0
+        while let option = sqlite3_compileoption_get(i) {
+            let raw = String(cString: option)
+            let pieces = raw.split(separator: "=", maxSplits: 2, omittingEmptySubsequences: false)
+            if pieces.count == 2 {
+                options.insert(SQLiteOption(name: String(pieces[0]), value: String(pieces[1])))
+            } else {
+                options.insert(SQLiteOption(name: String(pieces[0]), value: nil))
+            }
+            i += 1
+        }
+        return options
+    }()
+
+    public let name: String
+    public let value: String?
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+    }
+
+}

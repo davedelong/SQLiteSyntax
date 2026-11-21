@@ -72,14 +72,19 @@ public struct SyntaxBuilder {
     /// this process links (`SQLiteVersion.linked`); nil checks nothing.
     public var sqliteVersion: SQLiteVersion?
 
+    public var options: Set<SQLiteOption>?
+
     /// The latest release required by anything built so far; 3.0.0 if nothing needed a later one.
     public private(set) var minimumRequiredVersion = SQLiteVersion(3, 0, 0)
+
+    public private(set) var requiredOptions = Set<SQLiteOption>()
 
     /// Whether parts are validated as they are added (off when only collecting requirements).
     var validates = true
 
-    public init(sqliteVersion: SQLiteVersion? = .linked) {
+    public init(sqliteVersion: SQLiteVersion? = .linked, options: Set<SQLiteOption>? = SQLiteOption.linkedOptions) {
         self.sqliteVersion = sqliteVersion
+        self.options = options
     }
 
     /// Records that the syntax being built needs `version`, and throws `SyntaxError.unsupported` if that's
@@ -90,7 +95,16 @@ public struct SyntaxBuilder {
             throw SyntaxError.unsupported(syntax, requires: version, sqliteVersion: sqliteVersion)
         }
     }
-    
+
+    /// Records that the syntax being built needs `option`, and throws `SyntaxError.unsupported` if that's
+    /// later than the release being built for.
+    public mutating func require(_ option: SQLiteOption, for syntax: any Syntax) throws(SyntaxError) {
+        requiredOptions.insert(option)
+        if let options, options.contains(option) == false {
+            throw SyntaxError.unsupported(syntax, requires: option, current: options)
+        }
+    }
+
     var sql: String { terms.joined(separator: " ") }
 
     /// Set after a `.`, so the next term joins it: `schema` `.` `table` reads `schema.table`.
@@ -163,6 +177,8 @@ public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
     /// The syntax needs a later SQLite release than the one being built for.
     case unsupported(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
+    /// The syntax needs a later SQLite release than the one being built for.
+    case unsupported(any Syntax, requires: SQLiteOption, current: Set<SQLiteOption>)
     /// The syntax is nested too deeply to build with the stack this thread has left. (It doesn't carry
     /// the syntax: describing a value that deep would overflow the stack too.)
     case nestedTooDeeply
