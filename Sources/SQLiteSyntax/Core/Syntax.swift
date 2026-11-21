@@ -117,7 +117,7 @@ public struct SyntaxBuilder {
     mutating func add(_ part: (any Syntax)?) throws(SyntaxError) {
         guard let part else { return }
         // Every nested part is built through here, so this keeps deep nesting from overflowing the stack.
-        guard StackGuard.hasRoom else { throw SyntaxError.nestedTooDeeply }
+        guard Thread.current.hasRemainingStackSpace else { throw SyntaxError.nestedTooDeeply }
         if validates { try part.validate() }
         try part.build(using: &self)
     }

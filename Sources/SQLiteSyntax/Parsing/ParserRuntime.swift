@@ -1,3 +1,5 @@
+import Foundation
+
 /// Which keywords may stand for a name at a given place (parse.y token classes).
 enum NameClass {
     /// `nm`: identifiers, fallback keywords, JOIN_KW, INDEXED, and string literals.
@@ -162,7 +164,7 @@ extension Parser {
     /// of the parse. Every recursive path goes through `memoized` or `parseExpression`, which call this.
     func ensureStackSpace() throws(ParseError) {
         if let exhausted = state.stackExhausted { throw exhausted }
-        guard !StackGuard.hasRoom else { return }
+        guard !Thread.current.hasRemainingStackSpace else { return }
         let e = error("SQL is nested too deeply to parse")
         state.stackExhausted = e
         throw e
