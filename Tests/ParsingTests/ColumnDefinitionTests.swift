@@ -41,7 +41,7 @@ struct ColumnDefinitionTests {
     func typeAndGenerationAgreeWithSQLite(_ definition: String) throws {
         let expected = try Self.sqlite(definition)
         let column = try ColumnDefinition(parsing: definition)
-        let type = column.typeName.map { $0.names.items.map(\.value).joined(separator: " ")
+        let type = column.typeName.map { $0.typeWords.items.map(\.value).joined(separator: " ")
             + ($0.arguments.map { a in "(" + ((try? a.sql()) ?? "") + ")" } ?? "") } ?? ""
         let generated = column.constraints.contains { if case .generated = $0.constraint { return true } else { return false } }
         #expect(type.filter { !" ()".contains($0) } == expected.type.filter { !" ()".contains($0) })
@@ -57,16 +57,16 @@ struct ColumnDefinitionTests {
     /// reads as identifiers are printed plain; other keywords still need quotes.
     @Test func typeWordsArePrintedAsSQLiteReadsThem() throws {
         #expect(try ColumnDefinition(parsing: "a always generated").sql() == "a always generated")
-        #expect(try TypeName(names: ["DOUBLE", "precision"]).sql() == "DOUBLE precision")
-        #expect(try TypeName(names: ["primary"]).sql() == "\"primary\"")
-        #expect(try TypeName(names: ["my type"]).sql() == "\"my type\"")
+        #expect(try TypeName(typeWords: ["DOUBLE", "precision"]).sql() == "DOUBLE precision")
+        #expect(try TypeName(typeWords: ["primary"]).sql() == "\"primary\"")
+        #expect(try TypeName(typeWords: ["my type"]).sql() == "\"my type\"")
         // Elsewhere keywords are still quoted.
         #expect(try Name<Column>("always").sql() == "\"always\"")
     }
 
     @Test func generatedAlwaysMovesFromTheTypeNameToTheConstraint() throws {
         let column = try ColumnDefinition(parsing: "a INT GENERATED ALWAYS AS (b) STORED")
-        #expect(column.typeName?.names.items.map(\.value) == ["INT"])
+        #expect(column.typeName?.typeWords.items.map(\.value) == ["INT"])
         guard case .generated(let always, _, let storage)? = column.constraints.first?.constraint else {
             Issue.record("not a generated column: \(column)"); return
         }

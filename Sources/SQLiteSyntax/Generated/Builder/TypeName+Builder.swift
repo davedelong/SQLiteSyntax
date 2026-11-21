@@ -2,7 +2,7 @@
 
 extension TypeName {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        try builder.addList(names.items)
+        try builder.addList(typeWords.items)
         try builder.add(arguments)
     }
 }

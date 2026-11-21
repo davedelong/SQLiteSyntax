@@ -2,16 +2,16 @@
 
 /// `type-name ::= type-word+ [ '(' signed-number [ ',' signed-number ] ')' ]`
 public struct TypeName: Syntax {
-    public var names: List<Name<TypeWord>>
+    public var typeWords: List<Name<TypeWord>>
     public var arguments: Arguments? = nil
 
-    public init(names: List<Name<TypeWord>>, arguments: Arguments? = nil) {
-        self.names = names
+    public init(typeWords: List<Name<TypeWord>>, arguments: Arguments? = nil) {
+        self.typeWords = typeWords
         self.arguments = arguments
     }
 
     public func validate() throws(SyntaxError) {
-        try require(!names.isEmpty, reason: "TypeName.names must not be empty")
+        try require(!typeWords.isEmpty, reason: "TypeName.typeWords must not be empty")
     }
 
     /// `'(' signed-number [ ',' signed-number ] ')'`

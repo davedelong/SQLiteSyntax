@@ -10,14 +10,14 @@ extension ColumnDefinition {
     /// constraint that follows, so the value says what the SQL means.
     func adjustedAfterParsing() -> ColumnDefinition {
         guard let typeName, typeName.arguments == nil else { return self }
-        let words = typeName.names.items
+        let words = typeName.typeWords.items
         guard words.count >= 2,
               words[words.count - 2].value.uppercased() == "GENERATED",
               words[words.count - 1].value.uppercased() == "ALWAYS" else { return self }
         var result = self
-        var names = typeName.names
-        names.items.removeLast(2)
-        result.typeName = names.items.isEmpty ? nil : TypeName(names: names, arguments: nil)
+        var typeWords = typeName.typeWords
+        typeWords.items.removeLast(2)
+        result.typeName = typeWords.items.isEmpty ? nil : TypeName(typeWords: typeWords, arguments: nil)
         if var first = result.constraints.first, first.name == nil,
            case .generated(false, let expression, let storage) = first.constraint {
             first.constraint = .generated(generatedAlways: true, expression: expression, storage: storage)

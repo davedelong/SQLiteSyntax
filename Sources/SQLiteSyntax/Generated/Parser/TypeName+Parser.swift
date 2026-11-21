@@ -3,9 +3,9 @@
 extension TypeName {
     public static func parse(_ p: inout Parser) throws(ParseError) -> TypeName {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TypeName in
-            let names = List(try p.separated(by: []) { (p: inout Parser) throws(ParseError) -> Name<TypeWord> in try Name<TypeWord>.parse(&p, class: .name) })
+            let typeWords = List(try p.separated(by: []) { (p: inout Parser) throws(ParseError) -> Name<TypeWord> in try Name<TypeWord>.parse(&p, class: .name) })
             let arguments = p.attempt { (p: inout Parser) throws(ParseError) -> Arguments in try Arguments.parse(&p) }
-            return TypeName(names: names, arguments: arguments)
+            return TypeName(typeWords: typeWords, arguments: arguments)
         }
     }
 }

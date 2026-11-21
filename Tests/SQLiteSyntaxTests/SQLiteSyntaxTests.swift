@@ -6,7 +6,7 @@ import Testing
                                       tableName: "Test",
                                       definition: .columns(columnDefinitions: [
                                         .init(name: "id",
-                                              typeName: .init(names: [.init(value: "INT")]),
+                                              typeName: .init(typeWords: [.init(value: "INT")]),
                                               constraints: [
                                                 .init(constraint: .primaryKey(conflict: .abort, autoincrement: true))
                                               ])
