@@ -16,7 +16,7 @@ struct Tokenizer {
         while i < bytes.count {
             let start = i
             let c = bytes[i]
-            func symbol(_ s: String) { tokens.append(Token(kind: .symbol(s), range: start..<i)) }
+            func symbol(_ s: String) { tokens.append(Token(kind: .symbol, string: s, range: start..<i)) }
 
             switch c {
                 case 0x20, 0x09, 0x0A, 0x0C, 0x0D:   // whitespace
@@ -63,34 +63,34 @@ struct Tokenizer {
                 case ch("'"), ch("\""), ch("`"):
                     let (text, end) = try quoted(from: i, delimiter: c)
                     i = end
-                    tokens.append(Token(kind: c == ch("'") ? .string(text) : .identifier(text, quoted: true), range: start..<i))
+                    tokens.append(Token(kind: c == ch("'") ? .string : .identifier(quoted: true), string: text, range: start..<i))
                 case ch("["):
                     guard let close = bytes[(i + 1)...].firstIndex(of: ch("]")) else { throw error("unterminated [identifier]", at: i) }
                     let text = String(decoding: bytes[(i + 1)..<close], as: UTF8.self)
                     i = close + 1
-                    tokens.append(Token(kind: .identifier(text, quoted: true), range: start..<i))
+                    tokens.append(Token(kind: .identifier(quoted: true), string: text, range: start..<i))
                 case ch("."):
                     if isDigit(at(i + 1)) {
                         i = try number(from: i)
-                        tokens.append(Token(kind: .number(text(start..<i)), range: start..<i))
+                        tokens.append(Token(kind: .number, string: text(start..<i), range: start..<i))
                     } else {
                         i += 1; symbol(".")
                     }
                 case ch("0")...ch("9"):
                     i = try number(from: i)
-                    tokens.append(Token(kind: .number(text(start..<i)), range: start..<i))
+                    tokens.append(Token(kind: .number, string: text(start..<i), range: start..<i))
                 case ch("?"):
                     i += 1
                     while isDigit(at(i)) { i += 1 }
-                    tokens.append(Token(kind: .variable(text(start..<i)), range: start..<i))
+                    tokens.append(Token(kind: .variable, string: text(start..<i), range: start..<i))
                 case ch("$"), ch("@"), ch(":"), ch("#"):
                     i = try variable(from: i)
-                    tokens.append(Token(kind: .variable(text(start..<i)), range: start..<i))
+                    tokens.append(Token(kind: .variable, string: text(start..<i), range: start..<i))
                 case ch("x") where at(i + 1) == ch("'"), ch("X") where at(i + 1) == ch("'"):
                     var j = i + 2
                     while isHexDigit(at(j)) { j += 1 }
                     guard at(j) == ch("'"), (j - i - 2) % 2 == 0 else { throw error("malformed blob literal", at: i) }
-                    tokens.append(Token(kind: .blob(text((i + 2)..<j)), range: start..<(j + 1)))
+                    tokens.append(Token(kind: .blob, string: text((i + 2)..<j), range: start..<(j + 1)))
                     i = j + 1
                 default:
                     guard isIdentifierCharacter(c) else {
@@ -99,26 +99,29 @@ struct Tokenizer {
                     while i < bytes.count, isIdentifierCharacter(bytes[i]) { i += 1 }
                     let word = text(start..<i)
                     let upper = word.uppercased()
-                    tokens.append(Token(kind: Keywords.all.contains(upper) ? .keyword(upper) : .identifier(word, quoted: false),
-                                        range: start..<i))
+                    if Keywords.all.contains(upper) {
+                        tokens.append(Token(kind: .keyword, string: upper, range: start..<i))
+                    } else {
+                        tokens.append(Token(kind: .identifier(quoted: false), string: word, range: start..<i))
+                    }
             }
         }
-        tokens.append(Token(kind: .endOfInput, range: bytes.count..<bytes.count))
+        tokens.append(Token(kind: .endOfInput, string: "", range: bytes.count..<bytes.count))
         // tokenize.c: WINDOW is a keyword only before `name AS`; OVER only after `)` and before `(` or a
         // name; FILTER only after `)` and before `(`. Elsewhere they are identifiers.
         for i in tokens.indices {
-            guard case .keyword(let k) = tokens[i].kind, Keywords.contextual.contains(k) else { continue }
+            guard case .keyword = tokens[i].kind, Keywords.contextual.contains(tokens[i].string) else { continue }
             let previous = i > 0 ? tokens[i - 1] : nil
             let next = tokens[min(i + 1, tokens.count - 1)], afterNext = tokens[min(i + 2, tokens.count - 1)]
             let isName: (Token) -> Bool = { if case .identifier = $0.kind { return true } else { return false } }
             let isKeyword: Bool
-            switch k {
+            switch tokens[i].string {
                 case "WINDOW": isKeyword = isName(next) && afterNext.isKeyword("AS")
                 case "OVER": isKeyword = previous?.isSymbol(")") == true && (next.isSymbol("(") || isName(next))
                 default: isKeyword = previous?.isSymbol(")") == true && next.isSymbol("(")
             }
             if !isKeyword {
-                tokens[i].kind = .identifier(String(decoding: bytes[tokens[i].range], as: UTF8.self), quoted: false)
+                tokens[i].kind = .identifier(quoted: false)
             }
         }
         return tokens

@@ -47,9 +47,9 @@ extension Parser {
 
     static func token(_ token: Token, matches text: String) -> Bool {
         switch token.kind {
-            case .symbol(let s): return s == text
-            case .keyword(let k): return k == text
-            case .identifier(let s, quoted: false): return text.first?.isLetter == true && s.uppercased() == text
+            case .symbol: return token.string == text
+            case .keyword: return token.string == text
+            case .identifier(quoted: false): return text.first?.isLetter == true && token.string.uppercased() == text
             default: return false
         }
     }
@@ -167,13 +167,13 @@ extension Parser {
     mutating func parseName(class nameClass: NameClass, excluding: Set<String> = []) throws(ParseError) -> String {
         let token = current
         switch token.kind {
-            case .identifier(let s, quoted: false) where excluding.contains(s.uppercased()):
+            case .identifier(quoted: false) where excluding.contains(token.string.uppercased()):
                 break
-            case .identifier(let s, _):
-                _ = advance(); return s
-            case .string(let s):
-                _ = advance(); return s
-            case .keyword(let k) where Keywords.usableAsName(k, class: nameClass) && !excluding.contains(k):
+            case .identifier:
+                _ = advance(); return token.string
+            case .string:
+                _ = advance(); return token.string
+            case .keyword where Keywords.usableAsName(token.string, class: nameClass) && !excluding.contains(token.string):
                 _ = advance(); return Self.sourceText(of: token, in: source)
             default:
                 break
@@ -208,15 +208,15 @@ extension LiteralValue: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         let token = p.current
         switch token.kind {
-            case .number(let text): _ = p.advance(); return try p.numericLiteral(text, token: token)
-            case .string(let s): _ = p.advance(); return .string(s)
-            case .blob(let hex): _ = p.advance(); return .blob(p.blob(hex))
-            case .keyword("NULL"): _ = p.advance(); return .null
-            case .keyword("CURRENT_DATE"): _ = p.advance(); return .currentDate
-            case .keyword("CURRENT_TIME"): _ = p.advance(); return .currentTime
-            case .keyword("CURRENT_TIMESTAMP"): _ = p.advance(); return .currentTimestamp
-            case .identifier(let s, quoted: false) where s.uppercased() == "TRUE": _ = p.advance(); return .true
-            case .identifier(let s, quoted: false) where s.uppercased() == "FALSE": _ = p.advance(); return .false
+            case .number: _ = p.advance(); return try p.numericLiteral(token.string, token: token)
+            case .string: _ = p.advance(); return .string(token.string)
+            case .blob: _ = p.advance(); return .blob(p.blob(token.string))
+            case .keyword where token.string == "NULL": _ = p.advance(); return .null
+            case .keyword where token.string == "CURRENT_DATE": _ = p.advance(); return .currentDate
+            case .keyword where token.string == "CURRENT_TIME": _ = p.advance(); return .currentTime
+            case .keyword where token.string == "CURRENT_TIMESTAMP": _ = p.advance(); return .currentTimestamp
+            case .identifier(quoted: false) where token.string.uppercased() == "TRUE": _ = p.advance(); return .true
+            case .identifier(quoted: false) where token.string.uppercased() == "FALSE": _ = p.advance(); return .false
             default:
                 let e = p.unexpected(expected: "a literal value")
                 p.state.record(e)
@@ -228,13 +228,13 @@ extension LiteralValue: SQLParsable {
 extension NumericLiteral: SQLParsable {
     static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         let token = p.current
-        guard case .number(let text) = token.kind else {
+        guard case .number = token.kind else {
             let e = p.unexpected(expected: "a number")
             p.state.record(e)
             throw e
         }
         _ = p.advance()
-        return NumericLiteral(try p.number(text, token: token))
+        return NumericLiteral(try p.number(token.string, token: token))
     }
 }
 

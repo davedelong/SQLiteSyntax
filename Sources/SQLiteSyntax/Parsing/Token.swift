@@ -1,40 +1,43 @@
 /// A lexical token of SQL text.
-public struct Token: Equatable, Sendable {
+struct Token: Equatable, Sendable {
 
-    public enum Kind: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
         /// An SQL keyword, uppercased (e.g. `SELECT`). Some keywords may still be used as identifiers.
-        case keyword(String)
+        case keyword
         /// An identifier, with quotes removed. `quoted` is true for `"x"`, `[x]` and `` `x` ``.
-        case identifier(String, quoted: Bool)
+        case identifier(quoted: Bool)
         /// A string literal, with quotes removed and `''` unescaped.
-        case string(String)
+        case string
         /// A blob literal's hex digits (`X'...'`).
-        case blob(String)
+        case blob
         /// A numeric literal as written (digit separators included).
-        case number(String)
+        case number
         /// A bind parameter as written: `?`, `?NNN`, `:name`, `@name`, `#name`, `$name`.
-        case variable(String)
+        case variable
         /// Punctuation or an operator, e.g. `(`, `||`, `->>`, `<>`.
-        case symbol(String)
+        case symbol
         case endOfInput
     }
 
-    public var kind: Kind
+    var kind: Kind
     /// The token's range in the source, as UTF-8 offsets.
-    public var range: Range<Int>
+    var range: Range<Int>
 
-    public init(kind: Kind, range: Range<Int>) {
+    var string: String
+
+    init(kind: Kind, string: String, range: Range<Int>) {
         self.kind = kind
+        self.string = string
         self.range = range
     }
 
     var keyword: String? {
-        if case .keyword(let k) = kind { return k }
+        if case .keyword = kind { return string }
         return nil
     }
 
     func isSymbol(_ s: String) -> Bool {
-        if case .symbol(let x) = kind { return x == s }
+        if case .symbol = kind { return string == s }
         return false
     }
 
@@ -43,13 +46,13 @@ public struct Token: Equatable, Sendable {
     /// A short description for error messages.
     var display: String {
         switch kind {
-            case .keyword(let k): return k
-            case .identifier(let s, _): return "identifier \"\(s)\""
-            case .string(let s): return "'\(s)'"
-            case .blob(let s): return "X'\(s)'"
-            case .number(let s): return s
-            case .variable(let s): return s
-            case .symbol(let s): return "'\(s)'"
+            case .keyword: return string
+            case .identifier: return "identifier \"\(string)\""
+            case .string: return "'\(string)'"
+            case .blob: return "X'\(string)'"
+            case .number: return string
+            case .variable: return string
+            case .symbol: return "'\(string)'"
             case .endOfInput: return "end of input"
         }
     }

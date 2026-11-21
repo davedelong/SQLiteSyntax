@@ -65,8 +65,8 @@ extension Parser {
     }
 
     func binaryOperator(_ token: Token) -> (Int, BinaryOperator)? {
-        guard case .symbol(let s) = token.kind else { return nil }
-        switch s {
+        guard case .symbol = token.kind else { return nil }
+        switch token.string {
             case "=": return (ExpressionPrecedence.equality, .equals)
             case "!=", "<>": return (ExpressionPrecedence.equality, .notEquals)
             case "<": return (ExpressionPrecedence.comparison, .lessThan)
@@ -150,19 +150,19 @@ extension Parser {
     mutating func parsePrefix() throws(ParseError) -> Expr {
         let token = current
         switch token.kind {
-            case .number(let text):
+            case .number:
                 _ = advance()
-                return .literalValue(try numericLiteral(text, token: token))
-            case .string(let s):
+                return .literalValue(try numericLiteral(token.string, token: token))
+            case .string:
                 _ = advance()
-                return .literalValue(.string(s))
-            case .blob(let hex):
+                return .literalValue(.string(token.string))
+            case .blob:
                 _ = advance()
-                return .literalValue(.blob(blob(hex)))
-            case .variable(let v):
+                return .literalValue(.blob(blob(token.string)))
+            case .variable:
                 _ = advance()
-                return .bindParameter(try bindParameter(v, token: token))
-            case .symbol("("):
+                return .bindParameter(try bindParameter(token.string, token: token))
+            case .symbol where token.string == "(":
                 _ = advance()
                 if ["SELECT", "VALUES", "WITH"].contains(current.keyword ?? "") {
                     let select = try SelectStatement.parse(&self)
@@ -172,51 +172,51 @@ extension Parser {
                 let items = try parseExpressionList()
                 try expect(symbol: ")")
                 return .expressionList(List(items))
-            case .symbol("-"):
+            case .symbol where token.string == "-":
                 _ = advance()
                 // Like SQLite (expr.c codeInteger), minus applied directly to 9223372036854775808 is the
                 // smallest INTEGER rather than the negation of an out-of-range (REAL) literal.
-                if case .number(let text) = current.kind, text.replacingOccurrences(of: "_", with: "") == "9223372036854775808" {
+                if case .number = current.kind, token.string.replacingOccurrences(of: "_", with: "") == "9223372036854775808" {
                     _ = advance()
                     return .literalValue(.integer(.min))
                 }
                 // Minus directly before a number is a negative literal, so negative literals print and
                 // re-parse as the same value (`-5`, `-1.5`). (Negating Int64.min stays an operation.)
-                if case .number(let text) = current.kind {
+                if case .number = current.kind {
                     let token = advance()
-                    switch try numericLiteral(text, token: token) {
+                    switch try numericLiteral(token.string, token: token) {
                         case .integer(let i) where i != .min && i != 0: return .literalValue(.integer(-i))   // no integer -0
                         case .real(let d): return .literalValue(.real(-d))
                         case let other: return .unaryOperator(.negate, .literalValue(other))
                     }
                 }
                 return .unaryOperator(.negate, try parseExpression(ExpressionPrecedence.unary))
-            case .symbol("+"):
+            case .symbol where token.string == "+":
                 _ = advance(); return .unaryOperator(.plus, try parseExpression(ExpressionPrecedence.unary))
-            case .symbol("~"):
+            case .symbol where token.string == "~":
                 _ = advance(); return .unaryOperator(.bitwiseNot, try parseExpression(ExpressionPrecedence.unary))
-            case .keyword("NOT"):
+            case .keyword where token.string == "NOT":
                 _ = advance()
                 if accept(keyword: "EXISTS") { return .exists(negated: true, try parseParenthesizedSelect()) }
                 return .unaryOperator(.not, try parseExpression(ExpressionPrecedence.not))
-            case .keyword("EXISTS"):
+            case .keyword where token.string == "EXISTS":
                 _ = advance()
                 return .exists(negated: false, try parseParenthesizedSelect())
-            case .keyword("NULL"):
+            case .keyword where token.string == "NULL":
                 _ = advance(); return .literalValue(.null)
-            case .keyword("CURRENT_DATE"):
+            case .keyword where token.string == "CURRENT_DATE":
                 _ = advance(); return .literalValue(.currentDate)
-            case .keyword("CURRENT_TIME"):
+            case .keyword where token.string == "CURRENT_TIME":
                 _ = advance(); return .literalValue(.currentTime)
-            case .keyword("CURRENT_TIMESTAMP"):
+            case .keyword where token.string == "CURRENT_TIMESTAMP":
                 _ = advance(); return .literalValue(.currentTimestamp)
-            case .keyword("CASE"):
+            case .keyword where token.string == "CASE":
                 return try parseCase()
             // CAST and RAISE fall back to identifiers elsewhere, but not here: in SQLite's parser
             // a keyword only becomes an identifier where the keyword itself cannot appear.
-            case .keyword("CAST"):
+            case .keyword where token.string == "CAST":
                 return try parseCast()
-            case .keyword("RAISE"):
+            case .keyword where token.string == "RAISE":
                 return try parseRaise()
             default:
                 guard isName(token) else { throw unexpected(expected: "an expression") }
@@ -227,7 +227,7 @@ extension Parser {
     func isName(_ token: Token) -> Bool {
         switch token.kind {
             case .identifier: return true
-            case .keyword(let k): return Keywords.usableAsName(k)
+            case .keyword: return Keywords.usableAsName(token.string)
             default: return false
         }
     }
@@ -236,9 +236,9 @@ extension Parser {
     mutating func parseName(allowString: Bool = false) throws(ParseError) -> String {
         let token = current
         switch token.kind {
-            case .identifier(let s, _): _ = advance(); return s
-            case .keyword(let k) where Keywords.usableAsName(k): _ = advance(); return Self.sourceText(of: token, in: source)
-            case .string(let s) where allowString: _ = advance(); return s
+            case .identifier: _ = advance(); return token.string
+            case .keyword where Keywords.usableAsName(token.string): _ = advance(); return Self.sourceText(of: token, in: source)
+            case .string where allowString: _ = advance(); return token.string
             default: throw unexpected(expected: "a name")
         }
     }
@@ -256,8 +256,8 @@ extension Parser {
             return try parseFunctionCall(name: first)
         }
         guard accept(symbol: ".") else {
-            if case .identifier(let s, quoted: false) = token.kind {
-                switch s.uppercased() {
+            if case .identifier(quoted: false) = token.kind {
+                switch token.string.uppercased() {
                     case "TRUE": return .literalValue(.true)
                     case "FALSE": return .literalValue(.false)
                     default: break
