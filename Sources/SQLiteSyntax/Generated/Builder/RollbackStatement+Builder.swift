@@ -4,8 +4,17 @@ extension RollbackStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         if to != nil { try builder.require(SQLiteVersion(3, 1, 0), for: self) }
         builder.add("ROLLBACK")
-        if transaction { builder.add("TRANSACTION") }
+        try builder.add(transaction)
         try builder.add(to)
+    }
+}
+
+extension RollbackStatement.Transaction {
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("TRANSACTION")
+        if let transactionName {
+            try builder.add(transactionName)
+        }
     }
 }
 

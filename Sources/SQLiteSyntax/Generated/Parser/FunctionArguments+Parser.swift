@@ -20,6 +20,10 @@ extension FunctionArguments {
                     }
                     return .arguments(quantifier: quantifier, expressions: expressions, orderBy: orderBy)
                 },
+                { (p: inout Parser) throws -> FunctionArguments in
+                    let orderBy = try OrderBy.parse(&p)
+                    return .orderBy(orderBy)
+                },
             ]
             let value = try p.longest(alternatives)
             return value

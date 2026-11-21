@@ -13,6 +13,8 @@ extension FunctionArguments {
                 if let orderBy {
                     try builder.add(orderBy)
                 }
+            case .orderBy(let orderBy):
+                try builder.add(orderBy)
         }
     }
 }

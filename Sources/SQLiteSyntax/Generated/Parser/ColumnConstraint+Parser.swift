@@ -100,8 +100,32 @@ extension ColumnConstraint.Constraint.Default {
                     return .signedNumber(signedNumber)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint.Default in
+                    let sign = try Sign.parse(&p)
+                    let literalValue = try LiteralValue.parse(&p)
+                    return .signedLiteral(sign: sign, literalValue: literalValue)
+                },
+                { (p: inout Parser) throws -> ColumnConstraint.Constraint.Default in
                     let name = try Name<Any>.parse(&p, class: .name)
                     return .name(name)
+                },
+            ]
+            let value = try p.longest(alternatives)
+            return value
+        }
+    }
+}
+
+extension ColumnConstraint.Constraint.Default.Sign {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> ColumnConstraint.Constraint.Default.Sign {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ColumnConstraint.Constraint.Default.Sign in
+            let alternatives: [(inout Parser) throws -> ColumnConstraint.Constraint.Default.Sign] = [
+                { (p: inout Parser) throws -> ColumnConstraint.Constraint.Default.Sign in
+                    try p.expect(texts: ["+"])
+                    return .plus
+                },
+                { (p: inout Parser) throws -> ColumnConstraint.Constraint.Default.Sign in
+                    try p.expect(texts: ["-"])
+                    return .minus
                 },
             ]
             let value = try p.longest(alternatives)

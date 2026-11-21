@@ -17,7 +17,8 @@ public indirect enum Expression: Syntax {
     /// `name ( arguments ) [ filter ] [ over ]`; `nil` arguments is `name ( )`.
     case function(Name<Function>, FunctionArguments?, FilterClause?, OverClause?)
     case expressionList(List<Expression>)
-    case cast(Expression, as: TypeName)
+    /// `CAST(x AS type)`; the type may be empty, `CAST(x AS )`, as parse.y allows.
+    case cast(Expression, as: TypeName?)
     case collate(Expression, Name<Collation>)
     case like(Expression, negated: Bool, like: Expression, escape: Expression?)
     case glob(Expression, negated: Bool, glob: Expression)

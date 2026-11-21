@@ -66,8 +66,22 @@ extension ColumnConstraint.Constraint.Default {
                 try builder.add(literalValue)
             case .signedNumber(let signedNumber):
                 try builder.add(signedNumber)
+            case .signedLiteral(let sign, let literalValue):
+                try builder.add(sign)
+                try builder.add(literalValue)
             case .name(let name):
                 try builder.add(name)
+        }
+    }
+}
+
+extension ColumnConstraint.Constraint.Default.Sign {
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        switch self {
+            case .plus:
+                builder.add("+")
+            case .minus:
+                builder.add("-")
         }
     }
 }

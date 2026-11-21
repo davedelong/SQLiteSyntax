@@ -4,9 +4,22 @@ extension RollbackStatement {
     public static func parse(_ p: inout Parser) throws(ParseError) -> RollbackStatement {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> RollbackStatement in
             try p.expect(texts: ["ROLLBACK"])
-            let transaction = p.accept(texts: ["TRANSACTION"])
+            let transaction = p.attempt { (p: inout Parser) throws(ParseError) -> Transaction in try Transaction.parse(&p) }
             let to = p.attempt { (p: inout Parser) throws(ParseError) -> To in try To.parse(&p) }
             return RollbackStatement(transaction: transaction, to: to)
+        }
+    }
+}
+
+extension RollbackStatement.Transaction {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> RollbackStatement.Transaction {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> RollbackStatement.Transaction in
+            try p.expect(texts: ["TRANSACTION"])
+            let transactionName = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Any> in
+                let value = try Name<Any>.parse(&p, class: .name)
+                return value
+            }
+            return RollbackStatement.Transaction(transactionName: transactionName)
         }
     }
 }

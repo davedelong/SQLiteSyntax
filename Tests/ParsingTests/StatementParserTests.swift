@@ -49,7 +49,34 @@ struct StatementParserTests {
         "ATTACH DATABASE 'other.db' AS other",
         "DETACH other",
         "EXPLAIN QUERY PLAN SELECT * FROM t",
+        // Accepted by parse.y beyond the diagrams.
+        "BEGIN TRANSACTION 'foo'",
+        "COMMIT TRANSACTION tx",
+        "END TRANSACTION",
+        "ROLLBACK TRANSACTION tx TO SAVEPOINT sp",
+        "CREATE TABLE d (a TEXT DEFAULT -'hello', b DEFAULT +X'00', c DEFAULT -5)",
+        "SELECT count(ORDER BY a), group_concat(a ORDER BY a) FROM t",
+        "SELECT CAST(a AS ), CAST(a AS INT) FROM t",
+        "SELECT 't'.'a', main.'t'.b, t.'a' FROM t",
+        "SELECT sum(x) over over FROM over WINDOW over AS ()",
+        "SELECT sum(window) OVER window window FROM window window window window AS (ORDER BY window)",
+        "CREATE VIRTUAL TABLE f USING fts4(a, notindexed = a, )",
+        "CREATE VIRTUAL TABLE f USING m()",
     ]
+
+    @Test func parseYFormsKeepTheirMeaning() throws {
+        guard case .select(_, let columns, _, _, _, _) = try SelectStatement(parsing: "SELECT 't'.'a', count(ORDER BY a) FROM t").selectCore,
+              case .expression(.columnName(nil, let table?, let name), _) = columns.first,
+              case .expression(.function(_, .orderBy?, nil, nil), _) = columns.last else {
+            Issue.record("unexpected structure"); return
+        }
+        #expect(table.value == "t" && name.value == "a")
+        // An empty module argument only next to a comma: m() still has no arguments.
+        let none = try CreateVirtualTableStatement(parsing: "CREATE VIRTUAL TABLE f USING m()")
+        let trailing = try CreateVirtualTableStatement(parsing: "CREATE VIRTUAL TABLE f USING m(a, )")
+        #expect(none.arguments?.moduleArguments == nil)
+        #expect(trailing.arguments?.moduleArguments?.map(\.text) == ["a", ""])
+    }
 
     @Test(arguments: statements)
     func statementRoundTrips(_ text: String) throws {

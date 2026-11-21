@@ -26,7 +26,8 @@ public struct ModuleArgument: Syntax, ExpressibleByStringLiteral {
             if p.current.isSymbol(")") { depth -= 1 }
             end = p.advance().range.upperBound
         }
-        guard end > start else {
+        // parse.y vtabarg may be empty. Allow that beside a comma (`fts4(a, )`), so `m()` stays "no arguments".
+        guard end > start || p.current.isSymbol(",") || p.previous?.isSymbol(",") == true else {
             let e = p.unexpected(expected: "a module argument")
             p.state.record(e)
             throw e

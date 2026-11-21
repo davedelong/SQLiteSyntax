@@ -8,7 +8,7 @@ extension BeginStatement {
                 let value = try Begin.parse(&p)
                 return value
             }
-            let transaction = p.accept(texts: ["TRANSACTION"])
+            let transaction = p.attempt { (p: inout Parser) throws(ParseError) -> Transaction in try Transaction.parse(&p) }
             return BeginStatement(begin: begin, transaction: transaction)
         }
     }
@@ -33,6 +33,19 @@ extension BeginStatement.Begin {
             ]
             let value = try p.longest(alternatives)
             return value
+        }
+    }
+}
+
+extension BeginStatement.Transaction {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> BeginStatement.Transaction {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> BeginStatement.Transaction in
+            try p.expect(texts: ["TRANSACTION"])
+            let transactionName = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Any> in
+                let value = try Name<Any>.parse(&p, class: .name)
+                return value
+            }
+            return BeginStatement.Transaction(transactionName: transactionName)
         }
     }
 }

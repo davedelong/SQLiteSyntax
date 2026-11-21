@@ -144,6 +144,9 @@ extension Parser {
             case .number:
                 _ = advance()
                 return .literalValue(try numericLiteral(token.string, token: token))
+            case .string where peek().isSymbol("."):
+                // parse.y `nm DOT nm`: nm includes strings, so 'tbl'.'col' is a column name.
+                return try parseNameOrCall()
             case .string:
                 _ = advance()
                 return .literalValue(.string(token.string))
@@ -242,7 +245,7 @@ extension Parser {
     /// `column`, `table.column`, `schema.table.column`, a TRUE/FALSE literal, or a function call.
     mutating func parseNameOrCall() throws(ParseError) -> Expr {
         let token = current
-        let first = try parseName()
+        let first = try parseName(allowString: true)
         if current.isSymbol("(") {
             return try parseFunctionCall(name: first)
         }
@@ -256,11 +259,11 @@ extension Parser {
             }
             return .columnName(nil, nil, Name<Column>(value: first))
         }
-        let second = try parseName()
+        let second = try parseName(allowString: true)
         guard accept(symbol: ".") else {
             return .columnName(nil, Name<Table>(value: first), Name<Column>(value: second))
         }
-        let third = try parseName()
+        let third = try parseName(allowString: true)
         return .columnName(Name<Schema>(value: first), Name<Table>(value: second), Name<Column>(value: third))
     }
 
@@ -314,7 +317,8 @@ extension Parser {
         try expect(symbol: "(")
         let value = try parseExpression()
         try expect(keyword: "AS")
-        let type = try TypeName.parse(&self)
+        // parse.y typetoken may be empty: CAST(x AS ).
+        let type = current.isSymbol(")") ? nil : try TypeName.parse(&self)
         try expect(symbol: ")")
         return .cast(value, as: type)
     }

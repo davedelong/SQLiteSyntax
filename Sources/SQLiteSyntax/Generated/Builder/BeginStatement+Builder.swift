@@ -6,7 +6,7 @@ extension BeginStatement {
         if let begin {
             try builder.add(begin)
         }
-        if transaction { builder.add("TRANSACTION") }
+        try builder.add(transaction)
     }
 }
 
@@ -20,6 +20,15 @@ extension BeginStatement.Begin {
                 builder.add("EXCLUSIVE")
             case .immediate:
                 builder.add("IMMEDIATE")
+        }
+    }
+}
+
+extension BeginStatement.Transaction {
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("TRANSACTION")
+        if let transactionName {
+            try builder.add(transactionName)
         }
     }
 }

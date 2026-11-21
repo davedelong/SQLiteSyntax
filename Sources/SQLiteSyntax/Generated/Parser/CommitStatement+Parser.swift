@@ -4,7 +4,7 @@ extension CommitStatement {
     public static func parse(_ p: inout Parser) throws(ParseError) -> CommitStatement {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> CommitStatement in
             let keyword = try Keyword.parse(&p)
-            let transaction = p.accept(texts: ["TRANSACTION"])
+            let transaction = p.attempt { (p: inout Parser) throws(ParseError) -> Transaction in try Transaction.parse(&p) }
             return CommitStatement(keyword: keyword, transaction: transaction)
         }
     }
@@ -25,6 +25,19 @@ extension CommitStatement.Keyword {
             ]
             let value = try p.longest(alternatives)
             return value
+        }
+    }
+}
+
+extension CommitStatement.Transaction {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> CommitStatement.Transaction {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> CommitStatement.Transaction in
+            try p.expect(texts: ["TRANSACTION"])
+            let transactionName = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Any> in
+                let value = try Name<Any>.parse(&p, class: .name)
+                return value
+            }
+            return CommitStatement.Transaction(transactionName: transactionName)
         }
     }
 }

@@ -113,7 +113,17 @@ struct Tokenizer {
             guard case .keyword = tokens[i].kind, Keywords.contextual.contains(tokens[i].string) else { continue }
             let previous = i > 0 ? tokens[i - 1] : nil
             let next = tokens[min(i + 1, tokens.count - 1)], afterNext = tokens[min(i + 2, tokens.count - 1)]
-            let isName: (Token) -> Bool = { if case .identifier = $0.kind { return true } else { return false } }
+            // tokenize.c getToken(): what counts as a name when looking ahead. Keywords count too, before
+            // they're resolved themselves (`sum(x) over over`).
+            let isName: (Token) -> Bool = { token in
+                switch token.kind {
+                    case .identifier, .string: return true
+                    case .keyword:
+                        return Keywords.joinKeywords.contains(token.string) || token.string == "WINDOW" || token.string == "OVER"
+                            || Keywords.fallbackToIdentifier.contains(token.string)
+                    default: return false
+                }
+            }
             let isKeyword: Bool
             switch tokens[i].string {
                 case "WINDOW": isKeyword = isName(next) && afterNext.isKeyword("AS")

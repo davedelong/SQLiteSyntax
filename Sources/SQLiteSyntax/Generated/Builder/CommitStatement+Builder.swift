@@ -3,7 +3,7 @@
 extension CommitStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.add(keyword)
-        if transaction { builder.add("TRANSACTION") }
+        try builder.add(transaction)
     }
 }
 
@@ -14,6 +14,15 @@ extension CommitStatement.Keyword {
                 builder.add("COMMIT")
             case .end:
                 builder.add("END")
+        }
+    }
+}
+
+extension CommitStatement.Transaction {
+    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add("TRANSACTION")
+        if let transactionName {
+            try builder.add(transactionName)
         }
     }
 }
