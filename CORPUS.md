@@ -2,9 +2,15 @@
 
 `CorpusTests` extracts the SQL from SQLite's own test suite (`sqlite/test/*.test`), splits it into
 statements with `sqlite3_complete`, and compares the parser's verdict with SQLite's
-(`sqlite3_prepare_v2` against an empty database; only syntax errors, and errors raised by parse.y's
-own rule actions, count as rejections). Statements both accept must also round-trip: SQLite accepts
-the re-printed SQL, and parsing it again reproduces it.
+(`sqlite3_prepare_v2`). Statements both accept must also round-trip: SQLite accepts the re-printed
+SQL, and parsing it again reproduces it.
+
+SQLite's verdict comes from an in-memory database. The tests set up their own schema first, and SQLite
+stops at a missing table before checking the rest of a statement, so when it reports a missing table,
+database or column, the test creates it (a one-column table, an attached in-memory database, or a new
+column) and prepares the statement again. Only syntax errors, errors raised by parse.y's own rule
+actions, and a few errors that no schema can avoid (`count(DISTINCT)`, `ORDER BY` without `LIMIT` on
+`DELETE`/`UPDATE`, `RETURNING t.*`) count as rejections.
 
     SQLITE_CORPUS=1 swift test -c release --filter CorpusTests
 
@@ -13,9 +19,9 @@ the re-printed SQL, and parsing it again reproduces it.
 | | Statements |
 |---|---:|
 | Distinct statements | 47,745 |
-| Agree | 47,666 (99.83%) |
-| SQLite accepts, parser rejects | 30 |
-| SQLite rejects, parser accepts | 49 |
+| Agree | 47,659 (99.82%) |
+| SQLite accepts, parser rejects | 17 |
+| SQLite rejects, parser accepts | 69 |
 | Round-trip failures | 0 |
 
 ## Syntax added from parse.y (`codegen.json` `grammarPatches`)
@@ -43,23 +49,27 @@ tokenize.c's rule for what counts as a name when deciding whether they are keywo
 
 ## Remaining disagreements
 
-### Parser accepts, SQLite rejects (49)
+### Parser accepts, SQLite rejects (69)
 
 | Count | Reason | Assessment |
 |---:|---|---|
-| 43 | `ALTER TABLE … ADD/DROP CONSTRAINT`, `ALTER COLUMN … SET/DROP NOT NULL`: in the 2025-11 docs, newer than the linked SQLite 3.51.0 | Correct per the docs |
+| 53 | `ALTER TABLE … ADD [CONSTRAINT name] CHECK`, `DROP CONSTRAINT`, `ALTER COLUMN … SET/DROP NOT NULL`: in the 2025-11 docs, newer than the linked SQLite 3.51.0 | Correct per the docs |
+| 6 | Trigger bodies: parse.y's grammar for statements inside a trigger is narrower than for standalone ones. It rejects `UPDATE t AS alias`, `INSERT … DEFAULT VALUES`, and `INDEXED BY`/`NOT INDEXED` on `UPDATE`/`DELETE` there; the diagram reuses the full statements | Parser too lenient; not fixed yet |
+| 3 | `UPDATE … ORDER BY` without `LIMIT`: SQLite always rejects it ("ORDER BY without LIMIT on UPDATE"). The `update-stmt-limited` diagram allows it (the `DELETE` diagram doesn't) | Parser too lenient; not fixed yet |
 | 2 | 50+ levels of nested subqueries/functions exceed SQLite's parser stack | Implementation limit, not syntax |
 | 2 | `RANGE BETWEEN UNBOUNDED FOLLOWING …`: `UNBOUNDED` is read as a column name | Known limit of the keyword-fallback approximation in the hand-written expression parser |
+| 1 | `string_agg(DISTINCT a, b)`: SQLite allows `DISTINCT` only with exactly one argument | Parser too lenient; not fixed yet |
 | 1 | `PRAGMA compile_options(NULL)`: the diagram's `signed-literal` admits NULL, parse.y does not | Diagram vs parse.y |
 | 1 | `-0x08000000000000000`: SQLite rejects the 17-digit hex literal | Edge case |
 
-### SQLite accepts, parser rejects (30)
+### SQLite accepts, parser rejects (17)
 
 | Count | Reason | Assessment |
 |---:|---|---|
-| 14 | SQLite stops at a missing table or database before the real error. With the tables created, SQLite rejects them too: syntax errors (`ALTER TABLE t ADD COLUMN (…`, `SELECT * FROM;` and `#N` parameters in trigger bodies, `#2` in `ADD CONSTRAINT`, trailing `%WO%`), `count(DISTINCT)` ×3, `DELETE … ORDER BY` without `LIMIT` ×2, `RETURNING t.*`, and oversized hex literals ×2 (in a trigger body SQLite only notices when the trigger runs) | Parser is right; the test's empty database hides SQLite's error |
 | 11 | Legacy constraint lists: a standalone or chained `CONSTRAINT name`, table constraints without commas between them, `[NOT] DEFERRABLE …` as a column constraint on its own | parse.y legacy, not in the diagrams; not supported yet |
 | 5 | Join keywords in any order or combination: `OUTER LEFT NATURAL JOIN`, `LEFT RIGHT JOIN` (= `FULL`), `NATURAL LEFT FULL JOIN`. parse.y accepts `JOIN_KW [nm [nm]] JOIN` and sqlite3JoinType() accepts any consistent set of keywords | SQLite accepts them; not supported yet |
+| 1 | An oversized hex literal in a trigger body: SQLite only compiles the body when the trigger runs, so `CREATE TRIGGER` succeeds | Parser is stricter; the trigger could never run |
 
-No remaining disagreement is an unexplained parser bug. One known approximation remains: keyword
-fallback in frame bounds (`RANGE BETWEEN UNBOUNDED FOLLOWING`), documented above.
+No remaining disagreement is unexplained. The parser is too lenient in trigger bodies, `UPDATE … ORDER
+BY` without `LIMIT` and multi-argument `DISTINCT`, and one known approximation remains: keyword
+fallback in frame bounds (`RANGE BETWEEN UNBOUNDED FOLLOWING`).

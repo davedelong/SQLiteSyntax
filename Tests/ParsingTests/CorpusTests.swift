@@ -145,31 +145,65 @@ struct CorpusTests {
     // MARK: SQLite's verdict
 
     /// SQLite's prepare error, or "" if it prepares.
+    ///
+    /// The statements come from tests that set up their own schema first, and SQLite stops at a missing
+    /// table or column before checking the rest. So when it reports one missing, that's created (a
+    /// table, an attached in-memory database, or a column) and the statement is prepared again.
     static func sqliteMessage(_ sql: String) -> String {
         var db: OpaquePointer?
         sqlite3_open(":memory:", &db)
         defer { sqlite3_close(db) }
-        var statement: OpaquePointer?
-        defer { sqlite3_finalize(statement) }
-        return sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK ? "" : String(cString: sqlite3_errmsg(db))
+        var tables: [String] = []   // created so far, quoted
+        var tried: Set<String> = []
+        while true {
+            var statement: OpaquePointer?
+            let status = sqlite3_prepare_v2(db, sql, -1, &statement, nil)
+            sqlite3_finalize(statement)
+            if status == SQLITE_OK { return "" }
+            let message = String(cString: sqlite3_errmsg(db))
+            let setup = Self.setup(for: message, tables: tables).filter { tried.insert($0).inserted }
+            // Statements that fail (a column already there, say) are fine as long as one does something.
+            let succeeded = setup.filter { sqlite3_exec(db, $0, nil, nil, nil) == SQLITE_OK }
+            guard !succeeded.isEmpty else { return message }
+            tables += succeeded.compactMap { $0.hasPrefix("CREATE TABLE ") ? String($0.dropFirst(13).dropLast(3)) : nil }
+        }
     }
 
-    /// Accepted unless SQLite reports a syntax problem (unknown tables, functions etc. are fine).
+    /// SQL that creates what `message` says is missing: a table, a database, or a column (added to the
+    /// table it names, or to each table created so far).
+    static func setup(for message: String, tables: [String]) -> [String] {
+        func quoted<S: StringProtocol>(_ name: S) -> String { "\"" + name.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }
+        func qualified(_ name: Substring) -> [String] { name.split(separator: ".").map(quoted) }
+        if message.hasPrefix("no such table: ") {
+            // `t1` or `main.t1`.
+            return ["CREATE TABLE \(qualified(message.dropFirst("no such table: ".count)).joined(separator: "."))(x)"]
+        }
+        if message.hasPrefix("unknown database ") {
+            return ["ATTACH ':memory:' AS \(quoted(message.dropFirst("unknown database ".count)))"]
+        }
+        if message.hasPrefix("no such column: ") {
+            // `c`, `t.c` or `main.t.c`.
+            let parts = qualified(message.dropFirst("no such column: ".count))
+            let owners = parts.count > 1 ? [parts.dropLast().joined(separator: ".")] : tables
+            return owners.map { "ALTER TABLE \($0) ADD COLUMN \(parts.last!)" }
+        }
+        return []
+    }
+
+    /// Accepted unless SQLite reports a syntax problem (unknown columns, functions etc. are fine).
     static func sqliteVerdict(_ sql: String) -> Verdict {
-        var db: OpaquePointer?
-        sqlite3_open(":memory:", &db)
-        defer { sqlite3_close(db) }
-        var statement: OpaquePointer?
-        defer { sqlite3_finalize(statement) }
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK { return .accepted }
-        let message = String(cString: sqlite3_errmsg(db))
+        let message = sqliteMessage(sql)
+        if message.isEmpty { return .accepted }
         // Syntax errors, plus errors parse.y raises from its own rule actions (they are parse-time rejections).
         let syntax = ["syntax error", "incomplete input", "unrecognized token", "parser stack overflow",
                       "unterminated", "near \"", "unknown table option", "should come after", "not before",
                       "too many terms in compound SELECT", "is not an ordered-set aggregate",
                       "DISTINCT not allowed on ordered-set aggregate", "Recursion limit",
                       "clause is not allowed on UPDATE or DELETE statements within triggers",
-                      "unknown join type", "hex literal too big", "a JOIN clause is required before", "unsupported use of NULLS"]
+                      "unknown join type", "hex literal too big", "a JOIN clause is required before", "unsupported use of NULLS",
+                      // Raised after parsing, but whatever the schema: the statement can never prepare.
+                      "DISTINCT aggregates must have exactly one argument", "ORDER BY without LIMIT on",
+                      "RETURNING may not use"]
         return syntax.contains { message.contains($0) } ? .rejected : .accepted
     }
 
