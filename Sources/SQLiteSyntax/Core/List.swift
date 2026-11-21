@@ -1,86 +1,65 @@
-//
-//  File.swift
-//  SQLiteSyntax
-//
-//  Created by Dave DeLong on 4/26/25.
-//
-
-import Foundation
-
+/// A list that must contain at least one item, printed with commas between the items.
+///
+/// Generated types use `List` where the grammar requires at least one item (`x { ',' x }`), and a plain
+/// array where the list may be empty. Lists with another delimiter (such as `;` in `SQLStatementList`)
+/// are printed by their generated `build(using:)`, which passes the delimiter itself.
+///
+/// `List` is a collection and can be written as an array literal:
+///
+/// ```swift
+/// statement.columns = []
+/// statement.columns.append(...)
+/// ```
 public struct List<Element: Syntax>: Syntax {
-    
-    public var items: Array<Element>
-    public var delimiter = ","
-    public var includeLeadingDelimeter = false
-    
-    public init(items: Array<Element>, delimeter: String, includeLeadingDelimeter: Bool) {
-        self.items = items
-        self.delimiter = delimeter
-        self.includeLeadingDelimeter = includeLeadingDelimeter
+
+    public var items: [Element]
+
+    public init() {
+        self.items = []
     }
-    
+
+    public init<S: Sequence>(_ elements: S) where S.Element == Element {
+        self.items = Array(elements)
+    }
+
     public func validate() throws(SyntaxError) {
-        try require(items.count > 0, reason: "A list must contain at least one item")
+        try require(!items.isEmpty, reason: "A list must contain at least one item")
     }
-    
+
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        if includeLeadingDelimeter { builder.add(delimiter) }
-        try builder.addList(items, delimiter: delimiter)
+        try builder.addList(items, delimiter: ",")
     }
 }
 
-/*
- List conforms to various collection protocols to make interacting with it a bit easier
- 
- Instead of having to do:
- statement.columns = List()
- statement.columns.items.append(...)
- 
- You can do:
- statement.columns = []
- statement.columns.append(...)
- */
-
 extension List: ExpressibleByArrayLiteral {
-    
     public init(arrayLiteral elements: Element...) {
         self.init(elements)
     }
-    
 }
 
 extension List: RangeReplaceableCollection, BidirectionalCollection, MutableCollection, RandomAccessCollection {
-    
+
     public typealias SubSequence = List<Element>
-    public typealias Index = Array<Element>.Index
-    
-    public var startIndex: Array<Element>.Index { items.startIndex }
-    public var endIndex: Array<Element>.Index { items.endIndex }
+    public typealias Index = [Element].Index
+
+    public var startIndex: Index { items.startIndex }
+    public var endIndex: Index { items.endIndex }
     public var count: Int { items.count }
-    
+
     public func index(before i: Index) -> Index { items.index(before: i) }
     public func index(after i: Index) -> Index { items.index(after: i) }
-    
+
     public subscript(position: Index) -> Element {
         get { items[position] }
         set { items[position] = newValue }
     }
+
     public subscript(bounds: Range<Index>) -> List<Element> {
-        get { List(items: Array(items[bounds]),
-                   delimeter: delimiter,
-                   includeLeadingDelimeter: includeLeadingDelimeter) }
+        get { List(items[bounds]) }
         set { items[bounds] = newValue.items[...] }
     }
-    
-    public init() {
-        self.items = []
-    }
-    
-    public init<S>(_ elements: S) where S : Sequence, Element == S.Element {
-        self.items = Array(elements)
-    }
-    
-    public mutating func replaceSubrange<C>(_ subrange: Range<Index>, with newElements: C) where C : Collection, Element == C.Element {
+
+    public mutating func replaceSubrange<C: Collection>(_ subrange: Range<Index>, with newElements: C) where C.Element == Element {
         items.replaceSubrange(subrange, with: newElements)
     }
 }
