@@ -6,14 +6,21 @@
 /// A `numeric-literal` token: an unsigned number. `signed-number` adds the sign. Used by generated types
 /// (see `tokens` in SQLiteSyntaxGenerator/Grammar/codegen.json).
 public enum NumericLiteral: Syntax, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
+
     /// An INTEGER, e.g. `10` or `0x10`. A negative value is written as the hex literal SQLite reads as it
     /// (`0xFFFFFFFFFFFFFFFF` is -1), since a numeric literal has no sign.
     case integer(Int64)
+
     /// A REAL, e.g. `1.5` or `1e3`; it must not be negative or NaN.
     case real(Double)
 
-    public init(integerLiteral value: Int64) { self = .integer(value) }
-    public init(floatLiteral value: Double) { self = .real(value) }
+    public init(integerLiteral value: Int64) {
+        self = .integer(value)
+    }
+
+    public init(floatLiteral value: Double) {
+        self = .real(value)
+    }
 
     public func validate() throws(SyntaxError) {
         if case .real(let d) = self {

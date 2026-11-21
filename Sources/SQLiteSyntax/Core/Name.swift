@@ -30,7 +30,7 @@ public struct Name<T>: Syntax {
     
     /// SQLite reads SQL text only up to a NUL, so a name containing one would cut the statement short.
     public func validate() throws(SyntaxError) {
-        try require(!value.utf8.contains(0), reason: "A name cannot contain a NUL character")
+        try require(!value.containsNull, reason: "A name cannot contain a NUL character")
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {

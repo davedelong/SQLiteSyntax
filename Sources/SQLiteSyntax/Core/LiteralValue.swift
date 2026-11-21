@@ -26,7 +26,7 @@ public enum LiteralValue: Syntax {
     /// (Use `.blob` for binary data.)
     public func validate() throws(SyntaxError) {
         if case .string(let s) = self {
-            try require(!s.utf8.contains(0), reason: "A string literal cannot contain a NUL character; use a blob")
+            try require(!s.containsNull, reason: "A string literal cannot contain a NUL character; use a blob")
         }
     }
 
