@@ -17,11 +17,11 @@ public struct TableConstraint: Syntax {
     /// `( 'CHECK' '(' expr ')' conflict-clause | 'FOREIGN' 'KEY' column-name-list foreign-key-clause | ( 'PRIMARY' 'KEY' '(' indexed-column 'AUTOINCREMENT' | ( 'PRIMARY' 'KEY' | 'UNIQUE' ) '(' indexed-column { ',' indexed-column } ) ')' conflict-clause )`
     public enum Constraint: Syntax {
         /// `'CHECK' '(' expr ')' conflict-clause`
-        case check(check: Expression, conflictClause: ConflictClause? = nil)
+        case check(check: Expression, conflict: Conflict? = nil)
         /// `'FOREIGN' 'KEY' column-name-list foreign-key-clause`
-        case foreignKey(columnNameList: ColumnNameList, foreignKeyClause: ForeignKeyClause)
+        case foreignKey(columnNameList: ColumnNameList, foreignKey: ForeignKey)
         /// `( 'PRIMARY' 'KEY' '(' indexed-column 'AUTOINCREMENT' | ( 'PRIMARY' 'KEY' | 'UNIQUE' ) '(' indexed-column { ',' indexed-column } ) ')' conflict-clause`
-        case key(columns: Columns, conflictClause: ConflictClause? = nil)
+        case key(columns: Columns, conflict: Conflict? = nil)
 
         /// `( 'PRIMARY' 'KEY' '(' indexed-column 'AUTOINCREMENT' | ( 'PRIMARY' 'KEY' | 'UNIQUE' ) '(' indexed-column { ',' indexed-column } )`
         public enum Columns: Syntax {

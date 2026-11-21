@@ -21,7 +21,7 @@ public indirect enum TableOrSubquery: Syntax {
         /// `( join-clause | table-or-subquery { ',' table-or-subquery } )`
         public indirect enum Source: Syntax {
             /// `join-clause`
-            case joinClause(JoinClause)
+            case join(Join)
             /// `table-or-subquery { ',' table-or-subquery }`
             case tables(List<TableOrSubquery>)
 

@@ -45,7 +45,7 @@ extension AlterTableStatement.Action.Add {
             case .columnDefinition(let column, let columnDefinition):
                 if column { builder.add("COLUMN") }
                 try builder.add(columnDefinition)
-            case .check(let constraintName, let check, let conflictClause):
+            case .check(let constraintName, let check, let conflict):
                 try builder.require(SQLiteVersion(3, 52, 0), for: self)
                 if let constraintName {
                     builder.add("CONSTRAINT")
@@ -54,8 +54,8 @@ extension AlterTableStatement.Action.Add {
                 builder.add("CHECK", "(")
                 try builder.add(check)
                 builder.add(")")
-                if let conflictClause {
-                    try builder.add(conflictClause)
+                if let conflict {
+                    try builder.add(conflict)
                 }
         }
     }
@@ -67,10 +67,10 @@ extension AlterTableStatement.Action.Change {
         switch self {
             case .dropNotNull:
                 builder.add("DROP", "NOT", "NULL")
-            case .setNotNull(let conflictClause):
+            case .setNotNull(let conflict):
                 builder.add("SET", "NOT", "NULL")
-                if let conflictClause {
-                    try builder.add(conflictClause)
+                if let conflict {
+                    try builder.add(conflict)
                 }
         }
     }

@@ -306,8 +306,8 @@ extension Parser {
            peek().isKeyword("GROUP"), peek(2).isSymbol("(") {
             return try parseOrderedSetAggregate(name: name, arguments: arguments)
         }
-        let filter = current.isKeyword("FILTER") && peek().isSymbol("(") ? try FilterClause.parse(&self) : nil
-        let over = current.isKeyword("OVER") ? try OverClause.parse(&self) : nil
+        let filter = current.isKeyword("FILTER") && peek().isSymbol("(") ? try Filter.parse(&self) : nil
+        let over = current.isKeyword("OVER") ? try Over.parse(&self) : nil
         return .function(Name<Function>(value: name), arguments, filter, over)
     }
 
@@ -330,8 +330,8 @@ extension Parser {
         try expect(keyword: "BY")
         let orderBy = try parseExpression()
         try expect(symbol: ")")
-        let filter = current.isKeyword("FILTER") && peek().isSymbol("(") ? try FilterClause.parse(&self) : nil
-        let over = current.isKeyword("OVER") ? try OverClause.parse(&self) : nil
+        let filter = current.isKeyword("FILTER") && peek().isSymbol("(") ? try Filter.parse(&self) : nil
+        let over = current.isKeyword("OVER") ? try Over.parse(&self) : nil
         return .orderedSetAggregate(Name<Function>(value: name), arguments: list, withinGroup: orderBy, filter: filter, over: over)
     }
 

@@ -11,7 +11,7 @@ extension ColumnNameList: ExpressibleByArrayLiteral {
 }
 
 /// `[1, "x"]` for one `VALUES` row `( 1 , 'x' )`.
-extension ValuesClause.ValuesElement: ExpressibleByArrayLiteral {
+extension Values.ValuesElement: ExpressibleByArrayLiteral {
     public init(arrayLiteral elements: Expression...) {
         self.init(expressions: List(elements))
     }

@@ -3,7 +3,7 @@
 /// `filter-clause ::= 'FILTER' '(' 'WHERE' expr ')'`
 ///
 /// Since SQLite 3.25.0.
-public struct FilterClause: Syntax {
+public struct Filter: Syntax {
     public var `where`: Expression
 
     public init(where: Expression) {

@@ -3,7 +3,7 @@
 /// `upsert-clause ::= 'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] ) { 'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] ) }`
 ///
 /// Since SQLite 3.24.0.
-public struct UpsertClause: Syntax {
+public struct Upsert: Syntax {
     public var clauses: List<ClausesElement>
 
     public init(clauses: List<ClausesElement>) {
@@ -11,7 +11,7 @@ public struct UpsertClause: Syntax {
     }
 
     public func validate() throws(SyntaxError) {
-        try require(!clauses.isEmpty, reason: "UpsertClause.clauses must not be empty")
+        try require(!clauses.isEmpty, reason: "Upsert.clauses must not be empty")
     }
 
     /// `'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] )`

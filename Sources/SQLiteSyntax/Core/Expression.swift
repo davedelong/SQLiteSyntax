@@ -15,12 +15,12 @@ public indirect enum Expression: Syntax {
     case unaryOperator(UnaryOperator, Expression)
     case binaryOperator(Expression, BinaryOperator, Expression)
     /// `name ( arguments ) [ filter ] [ over ]`; `nil` arguments is `name ( )`.
-    case function(Name<Function>, FunctionArguments?, FilterClause?, OverClause?)
+    case function(Name<Function>, FunctionArguments?, Filter?, Over?)
     /// An ordered-set aggregate, `name ( arguments ) WITHIN GROUP ( ORDER BY withinGroup ) [ filter ] [ over ]`,
     /// e.g. `percentile_cont(0.5) WITHIN GROUP (ORDER BY x)`. The arguments may be empty.
     ///
     /// Since SQLite 3.47.0, and only in builds compiled with `SQLITE_ENABLE_ORDERED_SET_AGGREGATES`.
-    case orderedSetAggregate(Name<Function>, arguments: [Expression], withinGroup: Expression, filter: FilterClause? = nil, over: OverClause? = nil)
+    case orderedSetAggregate(Name<Function>, arguments: [Expression], withinGroup: Expression, filter: Filter? = nil, over: Over? = nil)
     case expressionList(List<Expression>)
     /// `CAST(x AS type)`; the type may be empty, `CAST(x AS )`, as parse.y allows.
     case cast(Expression, as: TypeName?)

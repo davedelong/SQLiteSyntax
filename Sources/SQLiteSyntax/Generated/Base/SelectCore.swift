@@ -7,7 +7,7 @@ public indirect enum SelectCore: Syntax {
     /// - `window`: since SQLite 3.25.0.
     case select(selection: Selection? = nil, resultColumns: List<ResultColumn>, source: Source? = nil, groupBy: List<Expression>? = nil, having: Expression? = nil, window: List<WindowElement>? = nil)
     /// `values-clause`
-    case valuesClause(ValuesClause)
+    case values(Values)
 
     public func validate() throws(SyntaxError) {
         switch self {
@@ -36,7 +36,7 @@ public indirect enum SelectCore: Syntax {
         /// `( join-clause | table-or-subquery { ',' table-or-subquery } )`
         public indirect enum From: Syntax {
             /// `join-clause`
-            case joinClause(JoinClause)
+            case join(Join)
             /// `table-or-subquery { ',' table-or-subquery }`
             case tables(List<TableOrSubquery>)
 

@@ -3,7 +3,7 @@
 /// `over-clause ::= 'OVER' ( window-defn | window-name )`
 ///
 /// Since SQLite 3.25.0.
-public enum OverClause: Syntax {
+public enum Over: Syntax {
     /// `window-defn`
     case windowDefinition(WindowDefinition)
     /// `window-name`

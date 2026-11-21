@@ -3,7 +3,7 @@
 /// `returning-clause ::= 'RETURNING' ( '*' | expr [ [ 'AS' ] column-alias ] ) { ',' ( '*' | expr [ [ 'AS' ] column-alias ] ) }`
 ///
 /// Since SQLite 3.35.0.
-public struct ReturningClause: Syntax {
+public struct Returning: Syntax {
     public var returning: List<ReturningElement>
 
     public init(returning: List<ReturningElement>) {
@@ -11,7 +11,7 @@ public struct ReturningClause: Syntax {
     }
 
     public func validate() throws(SyntaxError) {
-        try require(!returning.isEmpty, reason: "ReturningClause.returning must not be empty")
+        try require(!returning.isEmpty, reason: "Returning.returning must not be empty")
     }
 
     /// `( '*' | expr [ [ 'AS' ] column-alias ] )`

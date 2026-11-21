@@ -44,7 +44,7 @@ extension Table.Create {
         self.columns.append(.init(name, type: type, canBeNull: canBeNull))
     }
     
-    public mutating func addForeignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, type: TypeName? = nil, canBeNull: Bool, onUpdate: ForeignKeyClause.Action? = nil, onDelete: ForeignKeyClause.Action? = nil) {
+    public mutating func addForeignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, type: TypeName? = nil, canBeNull: Bool, onUpdate: ForeignKey.Action? = nil, onDelete: ForeignKey.Action? = nil) {
         self.columns.append(.foreignKey(name, references: references, column: column, type: type, canBeNull: canBeNull, onUpdate: onUpdate, onDelete: onDelete))
     }
     

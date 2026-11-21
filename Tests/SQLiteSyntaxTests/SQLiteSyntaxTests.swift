@@ -8,7 +8,7 @@ import Testing
                                         .init(name: "id",
                                               typeName: .init(names: [.init(value: "INT")]),
                                               constraints: [
-                                                .init(constraint: .primaryKey(conflictClause: .abort, autoincrement: true))
+                                                .init(constraint: .primaryKey(conflict: .abort, autoincrement: true))
                                               ])
                                       ]))
     
@@ -67,7 +67,7 @@ import Testing
     let insert = InsertStatement(action: .insert(),
                                  tableName: "Test",
                                  columnNameList: ["greeting", "target"],
-                                 source: .rows(values: .valuesClause(ValuesClause(values: [
+                                 source: .rows(values: .values(Values(values: [
                                     ["Hello", "World"],
                                     ["Goodnight", "Moon"],
                                  ]))))

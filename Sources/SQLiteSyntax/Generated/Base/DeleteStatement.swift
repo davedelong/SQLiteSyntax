@@ -7,12 +7,12 @@ public struct DeleteStatement: Syntax {
     public var qualifiedTableName: QualifiedTableName
     public var `where`: Expression? = nil
     /// Since SQLite 3.35.0.
-    public var returningClause: ReturningClause? = nil
+    public var returning: Returning? = nil
 
-    public init(with: With? = nil, qualifiedTableName: QualifiedTableName, where: Expression? = nil, returningClause: ReturningClause? = nil) {
+    public init(with: With? = nil, qualifiedTableName: QualifiedTableName, where: Expression? = nil, returning: Returning? = nil) {
         self.with = with
         self.qualifiedTableName = qualifiedTableName
         self.`where` = `where`
-        self.returningClause = returningClause
+        self.returning = returning
     }
 }

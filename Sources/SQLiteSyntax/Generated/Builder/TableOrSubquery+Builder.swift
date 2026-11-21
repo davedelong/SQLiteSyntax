@@ -53,8 +53,8 @@ extension TableOrSubquery.Parenthesized {
 extension TableOrSubquery.Parenthesized.Source {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
-            case .joinClause(let joinClause):
-                try builder.add(joinClause)
+            case .join(let join):
+                try builder.add(join)
             case .tables(let tableOrSubquerys):
                 try builder.addList(tableOrSubquerys.items, delimiter: ",")
         }

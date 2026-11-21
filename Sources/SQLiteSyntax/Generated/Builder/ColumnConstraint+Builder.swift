@@ -25,23 +25,23 @@ extension ColumnConstraint.Constraint {
             case .`default`(let `default`):
                 builder.add("DEFAULT")
                 try builder.add(`default`)
-            case .notNull(let conflictClause):
+            case .notNull(let conflict):
                 builder.add("NOT", "NULL")
-                try builder.add(conflictClause)
-            case .null(let conflictClause):
+                try builder.add(conflict)
+            case .null(let conflict):
                 builder.add("NULL")
-                try builder.add(conflictClause)
-            case .primaryKey(let sortDirection, let conflictClause, let autoincrement):
+                try builder.add(conflict)
+            case .primaryKey(let sortDirection, let conflict, let autoincrement):
                 if autoincrement { try builder.require(SQLiteVersion(3, 1, 0), for: self) }
                 builder.add("PRIMARY", "KEY")
                 if let sortDirection {
                     try builder.add(sortDirection)
                 }
-                try builder.add(conflictClause)
+                try builder.add(conflict)
                 if autoincrement { builder.add("AUTOINCREMENT") }
-            case .unique(let conflictClause):
+            case .unique(let conflict):
                 builder.add("UNIQUE")
-                try builder.add(conflictClause)
+                try builder.add(conflict)
             case .generated(let generatedAlways, let expression, let storage):
                 try builder.require(SQLiteVersion(3, 31, 0), for: self)
                 if generatedAlways { try builder.require(SQLiteVersion(3, 31, 0), for: self) }
@@ -52,10 +52,10 @@ extension ColumnConstraint.Constraint {
                 if let storage {
                     try builder.add(storage)
                 }
-            case .foreignKey(let foreignKeyClause):
-                try builder.add(foreignKeyClause)
-            case .deferrable(let deferrableClause):
-                try builder.add(deferrableClause)
+            case .foreignKey(let foreignKey):
+                try builder.add(foreignKey)
+            case .deferrable(let deferrable):
+                try builder.add(deferrable)
         }
     }
 }

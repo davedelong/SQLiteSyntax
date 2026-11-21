@@ -23,15 +23,15 @@ public struct ColumnConstraint: Syntax {
         /// `'DEFAULT' ( '(' expr ')' | literal-value | signed-number | ( '+' | '-' ) literal-value | name )`
         case `default`(Default)
         /// `'NOT' 'NULL' conflict-clause`
-        case notNull(ConflictClause? = nil)
+        case notNull(Conflict? = nil)
         /// `'NULL' conflict-clause`
-        case null(ConflictClause? = nil)
+        case null(Conflict? = nil)
         /// `'PRIMARY' 'KEY' [ ( 'ASC' | 'DESC' ) ] conflict-clause [ 'AUTOINCREMENT' ]`
         ///
         /// - `autoincrement`: since SQLite 3.1.0.
-        case primaryKey(sortDirection: SortDirection? = nil, conflictClause: ConflictClause? = nil, autoincrement: Bool = false)
+        case primaryKey(sortDirection: SortDirection? = nil, conflict: Conflict? = nil, autoincrement: Bool = false)
         /// `'UNIQUE' conflict-clause`
-        case unique(ConflictClause? = nil)
+        case unique(Conflict? = nil)
         /// `[ 'GENERATED' 'ALWAYS' ] 'AS' '(' expr ')' [ ( 'STORED' | 'VIRTUAL' ) ]`
         ///
         /// Since SQLite 3.31.0.
@@ -39,9 +39,9 @@ public struct ColumnConstraint: Syntax {
         /// - `generatedAlways`: since SQLite 3.31.0.
         case generated(generatedAlways: Bool = false, expression: Expression, storage: Storage? = nil)
         /// `foreign-key-clause`
-        case foreignKey(ForeignKeyClause)
+        case foreignKey(ForeignKey)
         /// `deferrable-clause`
-        case deferrable(DeferrableClause)
+        case deferrable(Deferrable)
 
         /// `( '(' expr ')' | literal-value | signed-number | ( '+' | '-' ) literal-value | name )`
         public enum Default: Syntax {

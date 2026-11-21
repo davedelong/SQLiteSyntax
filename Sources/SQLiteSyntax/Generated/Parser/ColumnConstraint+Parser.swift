@@ -40,13 +40,13 @@ extension ColumnConstraint.Constraint {
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     try p.expect(texts: ["NOT", "NULL"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
-                    return .notNull(conflictClause)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in try Conflict.parse(&p) }
+                    return .notNull(conflict)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     try p.expect(texts: ["NULL"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
-                    return .null(conflictClause)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in try Conflict.parse(&p) }
+                    return .null(conflict)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     try p.expect(texts: ["PRIMARY", "KEY"])
@@ -54,14 +54,14 @@ extension ColumnConstraint.Constraint {
                         let value = try SortDirection.parse(&p)
                         return value
                     }
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in try Conflict.parse(&p) }
                     let autoincrement = p.accept(texts: ["AUTOINCREMENT"])
-                    return .primaryKey(sortDirection: sortDirection, conflictClause: conflictClause, autoincrement: autoincrement)
+                    return .primaryKey(sortDirection: sortDirection, conflict: conflict, autoincrement: autoincrement)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     try p.expect(texts: ["UNIQUE"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
-                    return .unique(conflictClause)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in try Conflict.parse(&p) }
+                    return .unique(conflict)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     let generatedAlways = p.accept(texts: ["GENERATED", "ALWAYS"])
@@ -75,12 +75,12 @@ extension ColumnConstraint.Constraint {
                     return .generated(generatedAlways: generatedAlways, expression: expression, storage: storage)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
-                    let foreignKeyClause = try ForeignKeyClause.parse(&p)
-                    return .foreignKey(foreignKeyClause)
+                    let foreignKey = try ForeignKey.parse(&p)
+                    return .foreignKey(foreignKey)
                 },
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
-                    let deferrableClause = try DeferrableClause.parse(&p)
-                    return .deferrable(deferrableClause)
+                    let deferrable = try Deferrable.parse(&p)
+                    return .deferrable(deferrable)
                 },
             ]
             let value = try p.longest(alternatives)

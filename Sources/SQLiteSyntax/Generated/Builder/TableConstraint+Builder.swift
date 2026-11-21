@@ -15,19 +15,19 @@ extension TableConstraint {
 extension TableConstraint.Constraint {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
-            case .check(let check, let conflictClause):
+            case .check(let check, let conflict):
                 builder.add("CHECK", "(")
                 try builder.add(check)
                 builder.add(")")
-                try builder.add(conflictClause)
-            case .foreignKey(let columnNameList, let foreignKeyClause):
+                try builder.add(conflict)
+            case .foreignKey(let columnNameList, let foreignKey):
                 builder.add("FOREIGN", "KEY")
                 try builder.add(columnNameList)
-                try builder.add(foreignKeyClause)
-            case .key(let columns, let conflictClause):
+                try builder.add(foreignKey)
+            case .key(let columns, let conflict):
                 try builder.add(columns)
                 builder.add(")")
-                try builder.add(conflictClause)
+                try builder.add(conflict)
         }
     }
 }

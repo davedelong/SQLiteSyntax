@@ -5,7 +5,7 @@
 
 import Foundation
 
-extension ForeignKeyClause {
+extension ForeignKey {
     /// What happens to a referencing row when the referenced row is deleted or updated.
     public typealias Action = ActionsElement.Action
 }
@@ -19,8 +19,8 @@ extension ColumnDefinition {
         ])
     }
     
-    public static func foreignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, type: TypeName? = nil, canBeNull: Bool, onUpdate: ForeignKeyClause.Action? = nil, onDelete: ForeignKeyClause.Action? = nil) -> Self {
-        var clause = ForeignKeyClause(foreignTable: references, columns: ColumnNameList(columnNames: [column]))
+    public static func foreignKey(_ name: Name<Column>, references: Name<Table>, column: Name<Column>, type: TypeName? = nil, canBeNull: Bool, onUpdate: ForeignKey.Action? = nil, onDelete: ForeignKey.Action? = nil) -> Self {
+        var clause = ForeignKey(foreignTable: references, columns: ColumnNameList(columnNames: [column]))
         if let onUpdate { clause.actions.append(.on(on: .update, action: onUpdate)) }
         if let onDelete { clause.actions.append(.on(on: .delete, action: onDelete)) }
         var definition = ColumnDefinition(name: name, typeName: type, constraints: [.init(constraint: .foreignKey(clause))])

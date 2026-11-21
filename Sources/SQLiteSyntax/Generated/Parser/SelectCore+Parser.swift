@@ -33,8 +33,8 @@ extension SelectCore {
                     return .select(selection: selection, resultColumns: resultColumns, source: source, groupBy: groupBy, having: having, window: window)
                 },
                 { (p: inout Parser) throws -> SelectCore in
-                    let valuesClause = try ValuesClause.parse(&p)
-                    return .valuesClause(valuesClause)
+                    let values = try Values.parse(&p)
+                    return .values(values)
                 },
             ]
             let value = try p.longest(alternatives)
@@ -93,8 +93,8 @@ extension SelectCore.Source.From {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> SelectCore.Source.From in
             let alternatives: [(inout Parser) throws -> SelectCore.Source.From] = [
                 { (p: inout Parser) throws -> SelectCore.Source.From in
-                    let joinClause = try JoinClause.parse(&p)
-                    return .joinClause(joinClause)
+                    let join = try Join.parse(&p)
+                    return .join(join)
                 },
                 { (p: inout Parser) throws -> SelectCore.Source.From in
                     let tableOrSubquerys = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> TableOrSubquery in try TableOrSubquery.parse(&p) })

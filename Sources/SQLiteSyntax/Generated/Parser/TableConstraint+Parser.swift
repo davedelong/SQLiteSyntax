@@ -26,20 +26,20 @@ extension TableConstraint.Constraint {
                     try p.expect(texts: ["CHECK", "("])
                     let check = try Expression.parse(&p)
                     try p.expect(texts: [")"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
-                    return .check(check: check, conflictClause: conflictClause)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in try Conflict.parse(&p) }
+                    return .check(check: check, conflict: conflict)
                 },
                 { (p: inout Parser) throws -> TableConstraint.Constraint in
                     try p.expect(texts: ["FOREIGN", "KEY"])
                     let columnNameList = try ColumnNameList.parse(&p)
-                    let foreignKeyClause = try ForeignKeyClause.parse(&p)
-                    return .foreignKey(columnNameList: columnNameList, foreignKeyClause: foreignKeyClause)
+                    let foreignKey = try ForeignKey.parse(&p)
+                    return .foreignKey(columnNameList: columnNameList, foreignKey: foreignKey)
                 },
                 { (p: inout Parser) throws -> TableConstraint.Constraint in
                     let columns = try Columns.parse(&p)
                     try p.expect(texts: [")"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in try ConflictClause.parse(&p) }
-                    return .key(columns: columns, conflictClause: conflictClause)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in try Conflict.parse(&p) }
+                    return .key(columns: columns, conflict: conflict)
                 },
             ]
             let value = try p.longest(alternatives)

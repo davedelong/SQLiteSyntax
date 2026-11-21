@@ -4,7 +4,7 @@ extension UpdateStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         if with != nil { try builder.require(SQLiteVersion(3, 8, 3), for: self) }
         if from != nil { try builder.require(SQLiteVersion(3, 33, 0), for: self) }
-        if returningClause != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
+        if returning != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
         if let with {
             try builder.add(with)
         }
@@ -24,8 +24,8 @@ extension UpdateStatement {
             builder.add("WHERE")
             try builder.add(`where`)
         }
-        if let returningClause {
-            try builder.add(returningClause)
+        if let returning {
+            try builder.add(returning)
         }
     }
 }
@@ -69,8 +69,8 @@ extension UpdateStatement.SetElement.Target {
 extension UpdateStatement.From {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
-            case .joinClause(let joinClause):
-                try builder.add(joinClause)
+            case .join(let join):
+                try builder.add(join)
             case .tables(let tableOrSubquerys):
                 try builder.addList(tableOrSubquerys.items, delimiter: ",")
         }

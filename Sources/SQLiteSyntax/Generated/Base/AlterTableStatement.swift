@@ -38,7 +38,7 @@ public struct AlterTableStatement: Syntax {
             /// `[ 'CONSTRAINT' constraint-name ] 'CHECK' '(' expr ')' [ conflict-clause ]`
             ///
             /// Since SQLite 3.52.0.
-            case check(constraintName: Name<Any>? = nil, check: Expression, conflictClause: ConflictClause? = nil)
+            case check(constraintName: Name<Any>? = nil, check: Expression, conflict: Conflict? = nil)
         }
 
         /// `( 'DROP' 'NOT' 'NULL' | 'SET' 'NOT' 'NULL' [ conflict-clause ] )`
@@ -46,7 +46,7 @@ public struct AlterTableStatement: Syntax {
             /// `'DROP' 'NOT' 'NULL'`
             case dropNotNull
             /// `'SET' 'NOT' 'NULL' [ conflict-clause ]`
-            case setNotNull(ConflictClause? = nil)
+            case setNotNull(Conflict? = nil)
         }
 
         /// `( 'CONSTRAINT' constraint-name | [ 'COLUMN' ] column-name )`

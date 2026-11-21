@@ -25,11 +25,11 @@ extension InsertStatement {
                 return value
             }
             let source = try Source.parse(&p)
-            let returningClause = p.attempt { (p: inout Parser) throws(ParseError) -> ReturningClause in
-                let value = try ReturningClause.parse(&p)
+            let returning = p.attempt { (p: inout Parser) throws(ParseError) -> Returning in
+                let value = try Returning.parse(&p)
                 return value
             }
-            return InsertStatement(with: with, action: action, schemaName: schemaName, tableName: tableName, alias: alias, columnNameList: columnNameList, source: source, returningClause: returningClause)
+            return InsertStatement(with: with, action: action, schemaName: schemaName, tableName: tableName, alias: alias, columnNameList: columnNameList, source: source, returning: returning)
         }
     }
 }
@@ -98,12 +98,12 @@ extension InsertStatement.Source {
                     return .defaultValues
                 },
                 { (p: inout Parser) throws -> InsertStatement.Source in
-                    let values = try Values.parse(&p)
-                    let upsertClause = p.attempt { (p: inout Parser) throws(ParseError) -> UpsertClause in
-                        let value = try UpsertClause.parse(&p)
+                    let values = try ValuesKind.parse(&p)
+                    let upsert = p.attempt { (p: inout Parser) throws(ParseError) -> Upsert in
+                        let value = try Upsert.parse(&p)
                         return value
                     }
-                    return .rows(values: values, upsertClause: upsertClause)
+                    return .rows(values: values, upsert: upsert)
                 },
             ]
             let value = try p.longest(alternatives)
@@ -112,15 +112,15 @@ extension InsertStatement.Source {
     }
 }
 
-extension InsertStatement.Source.Values {
-    public static func parse(_ p: inout Parser) throws(ParseError) -> InsertStatement.Source.Values {
-        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> InsertStatement.Source.Values in
-            let alternatives: [(inout Parser) throws -> InsertStatement.Source.Values] = [
-                { (p: inout Parser) throws -> InsertStatement.Source.Values in
-                    let valuesClause = try ValuesClause.parse(&p)
-                    return .valuesClause(valuesClause)
+extension InsertStatement.Source.ValuesKind {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> InsertStatement.Source.ValuesKind {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> InsertStatement.Source.ValuesKind in
+            let alternatives: [(inout Parser) throws -> InsertStatement.Source.ValuesKind] = [
+                { (p: inout Parser) throws -> InsertStatement.Source.ValuesKind in
+                    let values = try Values.parse(&p)
+                    return .values(values)
                 },
-                { (p: inout Parser) throws -> InsertStatement.Source.Values in
+                { (p: inout Parser) throws -> InsertStatement.Source.ValuesKind in
                     let selectStatement = try SelectStatement.parse(&p)
                     return .selectStatement(selectStatement)
                 },

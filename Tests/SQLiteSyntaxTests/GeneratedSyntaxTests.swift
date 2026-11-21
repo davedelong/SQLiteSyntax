@@ -53,7 +53,7 @@ struct GeneratedSyntaxTests {
 
     @Test func columnConstraintSQL() throws {
         let pk = ColumnConstraint(name: Name(value: "pk"),
-                                    constraint: .primaryKey(sortDirection: .ascending, conflictClause: .abort, autoincrement: true))
+                                    constraint: .primaryKey(sortDirection: .ascending, conflict: .abort, autoincrement: true))
         #expect(try pk.sql() == "CONSTRAINT pk PRIMARY KEY ASC ON CONFLICT ABORT AUTOINCREMENT")
         let generated = ColumnConstraint(constraint: .generated(generatedAlways: true, expression: a, storage: .stored))
         #expect(try generated.sql() == "GENERATED ALWAYS AS ( a ) STORED")
@@ -82,7 +82,7 @@ struct GeneratedSyntaxTests {
                                                                            materialized: .init(), selectStatement: plain)])
         // … UNION ALL VALUES (1), (2)   (SQLite rejects ORDER BY/LIMIT after VALUES, though the diagram allows it)
         var values = plain
-        values.compounds = [.init(compoundOperator: .union(all: true), selectCore: .valuesClause(ValuesClause(values: [[1], [2]])))]
+        values.compounds = [.init(compoundOperator: .union(all: true), selectCore: .values(Values(values: [[1], [2]])))]
         // … EXCEPT SELECT a FROM t ORDER BY 1 DESC LIMIT 5 OFFSET 1
         var compound = plain
         compound.compounds = [.init(compoundOperator: .except, selectCore: plain.selectCore)]
@@ -99,7 +99,7 @@ struct GeneratedSyntaxTests {
     // MARK: Hand-written fixes found by the generated types
 
     @Test func handWrittenFilterClauseIncludesWhere() throws {
-        let filter = FilterClause(where: .binaryOperator(a, .greaterThan, 1))
+        let filter = Filter(where: .binaryOperator(a, .greaterThan, 1))
         #expect(try filter.sql() == "FILTER ( WHERE a > 1 )")
         expectAccepted("SELECT count(*) \(try filter.sql()) FROM t")
     }
@@ -117,7 +117,7 @@ struct GeneratedSyntaxTests {
     // MARK: SQLite accepts every generated case
 
     @Test func conflictClausesParse() throws {
-        for c in ConflictClause.allCases {
+        for c in Conflict.allCases {
             expectAccepted("CREATE TABLE x (c INTEGER NOT NULL \(try c.sql()))")
             expectAccepted("CREATE TABLE x (c INTEGER \(try ColumnConstraint(constraint: .unique(c)).sql()))")
         }
@@ -132,7 +132,7 @@ struct GeneratedSyntaxTests {
             .default(.signedNumber(SignedNumber(sign: .plus, numericLiteral: 1.5))),
             .notNull(),
             .primaryKey(),
-            .primaryKey(sortDirection: .descending, conflictClause: .replace, autoincrement: false),
+            .primaryKey(sortDirection: .descending, conflict: .replace, autoincrement: false),
             .unique(),
             .generated(expression: .columnName(nil, nil, "d")),
             .generated(generatedAlways: true, expression: .columnName(nil, nil, "d"), storage: .virtual),
@@ -198,13 +198,13 @@ struct GeneratedSyntaxTests {
 
     @Test func filterClauseIncludesWhere() throws {
         // The grammar is `'FILTER' '(' 'WHERE' expr ')'`.
-        #expect(try FilterClause(where: a).sql() == "FILTER ( WHERE a )")
+        #expect(try Filter(where: a).sql() == "FILTER ( WHERE a )")
     }
 
     @Test func compoundOperatorsAndFiltersParse() throws {
         for op in [CompoundOperator.except, .intersect, .union(), .union(all: true)] {
             expectAccepted("SELECT a FROM t \(try op.sql()) SELECT b FROM u")
         }
-        expectAccepted("SELECT count(*) \(try FilterClause(where: .binaryOperator(a, .greaterThan, 1)).sql()) FROM t")
+        expectAccepted("SELECT count(*) \(try Filter(where: .binaryOperator(a, .greaterThan, 1)).sql()) FROM t")
     }
 }

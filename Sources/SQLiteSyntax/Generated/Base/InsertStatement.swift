@@ -11,9 +11,9 @@ public struct InsertStatement: Syntax {
     public var columnNameList: ColumnNameList? = nil
     public var source: Source
     /// Since SQLite 3.35.0.
-    public var returningClause: ReturningClause? = nil
+    public var returning: Returning? = nil
 
-    public init(with: With? = nil, action: Action, schemaName: Name<Schema>? = nil, tableName: Name<Table>, alias: Name<Table>? = nil, columnNameList: ColumnNameList? = nil, source: Source, returningClause: ReturningClause? = nil) {
+    public init(with: With? = nil, action: Action, schemaName: Name<Schema>? = nil, tableName: Name<Table>, alias: Name<Table>? = nil, columnNameList: ColumnNameList? = nil, source: Source, returning: Returning? = nil) {
         self.with = with
         self.action = action
         self.schemaName = schemaName
@@ -21,7 +21,7 @@ public struct InsertStatement: Syntax {
         self.alias = alias
         self.columnNameList = columnNameList
         self.source = source
-        self.returningClause = returningClause
+        self.returning = returning
     }
 
     /// `( 'INSERT' [ 'OR' ( 'ABORT' | 'FAIL' | 'IGNORE' | 'REPLACE' | 'ROLLBACK' ) ] | 'REPLACE' )`
@@ -52,13 +52,13 @@ public struct InsertStatement: Syntax {
         case defaultValues
         /// `( values-clause | select-stmt ) [ upsert-clause ]`
         ///
-        /// - `upsertClause`: since SQLite 3.24.0.
-        case rows(values: Values, upsertClause: UpsertClause? = nil)
+        /// - `upsert`: since SQLite 3.24.0.
+        case rows(values: ValuesKind, upsert: Upsert? = nil)
 
         /// `( values-clause | select-stmt )`
-        public enum Values: Syntax {
+        public enum ValuesKind: Syntax {
             /// `values-clause`
-            case valuesClause(ValuesClause)
+            case values(Values)
             /// `select-stmt`
             case selectStatement(SelectStatement)
         }

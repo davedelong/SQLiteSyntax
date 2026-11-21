@@ -67,11 +67,11 @@ extension AlterTableStatement.Action.Add {
                     try p.expect(texts: ["CHECK", "("])
                     let check = try Expression.parse(&p)
                     try p.expect(texts: [")"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in
-                        let value = try ConflictClause.parse(&p)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in
+                        let value = try Conflict.parse(&p)
                         return value
                     }
-                    return .check(constraintName: constraintName, check: check, conflictClause: conflictClause)
+                    return .check(constraintName: constraintName, check: check, conflict: conflict)
                 },
             ]
             let value = try p.longest(alternatives)
@@ -90,11 +90,11 @@ extension AlterTableStatement.Action.Change {
                 },
                 { (p: inout Parser) throws -> AlterTableStatement.Action.Change in
                     try p.expect(texts: ["SET", "NOT", "NULL"])
-                    let conflictClause = p.attempt { (p: inout Parser) throws(ParseError) -> ConflictClause in
-                        let value = try ConflictClause.parse(&p)
+                    let conflict = p.attempt { (p: inout Parser) throws(ParseError) -> Conflict in
+                        let value = try Conflict.parse(&p)
                         return value
                     }
-                    return .setNotNull(conflictClause)
+                    return .setNotNull(conflict)
                 },
             ]
             let value = try p.longest(alternatives)

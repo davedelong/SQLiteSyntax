@@ -26,11 +26,11 @@ extension UpdateStatement {
                 let value = try Expression.parse(&p)
                 return value
             }
-            let returningClause = p.attempt { (p: inout Parser) throws(ParseError) -> ReturningClause in
-                let value = try ReturningClause.parse(&p)
+            let returning = p.attempt { (p: inout Parser) throws(ParseError) -> Returning in
+                let value = try Returning.parse(&p)
                 return value
             }
-            return UpdateStatement(with: with, or: or, qualifiedTableName: qualifiedTableName, set: set, from: from, where: `where`, returningClause: returningClause)
+            return UpdateStatement(with: with, or: or, qualifiedTableName: qualifiedTableName, set: set, from: from, where: `where`, returning: returning)
         }
     }
 }
@@ -101,8 +101,8 @@ extension UpdateStatement.From {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> UpdateStatement.From in
             let alternatives: [(inout Parser) throws -> UpdateStatement.From] = [
                 { (p: inout Parser) throws -> UpdateStatement.From in
-                    let joinClause = try JoinClause.parse(&p)
-                    return .joinClause(joinClause)
+                    let join = try Join.parse(&p)
+                    return .join(join)
                 },
                 { (p: inout Parser) throws -> UpdateStatement.From in
                     let tableOrSubquerys = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> TableOrSubquery in try TableOrSubquery.parse(&p) })

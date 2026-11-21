@@ -11,16 +11,16 @@ public struct UpdateStatement: Syntax {
     public var from: From? = nil
     public var `where`: Expression? = nil
     /// Since SQLite 3.35.0.
-    public var returningClause: ReturningClause? = nil
+    public var returning: Returning? = nil
 
-    public init(with: With? = nil, or: Or? = nil, qualifiedTableName: QualifiedTableName, set: List<SetElement>, from: From? = nil, where: Expression? = nil, returningClause: ReturningClause? = nil) {
+    public init(with: With? = nil, or: Or? = nil, qualifiedTableName: QualifiedTableName, set: List<SetElement>, from: From? = nil, where: Expression? = nil, returning: Returning? = nil) {
         self.with = with
         self.or = or
         self.qualifiedTableName = qualifiedTableName
         self.set = set
         self.from = from
         self.`where` = `where`
-        self.returningClause = returningClause
+        self.returning = returning
     }
 
     public func validate() throws(SyntaxError) {
@@ -63,7 +63,7 @@ public struct UpdateStatement: Syntax {
     /// `( join-clause | table-or-subquery { ',' table-or-subquery } )`
     public enum From: Syntax {
         /// `join-clause`
-        case joinClause(JoinClause)
+        case join(Join)
         /// `table-or-subquery { ',' table-or-subquery }`
         case tables(List<TableOrSubquery>)
 

@@ -26,13 +26,13 @@ extension CreateTriggerStatement {
     private func check(_ update: UpdateStatement) throws(SyntaxError) {
         try require(update.with == nil, reason: "WITH is not allowed on INSERT, UPDATE or DELETE statements within triggers")
         try Self.check(update.qualifiedTableName.indexHint, statement: self)
-        try require(update.returningClause == nil, reason: "cannot use RETURNING in a trigger")
+        try require(update.returning == nil, reason: "cannot use RETURNING in a trigger")
     }
 
     private func check(_ delete: DeleteStatement) throws(SyntaxError) {
         try require(delete.with == nil, reason: "WITH is not allowed on INSERT, UPDATE or DELETE statements within triggers")
         try Self.check(delete.qualifiedTableName.indexHint, statement: self)
-        try require(delete.returningClause == nil, reason: "cannot use RETURNING in a trigger")
+        try require(delete.returning == nil, reason: "cannot use RETURNING in a trigger")
     }
 
     private func check(_ insert: InsertStatement) throws(SyntaxError) {
@@ -40,7 +40,7 @@ extension CreateTriggerStatement {
         if case .defaultValues = insert.source {
             throw SyntaxError.invalidSyntax(self, reason: "DEFAULT VALUES is not allowed within triggers")
         }
-        try require(insert.returningClause == nil, reason: "cannot use RETURNING in a trigger")
+        try require(insert.returning == nil, reason: "cannot use RETURNING in a trigger")
     }
 
     /// SQLite's own messages (parse.y `tridxby`).

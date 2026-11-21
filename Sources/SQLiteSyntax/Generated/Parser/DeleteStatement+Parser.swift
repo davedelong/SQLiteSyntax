@@ -14,11 +14,11 @@ extension DeleteStatement {
                 let value = try Expression.parse(&p)
                 return value
             }
-            let returningClause = p.attempt { (p: inout Parser) throws(ParseError) -> ReturningClause in
-                let value = try ReturningClause.parse(&p)
+            let returning = p.attempt { (p: inout Parser) throws(ParseError) -> Returning in
+                let value = try Returning.parse(&p)
                 return value
             }
-            return DeleteStatement(with: with, qualifiedTableName: qualifiedTableName, where: `where`, returningClause: returningClause)
+            return DeleteStatement(with: with, qualifiedTableName: qualifiedTableName, where: `where`, returning: returning)
         }
     }
 }

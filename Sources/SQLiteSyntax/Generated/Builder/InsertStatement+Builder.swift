@@ -3,7 +3,7 @@
 extension InsertStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         if with != nil { try builder.require(SQLiteVersion(3, 8, 3), for: self) }
-        if returningClause != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
+        if returning != nil { try builder.require(SQLiteVersion(3, 35, 0), for: self) }
         if let with {
             try builder.add(with)
         }
@@ -22,8 +22,8 @@ extension InsertStatement {
             try builder.add(columnNameList)
         }
         try builder.add(source)
-        if let returningClause {
-            try builder.add(returningClause)
+        if let returning {
+            try builder.add(returning)
         }
     }
 }
@@ -65,21 +65,21 @@ extension InsertStatement.Source {
         switch self {
             case .defaultValues:
                 builder.add("DEFAULT", "VALUES")
-            case .rows(let values, let upsertClause):
-                if upsertClause != nil { try builder.require(SQLiteVersion(3, 24, 0), for: self) }
+            case .rows(let values, let upsert):
+                if upsert != nil { try builder.require(SQLiteVersion(3, 24, 0), for: self) }
                 try builder.add(values)
-                if let upsertClause {
-                    try builder.add(upsertClause)
+                if let upsert {
+                    try builder.add(upsert)
                 }
         }
     }
 }
 
-extension InsertStatement.Source.Values {
+extension InsertStatement.Source.ValuesKind {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
-            case .valuesClause(let valuesClause):
-                try builder.add(valuesClause)
+            case .values(let values):
+                try builder.add(values)
             case .selectStatement(let selectStatement):
                 try builder.add(selectStatement)
         }

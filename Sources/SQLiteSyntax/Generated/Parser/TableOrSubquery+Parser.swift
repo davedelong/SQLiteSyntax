@@ -79,8 +79,8 @@ extension TableOrSubquery.Parenthesized.Source {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TableOrSubquery.Parenthesized.Source in
             let alternatives: [(inout Parser) throws -> TableOrSubquery.Parenthesized.Source] = [
                 { (p: inout Parser) throws -> TableOrSubquery.Parenthesized.Source in
-                    let joinClause = try JoinClause.parse(&p)
-                    return .joinClause(joinClause)
+                    let join = try Join.parse(&p)
+                    return .join(join)
                 },
                 { (p: inout Parser) throws -> TableOrSubquery.Parenthesized.Source in
                     let tableOrSubquerys = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> TableOrSubquery in try TableOrSubquery.parse(&p) })

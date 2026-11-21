@@ -73,7 +73,7 @@ struct VersionRequirementTests {
     }
 
     @Test func theCheckReachesNestedValues() throws {
-        // RETURNING is deep inside: SQLStatement -> DeleteStatement -> ReturningClause.
+        // RETURNING is deep inside: SQLStatement -> DeleteStatement -> Returning.
         let statement = try SQLStatement(parsing: "EXPLAIN DELETE FROM t RETURNING a")
         #expect(throws: SyntaxError.self) { try statement.sql(sqliteVersion: SQLiteVersion(3, 34, 1)) }
         // Including names built through a separate builder (`schema.table`).
