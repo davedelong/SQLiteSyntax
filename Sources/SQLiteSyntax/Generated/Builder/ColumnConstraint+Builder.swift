@@ -43,6 +43,7 @@ extension ColumnConstraint.Constraint {
                 builder.add("UNIQUE")
                 try builder.add(conflictClause)
             case .generated(let generatedAlways, let expression, let storage):
+                try builder.require(SQLiteVersion(3, 31, 0), for: self)
                 if generatedAlways { try builder.require(SQLiteVersion(3, 31, 0), for: self) }
                 if generatedAlways { builder.add("GENERATED", "ALWAYS") }
                 builder.add("AS", "(")

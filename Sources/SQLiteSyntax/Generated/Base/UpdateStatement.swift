@@ -7,6 +7,7 @@ public struct UpdateStatement: Syntax {
     public var or: Or? = nil
     public var qualifiedTableName: QualifiedTableName
     public var set: List<SetElement>
+    /// Since SQLite 3.33.0.
     public var from: From? = nil
     public var `where`: Expression? = nil
     /// Since SQLite 3.35.0.

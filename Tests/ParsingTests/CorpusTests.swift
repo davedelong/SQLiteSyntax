@@ -64,6 +64,7 @@ struct CorpusTests {
         var seen = Set<String>()
         var outcomes: [Outcome] = []
         var roundTripFailures: [Outcome] = []
+        var newerThanLinked = 0   // SQLite rejects, the parser accepts, but building for the linked release refuses
         for file in files {
             guard let text = (try? String(contentsOf: file, encoding: .utf8)) ?? (try? String(contentsOf: file, encoding: .isoLatin1)) else { continue }
             for script in Self.sqlScripts(in: text) {
@@ -76,6 +77,14 @@ struct CorpusTests {
                     do {
                         let parsed = try SQLStatement(parsing: statement)
                         parser = .accepted
+                        // Syntax newer than the linked SQLite: building for its release refuses, so the parser
+                        // agrees that this SQLite can't run it.
+                        if sqlite == .rejected, case .failure(.unsupported) = Result(catching: { () throws(SyntaxError) in
+                            try parsed.sql(sqliteVersion: SQLiteVersion(number: sqlite3_libversion_number()))
+                        }) {
+                            parser = .rejected
+                            newerThanLinked += 1
+                        }
                         if sqlite == .accepted {
                             let output = try parsed.sql()
                             // The linked SQLite accepted it, so building for its version must not object.
@@ -114,6 +123,7 @@ struct CorpusTests {
             SQLite accepts, parser rejects: \(falseRejections.count)
             SQLite rejects, parser accepts: \(falseAcceptances.count)
             round-trip failures: \(roundTripFailures.count)
+            agree because the syntax is newer than the linked SQLite \(String(cString: sqlite3_libversion())): \(newerThanLinked)
             """
         print(summary)
         print(Self.details("SQLite accepts, parser rejects", falseRejections))
@@ -175,8 +185,11 @@ struct CorpusTests {
         func quoted<S: StringProtocol>(_ name: S) -> String { "\"" + name.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }
         func qualified(_ name: Substring) -> [String] { name.split(separator: ".").map(quoted) }
         if message.hasPrefix("no such table: ") {
-            // `t1` or `main.t1`.
-            return ["CREATE TABLE \(qualified(message.dropFirst("no such table: ".count)).joined(separator: "."))(x)"]
+            // `t1` or `main.t1`. SQLite says this too when the schema doesn't exist, so attach it first.
+            let parts = qualified(message.dropFirst("no such table: ".count))
+            let attach = parts.count > 1 && !["\"main\"", "\"temp\""].contains(parts[0].lowercased())
+                ? ["ATTACH ':memory:' AS \(parts[0])"] : []
+            return attach + ["CREATE TABLE \(parts.joined(separator: "."))(x)"]
         }
         if message.hasPrefix("unknown database ") {
             return ["ATTACH ':memory:' AS \(quoted(message.dropFirst("unknown database ".count)))"]

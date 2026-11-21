@@ -23,11 +23,12 @@ let running = SQLiteVersion(number: sqlite3_libversion_number())
 let sql = try statement.sql(sqliteVersion: running)   // throws SyntaxError.unsupported if too new
 ```
 
-The check covers the generated types: each type, case and optional part knows the release that introduced its
-keywords (the doc comments say "Since SQLite x.y.z"). Without a release (`sql()`), nothing is checked.
-Hand-written `Expression` syntax isn't checked yet, for example `->` and `IS DISTINCT FROM`. Syntax that
-arrived without a new keyword is checked against the earlier release that introduced its keywords, or isn't
-checked at all. See SQLiteSyntaxGenerator's README.
+Each generated type, case and optional part knows the release that introduced it (the doc comments say
+"Since SQLite x.y.z"): mostly worked out from when its keywords appeared, with hand-set dates where that
+would be too early (`ROLLBACK TO`, `UPDATE … FROM`, the 3.52.0 `ALTER TABLE` constraint commands). The
+hand-written expressions check theirs: `->`/`->>`, `IS [NOT] DISTINCT FROM`, `FILTER`. Without a release
+(`sql()`), nothing is checked. One gap: an alias on a table inside a trigger body needs 3.52.0 there, but
+is checked as 3.24.0. See SQLiteSyntaxGenerator's README.
 
 ## Deeply nested SQL
 

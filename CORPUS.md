@@ -5,6 +5,10 @@ statements with `sqlite3_complete`, and compares the parser's verdict with SQLit
 (`sqlite3_prepare_v2`). Statements both accept must also round-trip: SQLite accepts the re-printed
 SQL, and parsing it again reproduces it.
 
+Syntax newer than the linked SQLite counts as agreement when SQLite rejects it and building it for the
+linked release throws `SyntaxError.unsupported`: the parser knows that SQLite can't run it. That covers
+54 statements, the 3.52.0 `ALTER TABLE` constraint commands.
+
 SQLite's verdict comes from an in-memory database. The tests set up their own schema first, and SQLite
 stops at a missing table before checking the rest of a statement, so when it reports a missing table,
 database or column, the test creates it (a one-column table, an attached in-memory database, or a new
@@ -25,9 +29,9 @@ keywords must make a join type, and a constraint needs a name or a body.
 | | Statements |
 |---|---:|
 | Distinct statements | 47,745 |
-| Agree | 47,684 (99.87%) |
+| Agree | 47,741 (99.99%) |
 | SQLite accepts, parser rejects | 1 |
-| SQLite rejects, parser accepts | 60 |
+| SQLite rejects, parser accepts | 3 |
 | Round-trip failures | 0 |
 
 ## Syntax added from parse.y (`codegen.json` `grammarPatches`)
@@ -48,6 +52,8 @@ extracted `sqlite.ebnf` stays faithful to the diagrams):
 - a sign before any literal in `DEFAULT`: `DEFAULT -'hello'`
 - `ORDER BY` with no arguments in a function call: `count(ORDER BY a)`
 - (narrowing) `LIMIT` is required after `ORDER BY` in `UPDATE`, as the `DELETE` diagram already has it
+- (narrowing) pragma values are names, numbers and `ON`/`DELETE`/`DEFAULT` (parse.y `nmnum`), not other
+  literals such as `NULL`
 - `CONSTRAINT name` as a constraint of its own, in column and table constraint lists: names that chain
   (`CONSTRAINT a CONSTRAINT b CHECK (x)`) or trail (`UNIQUE (a) CONSTRAINT one`), as parse.y's
   `ccons`/`tcons` allow
@@ -60,20 +66,18 @@ extracted `sqlite.ebnf` stays faithful to the diagrams):
 Hand-written parsing follows parse.y the same way: `CAST(x AS )` with an empty type, string literals
 as parts of a column name (`'t'.'c'`), empty module arguments beside a comma (`fts4(a, )`), and
 `over`/`window` as names next to the `OVER`/`WINDOW` keywords (`sum(x) over over`), using
-tokenize.c's rule for what counts as a name when deciding whether they are keywords.
+tokenize.c's rule for what counts as a name when deciding whether they are keywords. `UNBOUNDED` at the
+start of a window frame bound is always the keyword (`RANGE BETWEEN UNBOUNDED FOLLOWING` is an error),
+and negating a hex literal that reads as the smallest integer is "hex literal too big", as in expr.c.
 
 ## Remaining disagreements
 
-### Parser accepts, SQLite rejects (60)
+### Parser accepts, SQLite rejects (3)
 
 | Count | Reason | Assessment |
 |---:|---|---|
-| 53 | `ALTER TABLE … ADD [CONSTRAINT name] CHECK`, `DROP CONSTRAINT`, `ALTER COLUMN … SET/DROP NOT NULL`: in the 2025-11 docs, newer than the linked SQLite 3.51.0 | Correct per the docs |
-| 1 | `UPDATE t AS alias` in a trigger body: allowed by the current parse.y (`xfullname`), not by the linked 3.51.0 | Correct per current SQLite |
 | 2 | 50+ levels of nested subqueries/functions exceed SQLite's parser stack | Implementation limit, not syntax |
-| 2 | `RANGE BETWEEN UNBOUNDED FOLLOWING …`: `UNBOUNDED` is read as a column name | Known limit of the keyword-fallback approximation in the hand-written expression parser |
-| 1 | `PRAGMA compile_options(NULL)`: the diagram's `signed-literal` admits NULL, parse.y does not | Diagram vs parse.y |
-| 1 | `-0x08000000000000000`: SQLite rejects the 17-digit hex literal | Edge case |
+| 1 | `UPDATE t AS alias` in a trigger body: allowed since 3.52.0 (parse.y `xfullname`), and the version check can't see that it's in a trigger (it dates table aliases 3.24.0) | Correct per current SQLite |
 
 ### SQLite accepts, parser rejects (1)
 
@@ -81,5 +85,4 @@ tokenize.c's rule for what counts as a name when deciding whether they are keywo
 |---:|---|---|
 | 1 | An oversized hex literal in a trigger body: SQLite only compiles the body when the trigger runs, so `CREATE TRIGGER` succeeds | Parser is stricter; the trigger could never run |
 
-No remaining disagreement is unexplained. One known approximation remains: keyword fallback in frame
-bounds (`RANGE BETWEEN UNBOUNDED FOLLOWING`).
+No remaining disagreement is unexplained.

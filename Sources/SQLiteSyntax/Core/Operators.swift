@@ -90,6 +90,11 @@ public enum BinaryOperator: Syntax {
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
+            case .extractJSON, .extractValue: try builder.require(SQLiteVersion(3, 38, 0), for: self)
+            case .isDistinctFrom, .isNotDistinctFrom: try builder.require(SQLiteVersion(3, 39, 0), for: self)
+            default: break
+        }
+        switch self {
             case .concat: builder.add("||")
             case .extractJSON: builder.add("->")
             case .extractValue: builder.add("->>")

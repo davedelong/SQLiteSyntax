@@ -69,6 +69,8 @@ public indirect enum Expression: Syntax {
                 try builder.add(op)
                 try builder.addOperand(right, minimum: op.precedence + 1)
             case .function(let name, let args, let filter, let over):
+                // FILTER came with window functions (3.25.0), and to plain aggregates in 3.30.0.
+                if filter != nil { try builder.require(over == nil ? SQLiteVersion(3, 30, 0) : SQLiteVersion(3, 25, 0), for: self) }
                 try builder.add(name)
                 builder.add("(")
                 try builder.add(args)
@@ -118,6 +120,7 @@ public indirect enum Expression: Syntax {
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 builder.add("NOT", "NULL")
             case .equals(let expr, negated: let negated,distinct: let distinct, from: let from):
+                if distinct { try builder.require(SQLiteVersion(3, 39, 0), for: self) }
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 builder.add("IS")
                 if negated { builder.add("NOT") }

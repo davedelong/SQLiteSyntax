@@ -3,7 +3,7 @@
 /// `rollback-stmt ::= 'ROLLBACK' [ 'TRANSACTION' [ transaction-name ] ] [ 'TO' [ 'SAVEPOINT' ] savepoint-name ]`
 public struct RollbackStatement: Syntax {
     public var transaction: Transaction? = nil
-    /// Since SQLite 3.1.0.
+    /// Since SQLite 3.6.8.
     public var to: To? = nil
 
     public init(transaction: Transaction? = nil, to: To? = nil) {

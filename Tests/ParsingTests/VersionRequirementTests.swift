@@ -25,11 +25,22 @@ struct VersionRequirementTests {
         ("INSERT INTO t VALUES (1) ON CONFLICT DO NOTHING", SQLiteVersion(3, 24, 0)),
         ("SELECT a FROM t WINDOW w AS (ORDER BY a)", SQLiteVersion(3, 25, 0)),
         ("SELECT a FROM t ORDER BY a NULLS LAST", SQLiteVersion(3, 30, 0)),
-        ("CREATE TABLE t (a, b AS (a * 2) STORED, CHECK (b > 0))", SQLiteVersion(3, 0, 0)),   // keywords say baseline (see README)
+        ("CREATE TABLE t (a, b AS (a * 2) STORED, CHECK (b > 0))", SQLiteVersion(3, 31, 0)),
         ("CREATE TABLE t (a, b GENERATED ALWAYS AS (a * 2))", SQLiteVersion(3, 31, 0)),
         ("CREATE TABLE t (a, b INT GENERATED ALWAYS AS (a * 2) STORED)", SQLiteVersion(3, 31, 0)),
         ("DELETE FROM t RETURNING *", SQLiteVersion(3, 35, 0)),
         ("WITH c AS MATERIALIZED (SELECT 1) SELECT * FROM c", SQLiteVersion(3, 35, 0)),
+        // Dated by codegen.json `since` (the keywords are older than the syntax).
+        ("ROLLBACK TO sp", SQLiteVersion(3, 6, 8)),
+        ("UPDATE t SET a = 1 FROM u", SQLiteVersion(3, 33, 0)),
+        ("ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)", SQLiteVersion(3, 52, 0)),
+        ("ALTER TABLE t DROP CONSTRAINT c", SQLiteVersion(3, 52, 0)),
+        ("ALTER TABLE t ALTER COLUMN a SET NOT NULL", SQLiteVersion(3, 52, 0)),
+        // Hand-written expressions.
+        ("SELECT count(a) FILTER (WHERE a > 0) FROM t", SQLiteVersion(3, 30, 0)),
+        ("SELECT count(a) FILTER (WHERE a > 0) OVER () FROM t", SQLiteVersion(3, 25, 0)),
+        ("SELECT a -> '$.x', a ->> '$.y' FROM t", SQLiteVersion(3, 38, 0)),
+        ("SELECT a IS NOT DISTINCT FROM b FROM t", SQLiteVersion(3, 39, 0)),
     ]
 
     @Test(arguments: cases)

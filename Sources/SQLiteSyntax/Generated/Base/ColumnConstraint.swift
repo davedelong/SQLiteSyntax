@@ -34,6 +34,8 @@ public struct ColumnConstraint: Syntax {
         case unique(ConflictClause? = nil)
         /// `[ 'GENERATED' 'ALWAYS' ] 'AS' '(' expr ')' [ ( 'STORED' | 'VIRTUAL' ) ]`
         ///
+        /// Since SQLite 3.31.0.
+        ///
         /// - `generatedAlways`: since SQLite 3.31.0.
         case generated(generatedAlways: Bool = false, expression: Expression, storage: Storage? = nil)
         /// `foreign-key-clause`

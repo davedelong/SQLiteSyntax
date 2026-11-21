@@ -22,6 +22,7 @@ extension AlterTableStatement.Action {
                 builder.add("ADD")
                 try builder.add(add)
             case .alter(let column, let columnName, let change):
+                try builder.require(SQLiteVersion(3, 52, 0), for: self)
                 if column { try builder.require(SQLiteVersion(3, 2, 0), for: self) }
                 builder.add("ALTER")
                 if column { builder.add("COLUMN") }
@@ -45,6 +46,7 @@ extension AlterTableStatement.Action.Add {
                 if column { builder.add("COLUMN") }
                 try builder.add(columnDefinition)
             case .check(let constraintName, let check, let conflictClause):
+                try builder.require(SQLiteVersion(3, 52, 0), for: self)
                 if let constraintName {
                     builder.add("CONSTRAINT")
                     try builder.add(constraintName)
@@ -79,6 +81,7 @@ extension AlterTableStatement.Action.Drop {
         try builder.require(SQLiteVersion(3, 1, 0), for: self)
         switch self {
             case .constraint(let constraintName):
+                try builder.require(SQLiteVersion(3, 52, 0), for: self)
                 builder.add("CONSTRAINT")
                 try builder.add(constraintName)
             case .columnName(let column, let columnName):

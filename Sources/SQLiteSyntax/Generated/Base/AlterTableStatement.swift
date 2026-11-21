@@ -22,6 +22,8 @@ public struct AlterTableStatement: Syntax {
         case add(Add)
         /// `'ALTER' [ 'COLUMN' ] column-name ( 'DROP' 'NOT' 'NULL' | 'SET' 'NOT' 'NULL' [ conflict-clause ] )`
         ///
+        /// Since SQLite 3.52.0.
+        ///
         /// - `column`: since SQLite 3.2.0.
         case alter(column: Bool = false, columnName: Name<Column>, change: Change)
         /// `'DROP' ( 'CONSTRAINT' constraint-name | [ 'COLUMN' ] column-name )`
@@ -34,6 +36,8 @@ public struct AlterTableStatement: Syntax {
             /// `[ 'COLUMN' ] column-def`
             case columnDefinition(column: Bool = false, columnDefinition: ColumnDefinition)
             /// `[ 'CONSTRAINT' constraint-name ] 'CHECK' '(' expr ')' [ conflict-clause ]`
+            ///
+            /// Since SQLite 3.52.0.
             case check(constraintName: Name<Any>? = nil, check: Expression, conflictClause: ConflictClause? = nil)
         }
 
@@ -48,6 +52,8 @@ public struct AlterTableStatement: Syntax {
         /// `( 'CONSTRAINT' constraint-name | [ 'COLUMN' ] column-name )`
         public enum Drop: Syntax {
             /// `'CONSTRAINT' constraint-name`
+            ///
+            /// Since SQLite 3.52.0.
             case constraint(Name<Any>)
             /// `[ 'COLUMN' ] column-name`
             ///

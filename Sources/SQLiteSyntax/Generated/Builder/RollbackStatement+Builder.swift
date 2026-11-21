@@ -2,7 +2,7 @@
 
 extension RollbackStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        if to != nil { try builder.require(SQLiteVersion(3, 1, 0), for: self) }
+        if to != nil { try builder.require(SQLiteVersion(3, 6, 8), for: self) }
         builder.add("ROLLBACK")
         try builder.add(transaction)
         try builder.add(to)
