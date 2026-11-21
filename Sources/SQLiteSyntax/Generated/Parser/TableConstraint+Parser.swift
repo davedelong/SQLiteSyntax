@@ -3,13 +3,17 @@
 extension TableConstraint {
     public static func parse(_ p: inout Parser) throws(ParseError) -> TableConstraint {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> TableConstraint in
+            let start = p.position
             let name = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Any> in
                 try p.expect(texts: ["CONSTRAINT"])
                 let value = try Name<Any>.parse(&p, class: .name, excluding: ["CHECK", "FOREIGN", "PRIMARY", "UNIQUE"])
                 return value
             }
-            let constraint = try Constraint.parse(&p)
-            return TableConstraint(name: name, constraint: constraint)
+            let constraint = p.attempt { (p: inout Parser) throws(ParseError) -> Constraint in
+                let value = try Constraint.parse(&p)
+                return value
+            }
+            return try p.checked(TableConstraint(name: name, constraint: constraint), from: start)
         }
     }
 }

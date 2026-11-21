@@ -8,7 +8,9 @@ extension ForeignKeyClause {
             try builder.add(columns)
         }
         try builder.addList(actions)
-        try builder.add(deferrable)
+        if let deferrable {
+            try builder.add(deferrable)
+        }
     }
 }
 
@@ -51,28 +53,6 @@ extension ForeignKeyClause.ActionsElement.Action {
                 builder.add("SET", "DEFAULT")
             case .setNull:
                 builder.add("SET", "NULL")
-        }
-    }
-}
-
-extension ForeignKeyClause.Deferrable {
-    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        if not { builder.add("NOT") }
-        builder.add("DEFERRABLE")
-        if let initially {
-            builder.add("INITIALLY")
-            try builder.add(initially)
-        }
-    }
-}
-
-extension ForeignKeyClause.Deferrable.Initially {
-    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        switch self {
-            case .deferred:
-                builder.add("DEFERRED")
-            case .immediate:
-                builder.add("IMMEDIATE")
         }
     }
 }

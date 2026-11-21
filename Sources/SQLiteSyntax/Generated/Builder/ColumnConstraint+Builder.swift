@@ -6,7 +6,9 @@ extension ColumnConstraint {
             builder.add("CONSTRAINT")
             try builder.add(name)
         }
-        try builder.add(constraint)
+        if let constraint {
+            try builder.add(constraint)
+        }
     }
 }
 
@@ -51,6 +53,8 @@ extension ColumnConstraint.Constraint {
                 }
             case .foreignKey(let foreignKeyClause):
                 try builder.add(foreignKeyClause)
+            case .deferrable(let deferrableClause):
+                try builder.add(deferrableClause)
         }
     }
 }

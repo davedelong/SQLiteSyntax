@@ -64,3 +64,34 @@ extension FunctionArguments {
         }
     }
 }
+
+extension ColumnConstraint {
+    /// A constraint is a `CONSTRAINT name` on its own (naming what follows, as in parse.y), a constraint,
+    /// or both; not neither.
+    func checkRestrictions() throws(SyntaxError) {
+        try require(name != nil || constraint != nil, reason: "A column constraint needs a name or a constraint")
+    }
+}
+
+extension TableConstraint {
+    /// A constraint is a `CONSTRAINT name` on its own (naming what follows, as in parse.y), a constraint,
+    /// or both; not neither.
+    func checkRestrictions() throws(SyntaxError) {
+        try require(name != nil || constraint != nil, reason: "A table constraint needs a name or a constraint")
+    }
+}
+
+extension JoinOperator {
+    /// Join keywords in any order are checked as sqlite3JoinType() does: at most three, and a type that
+    /// makes sense (not INNER/CROSS with OUTER/LEFT/RIGHT/FULL, and OUTER only with LEFT, RIGHT or FULL).
+    func checkRestrictions() throws(SyntaxError) {
+        guard case .keywords(let keywords) = self else { return }
+        try require(keywords.count <= 3, reason: "unknown join type: at most three join keywords")
+        let words = Set(keywords.items)
+        let inner = words.contains(.inner) || words.contains(.cross)
+        let sided = words.contains(.left) || words.contains(.right) || words.contains(.full)
+        let outer = sided || words.contains(.outer)
+        try require(!(inner && outer), reason: "unknown join type: INNER or CROSS with an outer join")
+        try require(!words.contains(.outer) || sided, reason: "unknown join type: OUTER needs LEFT, RIGHT or FULL")
+    }
+}

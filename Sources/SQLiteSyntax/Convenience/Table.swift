@@ -54,10 +54,11 @@ extension Table.Create {
     private var parts: (columns: List<ColumnDefinition>, constraints: [TableConstraint], options: [TableOptions.OptionsElement]) {
         get {
             guard case .columns(let columns, let constraints, let options) = definition else { return ([], [], []) }
-            return (columns, constraints, options.map { Array($0.options) } ?? [])
+            return (columns, constraints.map { Array($0) } ?? [], options.map { Array($0.options) } ?? [])
         }
         set {
-            definition = .columns(columnDefinitions: newValue.columns, tableConstraints: newValue.constraints,
+            definition = .columns(columnDefinitions: newValue.columns,
+                                  tableConstraints: newValue.constraints.isEmpty ? nil : List(newValue.constraints),
                                   tableOptions: newValue.options.isEmpty ? nil : TableOptions(options: List(newValue.options)))
         }
     }

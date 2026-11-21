@@ -171,10 +171,12 @@ extension Parser {
     // MARK: Lists
 
     /// `x { sep x }`: one or more items, separated (an incomplete trailing separator is not consumed).
-    mutating func separated<T>(by separator: [String], _ item: (inout Parser) throws(ParseError) -> T) throws(ParseError) -> [T] {
+    /// With `optional`, `x { [sep] x }`: the separator may be left out.
+    mutating func separated<T>(by separator: [String], optional: Bool = false,
+                               _ item: (inout Parser) throws(ParseError) -> T) throws(ParseError) -> [T] {
         var items = [try item(&self)]
         while let next = attempt({ (p: inout Parser) throws(ParseError) -> T in
-            try p.expect(texts: separator)
+            if optional { _ = p.accept(texts: separator) } else { try p.expect(texts: separator) }
             return try item(&p)
         }) {
             items.append(next)

@@ -10,7 +10,10 @@ extension ForeignKeyClause {
                 return value
             }
             let actions = p.repeated(separator: []) { (p: inout Parser) throws(ParseError) -> ActionsElement in try ActionsElement.parse(&p) }
-            let deferrable = p.attempt { (p: inout Parser) throws(ParseError) -> Deferrable in try Deferrable.parse(&p) }
+            let deferrable = p.attempt { (p: inout Parser) throws(ParseError) -> DeferrableClause in
+                let value = try DeferrableClause.parse(&p)
+                return value
+            }
             return ForeignKeyClause(foreignTable: foreignTable, columns: columns, actions: actions, deferrable: deferrable)
         }
     }
@@ -80,40 +83,6 @@ extension ForeignKeyClause.ActionsElement.Action {
                 { (p: inout Parser) throws -> ForeignKeyClause.ActionsElement.Action in
                     try p.expect(texts: ["SET", "NULL"])
                     return .setNull
-                },
-            ]
-            let value = try p.longest(alternatives)
-            return value
-        }
-    }
-}
-
-extension ForeignKeyClause.Deferrable {
-    public static func parse(_ p: inout Parser) throws(ParseError) -> ForeignKeyClause.Deferrable {
-        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ForeignKeyClause.Deferrable in
-            let not = p.accept(texts: ["NOT"])
-            try p.expect(texts: ["DEFERRABLE"])
-            let initially = p.attempt { (p: inout Parser) throws(ParseError) -> Initially in
-                try p.expect(texts: ["INITIALLY"])
-                let value = try Initially.parse(&p)
-                return value
-            }
-            return ForeignKeyClause.Deferrable(not: not, initially: initially)
-        }
-    }
-}
-
-extension ForeignKeyClause.Deferrable.Initially {
-    public static func parse(_ p: inout Parser) throws(ParseError) -> ForeignKeyClause.Deferrable.Initially {
-        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ForeignKeyClause.Deferrable.Initially in
-            let alternatives: [(inout Parser) throws -> ForeignKeyClause.Deferrable.Initially] = [
-                { (p: inout Parser) throws -> ForeignKeyClause.Deferrable.Initially in
-                    try p.expect(texts: ["DEFERRED"])
-                    return .deferred
-                },
-                { (p: inout Parser) throws -> ForeignKeyClause.Deferrable.Initially in
-                    try p.expect(texts: ["IMMEDIATE"])
-                    return .immediate
                 },
             ]
             let value = try p.longest(alternatives)

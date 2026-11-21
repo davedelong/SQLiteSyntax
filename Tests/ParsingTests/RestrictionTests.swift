@@ -16,6 +16,9 @@ struct RestrictionTests {
         ("CREATE TRIGGER r AFTER INSERT ON t BEGIN UPDATE u SET a = 1 RETURNING *; END",
          "cannot use RETURNING in a trigger"),
         ("SELECT string_agg(DISTINCT a, ',') FROM t", "DISTINCT aggregates must have exactly one argument"),
+        ("SELECT * FROM t LEFT INNER JOIN u", "unknown join type: INNER or CROSS with an outer join"),
+        ("SELECT * FROM t OUTER JOIN u", "unknown join type: OUTER needs LEFT, RIGHT or FULL"),
+        ("SELECT * FROM t LEFT OUTER LEFT OUTER JOIN u", "unknown join type: at most three join keywords"),
     ]
 
     @Test(arguments: rejected)
@@ -42,6 +45,11 @@ struct RestrictionTests {
 
     @Test func updateOrderByNeedsLimit() {
         #expect(throws: ParseError.self) { try SQLStatement(parsing: "UPDATE t SET a = 1 ORDER BY a") }
+    }
+
+    @Test func aConstraintNeedsANameOrABody() {
+        let definition = ColumnDefinition(name: "a", constraints: [ColumnConstraint()])
+        #expect(throws: SyntaxError.self) { try definition.sql() }
     }
 
     /// Values made in code are checked when building.

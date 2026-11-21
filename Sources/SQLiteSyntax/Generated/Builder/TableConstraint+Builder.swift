@@ -6,7 +6,9 @@ extension TableConstraint {
             builder.add("CONSTRAINT")
             try builder.add(name)
         }
-        try builder.add(constraint)
+        if let constraint {
+            try builder.add(constraint)
+        }
     }
 }
 

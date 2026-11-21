@@ -62,6 +62,13 @@ struct StatementParserTests {
         "SELECT sum(window) OVER window window FROM window window window window AS (ORDER BY window)",
         "CREATE VIRTUAL TABLE f USING fts4(a, notindexed = a, )",
         "CREATE VIRTUAL TABLE f USING m()",
+        "CREATE TABLE abc (a, b, c, CONSTRAINT one CONSTRAINT two CHECK (b != c))",
+        "CREATE TABLE abc (a, b, c, CONSTRAINT one CHECK (a > b) FOREIGN KEY (a) REFERENCES abc)",
+        "CREATE TABLE p (a NOT NULL NOT DEFERRABLE INITIALLY IMMEDIATE, b REFERENCES p DEFERRABLE INITIALLY DEFERRED, c CONSTRAINT trailing)",
+        "CREATE TABLE q (a, b, c, UNIQUE (a) CONSTRAINT one, PRIMARY KEY (b, c) CONSTRAINT two)",
+        "SELECT * FROM t OUTER LEFT NATURAL JOIN u",
+        "SELECT * FROM t LEFT RIGHT JOIN u ON t.a = u.a",
+        "SELECT * FROM t NATURAL LEFT FULL JOIN u",
     ]
 
     @Test func parseYFormsKeepTheirMeaning() throws {
@@ -76,6 +83,19 @@ struct StatementParserTests {
         let trailing = try CreateVirtualTableStatement(parsing: "CREATE VIRTUAL TABLE f USING m(a, )")
         #expect(none.arguments?.moduleArguments == nil)
         #expect(trailing.arguments?.moduleArguments?.map(\.text) == ["a", ""])
+    }
+
+    @Test func legacyConstraintsAndJoinsKeepTheirStructure() throws {
+        // The usual join forms keep their structured cases; other orders keep their words.
+        guard case .join(true, .left?) = try JoinOperator(parsing: "NATURAL LEFT JOIN"),
+              case .keywords(let words) = try JoinOperator(parsing: "LEFT RIGHT JOIN") else {
+            Issue.record("unexpected join operators"); return
+        }
+        #expect(Array(words) == [.left, .right])
+        // A chained name is a constraint of its own, naming the next one, as in parse.y.
+        let column = try ColumnDefinition(parsing: "a CONSTRAINT one CONSTRAINT two CHECK (a > 0)")
+        #expect(column.constraints.map { $0.name?.value } == ["one", "two"])
+        #expect(column.constraints.first?.constraint == nil)
     }
 
     @Test(arguments: statements)

@@ -3,6 +3,7 @@
 extension JoinOperator {
     public static func parse(_ p: inout Parser) throws(ParseError) -> JoinOperator {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> JoinOperator in
+            let start = p.position
             let alternatives: [(inout Parser) throws -> JoinOperator] = [
                 { (p: inout Parser) throws -> JoinOperator in
                     try p.expect(texts: [","])
@@ -22,9 +23,14 @@ extension JoinOperator {
                     try p.expect(texts: ["JOIN"])
                     return .join(natural: natural, kind: kind)
                 },
+                { (p: inout Parser) throws -> JoinOperator in
+                    let joinKeywords = List(try p.separated(by: []) { (p: inout Parser) throws(ParseError) -> JoinKeyword in try JoinKeyword.parse(&p) })
+                    try p.expect(texts: ["JOIN"])
+                    return .keywords(joinKeywords)
+                },
             ]
             let value = try p.longest(alternatives)
-            return value
+            return try p.checked(value, from: start)
         }
     }
 }

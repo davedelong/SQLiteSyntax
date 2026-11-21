@@ -14,6 +14,9 @@ extension JoinOperator {
                     try builder.add(kind)
                 }
                 builder.add("JOIN")
+            case .keywords(let joinKeywords):
+                try builder.addList(joinKeywords.items)
+                builder.add("JOIN")
         }
     }
 }

@@ -48,7 +48,11 @@ extension CreateTableStatement.Definition {
                 { (p: inout Parser) throws -> CreateTableStatement.Definition in
                     try p.expect(texts: ["("])
                     let columnDefinitions = List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> ColumnDefinition in try ColumnDefinition.parse(&p) })
-                    let tableConstraints = p.repeated(separator: [","]) { (p: inout Parser) throws(ParseError) -> TableConstraint in try TableConstraint.parse(&p) }
+                    let tableConstraints = p.attempt { (p: inout Parser) throws(ParseError) -> List<TableConstraint> in
+                        try p.expect(texts: [","])
+                        let value = List(try p.separated(by: [","], optional: true) { (p: inout Parser) throws(ParseError) -> TableConstraint in try TableConstraint.parse(&p) })
+                        return value
+                    }
                     try p.expect(texts: [")"])
                     let tableOptions = p.attempt { (p: inout Parser) throws(ParseError) -> TableOptions in
                         let value = try TableOptions.parse(&p)

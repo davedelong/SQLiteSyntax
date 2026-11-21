@@ -15,7 +15,8 @@ actions, and a few errors that no schema can avoid (`count(DISTINCT)`, `ORDER BY
 Some of these rules sit outside SQLite's grammar diagrams. The parser enforces them with hand-written
 checks (`Core/Restrictions.swift`, codegen.json `restrictions`), which also run when building SQL:
 statements in a trigger body can't have `WITH`, `RETURNING`, `INSERT … DEFAULT VALUES` or
-`INDEXED BY`/`NOT INDEXED` (parse.y `trigger_cmd`), and `DISTINCT` takes exactly one argument.
+`INDEXED BY`/`NOT INDEXED` (parse.y `trigger_cmd`), `DISTINCT` takes exactly one argument, join
+keywords must make a join type, and a constraint needs a name or a body.
 
     SQLITE_CORPUS=1 swift test -c release --filter CorpusTests
 
@@ -24,8 +25,8 @@ statements in a trigger body can't have `WITH`, `RETURNING`, `INSERT … DEFAULT
 | | Statements |
 |---|---:|
 | Distinct statements | 47,745 |
-| Agree | 47,668 (99.84%) |
-| SQLite accepts, parser rejects | 17 |
+| Agree | 47,684 (99.87%) |
+| SQLite accepts, parser rejects | 1 |
 | SQLite rejects, parser accepts | 60 |
 | Round-trip failures | 0 |
 
@@ -47,6 +48,14 @@ extracted `sqlite.ebnf` stays faithful to the diagrams):
 - a sign before any literal in `DEFAULT`: `DEFAULT -'hello'`
 - `ORDER BY` with no arguments in a function call: `count(ORDER BY a)`
 - (narrowing) `LIMIT` is required after `ORDER BY` in `UPDATE`, as the `DELETE` diagram already has it
+- `CONSTRAINT name` as a constraint of its own, in column and table constraint lists: names that chain
+  (`CONSTRAINT a CONSTRAINT b CHECK (x)`) or trail (`UNIQUE (a) CONSTRAINT one`), as parse.y's
+  `ccons`/`tcons` allow
+- `[NOT] DEFERRABLE …` as a column constraint of its own
+- no comma needed between table constraints after the first (parse.y `tconscomma`); the comma is always
+  printed
+- join keywords in any order or combination, up to three (`OUTER LEFT NATURAL JOIN`,
+  `LEFT RIGHT JOIN`), checked as sqlite3JoinType() does; the usual forms keep their structured cases
 
 Hand-written parsing follows parse.y the same way: `CAST(x AS )` with an empty type, string literals
 as parts of a column name (`'t'.'c'`), empty module arguments beside a comma (`fts4(a, )`), and
@@ -66,12 +75,10 @@ tokenize.c's rule for what counts as a name when deciding whether they are keywo
 | 1 | `PRAGMA compile_options(NULL)`: the diagram's `signed-literal` admits NULL, parse.y does not | Diagram vs parse.y |
 | 1 | `-0x08000000000000000`: SQLite rejects the 17-digit hex literal | Edge case |
 
-### SQLite accepts, parser rejects (17)
+### SQLite accepts, parser rejects (1)
 
 | Count | Reason | Assessment |
 |---:|---|---|
-| 11 | Legacy constraint lists: a standalone or chained `CONSTRAINT name`, table constraints without commas between them, `[NOT] DEFERRABLE …` as a column constraint on its own | parse.y legacy, not in the diagrams; not supported yet |
-| 5 | Join keywords in any order or combination: `OUTER LEFT NATURAL JOIN`, `LEFT RIGHT JOIN` (= `FULL`), `NATURAL LEFT FULL JOIN`. parse.y accepts `JOIN_KW [nm [nm]] JOIN` and sqlite3JoinType() accepts any consistent set of keywords | SQLite accepts them; not supported yet |
 | 1 | An oversized hex literal in a trigger body: SQLite only compiles the body when the trigger runs, so `CREATE TRIGGER` succeeds | Parser is stricter; the trigger could never run |
 
 No remaining disagreement is unexplained. One known approximation remains: keyword fallback in frame

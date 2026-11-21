@@ -35,9 +35,9 @@ extension CreateTableStatement.Definition {
             case .columns(let columnDefinitions, let tableConstraints, let tableOptions):
                 builder.add("(")
                 try builder.addList(columnDefinitions.items, delimiter: ",")
-                for item in tableConstraints {
+                if let tableConstraints {
                     builder.add(",")
-                    try builder.add(item)
+                    try builder.addList(tableConstraints.items, delimiter: ",")
                 }
                 builder.add(")")
                 if let tableOptions {

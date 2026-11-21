@@ -3,13 +3,17 @@
 extension ColumnConstraint {
     public static func parse(_ p: inout Parser) throws(ParseError) -> ColumnConstraint {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> ColumnConstraint in
+            let start = p.position
             let name = p.attempt { (p: inout Parser) throws(ParseError) -> Name<Any> in
                 try p.expect(texts: ["CONSTRAINT"])
-                let value = try Name<Any>.parse(&p, class: .name, excluding: ["AS", "CHECK", "COLLATE", "DEFAULT", "GENERATED", "NOT", "NULL", "PRIMARY", "REFERENCES", "UNIQUE"])
+                let value = try Name<Any>.parse(&p, class: .name, excluding: ["AS", "CHECK", "COLLATE", "DEFAULT", "DEFERRABLE", "GENERATED", "NOT", "NULL", "PRIMARY", "REFERENCES", "UNIQUE"])
                 return value
             }
-            let constraint = try Constraint.parse(&p)
-            return ColumnConstraint(name: name, constraint: constraint)
+            let constraint = p.attempt { (p: inout Parser) throws(ParseError) -> Constraint in
+                let value = try Constraint.parse(&p)
+                return value
+            }
+            return try p.checked(ColumnConstraint(name: name, constraint: constraint), from: start)
         }
     }
 }
@@ -73,6 +77,10 @@ extension ColumnConstraint.Constraint {
                 { (p: inout Parser) throws -> ColumnConstraint.Constraint in
                     let foreignKeyClause = try ForeignKeyClause.parse(&p)
                     return .foreignKey(foreignKeyClause)
+                },
+                { (p: inout Parser) throws -> ColumnConstraint.Constraint in
+                    let deferrableClause = try DeferrableClause.parse(&p)
+                    return .deferrable(deferrableClause)
                 },
             ]
             let value = try p.longest(alternatives)
