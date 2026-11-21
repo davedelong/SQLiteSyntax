@@ -189,6 +189,16 @@ public indirect enum Expression: Syntax {
     public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
     }
+
+    /// Parses SQL text that consists of comma-separated expressions, e.g. `a, b + 1, max(c)`.
+    ///
+    /// Empty input gives an empty array. A trailing `;` is allowed, as in `init(parsing:)`.
+    public static func parseAll(_ sql: String) throws(ParseError) -> [Self] {
+        try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) -> [Self] in
+            if p.isAtEnd || p.current.isSymbol(";") { return [] }
+            return try p.parseExpressionList()
+        }
+    }
 }
 
 extension Expression {

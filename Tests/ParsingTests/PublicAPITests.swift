@@ -91,4 +91,16 @@ struct PublicAPITests {
     func binaryOperatorsParseAsTheyPrint(_ op: BinaryOperator) throws {
         #expect(try BinaryOperator(parsing: op.sql()) == op)
     }
+
+    @Test func parseAllExpressions() throws {
+        #expect(try Expression.parseAll("a, b + 1, max(c, d), (SELECT 1), x IN (1, 2)").map { try $0.sql() }
+                == ["a", "b + 1", "max ( c , d )", "( SELECT 1 )", "x IN ( 1 , 2 )"])
+        #expect(try Expression.parseAll("42;").map { try $0.sql() } == ["42"])
+        #expect(try Expression.parseAll("").isEmpty)
+        #expect(try Expression.parseAll("  -- nothing here\n").isEmpty)
+        #expect(try Expression.parseAll(";").isEmpty)
+        for bad in ["a,", ", a", "a b", "a,,b", "a; b"] {
+            #expect(throws: ParseError.self, "\(bad)") { try Expression.parseAll(bad) }
+        }
+    }
 }
