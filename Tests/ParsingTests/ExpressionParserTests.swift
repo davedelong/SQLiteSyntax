@@ -4,8 +4,23 @@ import Testing
 
 struct TokenizerTests {
 
-    func kinds(_ sql: String) throws -> [Token.Kind] {
-        try Tokenizer(sql).tokenize().map(\.kind)
+    /// A token's kind and text, with constructors named like the kinds so expectations read naturally.
+    struct Lexeme: Equatable, CustomStringConvertible {
+        var kind: Token.Kind
+        var string: String
+        static func keyword(_ s: String) -> Lexeme { Lexeme(kind: .keyword, string: s) }
+        static func identifier(_ s: String, quoted: Bool) -> Lexeme { Lexeme(kind: .identifier(quoted: quoted), string: s) }
+        static func string(_ s: String) -> Lexeme { Lexeme(kind: .string, string: s) }
+        static func blob(_ s: String) -> Lexeme { Lexeme(kind: .blob, string: s) }
+        static func number(_ s: String) -> Lexeme { Lexeme(kind: .number, string: s) }
+        static func variable(_ s: String) -> Lexeme { Lexeme(kind: .variable, string: s) }
+        static func symbol(_ s: String) -> Lexeme { Lexeme(kind: .symbol, string: s) }
+        static let endOfInput = Lexeme(kind: .endOfInput, string: "")
+        var description: String { "\(kind) \(string.debugDescription)" }
+    }
+
+    func kinds(_ sql: String) throws -> [Lexeme] {
+        try Tokenizer(sql).tokenize().map { Lexeme(kind: $0.kind, string: $0.string) }
     }
 
     @Test func tokens() throws {
@@ -22,6 +37,12 @@ struct TokenizerTests {
         ])
     }
 
+    @Test func contextualKeywordsKeepTheirSpellingAsNames() throws {
+        #expect(try kinds("filter, Over") == [
+            .identifier("filter", quoted: false), .symbol(","), .identifier("Over", quoted: false), .endOfInput,
+        ])
+    }
+
     @Test(arguments: ["'open", "\"open", "[open", "X'abc'", "1_", "12abc", "a ! b", "$"])
     func lexicalErrors(_ sql: String) {
         #expect(throws: ParseError.self) { try Tokenizer(sql).tokenize() }
@@ -31,6 +52,12 @@ struct TokenizerTests {
 struct ExpressionParserTests {
 
     func sql(_ text: String) throws -> String { try Expr(parsing: text).sql() }
+
+    @Test func smallestIntegerLiteral() throws {
+        guard case .literalValue(.integer(.min)) = try Expr(parsing: "-9223372036854775808") else {
+            Issue.record("-9223372036854775808 should parse as Int64.min"); return
+        }
+    }
 
     @Test func rendering() throws {
         #expect(try sql("a+b*c") == "a + b * c")

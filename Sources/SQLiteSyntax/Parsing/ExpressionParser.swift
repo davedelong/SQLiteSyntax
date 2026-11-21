@@ -176,7 +176,7 @@ extension Parser {
                 _ = advance()
                 // Like SQLite (expr.c codeInteger), minus applied directly to 9223372036854775808 is the
                 // smallest INTEGER rather than the negation of an out-of-range (REAL) literal.
-                if case .number = current.kind, token.string.replacingOccurrences(of: "_", with: "") == "9223372036854775808" {
+                if case .number = current.kind, current.string.replacingOccurrences(of: "_", with: "") == "9223372036854775808" {
                     _ = advance()
                     return .literalValue(.integer(.min))
                 }

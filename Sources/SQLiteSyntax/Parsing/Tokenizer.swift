@@ -122,6 +122,7 @@ struct Tokenizer {
             }
             if !isKeyword {
                 tokens[i].kind = .identifier(quoted: false)
+                tokens[i].string = String(decoding: bytes[tokens[i].range], as: UTF8.self)
             }
         }
         return tokens
