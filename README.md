@@ -23,6 +23,10 @@ let running = SQLiteVersion(number: sqlite3_libversion_number())
 let sql = try statement.sql(sqliteVersion: running)   // throws SyntaxError.unsupported if too new
 ```
 
+`SQLiteVersion.generatedAgainst` is the SQLite release the package was generated against (its source
+checkout's `VERSION`). The parser knows syntax up to that release; syntax added later is rejected or
+misread, so a linked SQLite newer than it may accept SQL the parser doesn't.
+
 Each generated type, case and optional part knows the release that introduced it (the doc comments say
 "Since SQLite x.y.z"): mostly worked out from when its keywords appeared, with hand-set dates where that
 would be too early (`ROLLBACK TO`, `UPDATE … FROM`, the 3.52.0 `ALTER TABLE` constraint commands). The

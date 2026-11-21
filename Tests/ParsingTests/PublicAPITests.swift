@@ -18,6 +18,10 @@ struct PublicAPITests {
         #expect(try Expression(parsing: "CAST(a AS INT)").sql() == "CAST ( a AS INT )")
     }
 
+    @Test func theGeneratedAgainstReleaseIsPublic() {
+        #expect(SQLiteVersion.generatedAgainst >= SQLiteVersion(3, 52, 0))   // the newest syntax it dates
+    }
+
     @Test func nullIsExplicit() throws {
         let value: Expression? = nil                      // Swift nil, not SQL NULL
         #expect(value.map { _ in true } == nil)

@@ -48,6 +48,9 @@ struct VersionRequirementTests {
         let statement = try SQLStatement(parsing: sql)
         #expect(throws: Never.self) { try statement.sql(sqliteVersion: required) }
         #expect(throws: Never.self) { try statement.sql() }   // no release given: nothing is checked
+        // Nothing the package knows is newer than the release it was generated against.
+        #expect(required <= .generatedAgainst)
+        #expect(throws: Never.self) { try statement.sql(sqliteVersion: .generatedAgainst) }
         guard required > SQLiteVersion(3, 0, 0) else { return }
         let earlier = SQLiteVersion(required.major, required.minor - 1, 99)
         do {
