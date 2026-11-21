@@ -7,8 +7,9 @@ whole grammar, and work in both directions — building SQL (`sql()`) and parsin
 ## Where things stand (2026-11-20)
 
 This table is the starting point of the plan. Phases 0–8 are now done; each phase below says what it changed.
-Since then the parser was folded into the `SQLiteSyntax` target (`Parsing/`, generated parsers in
-`Generated/Parsing/`), so there is one library. And the generator (`GrammarExtraction`, `SyntaxGeneration`, `sqlite-grammar`, the plugin,
+Since then the parser was folded into the `SQLiteSyntax` target (hand-written parsing in `Parsing/`),
+so there is one library, and each generated type is split into `Generated/Base/X.swift`,
+`Generated/Builder/X+Builder.swift` and `Generated/Parser/X+Parser.swift`. And the generator (`GrammarExtraction`, `SyntaxGeneration`, `sqlite-grammar`, the plugin,
 `Grammar/codegen.json` and `Grammar/sqlite.ebnf`) has moved to the sibling `SQLiteSyntaxGenerator` package.
 
 | Piece | State |
@@ -183,7 +184,7 @@ required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JO
 2. ~~**`LiteralValue` shape**~~ — decided: typed `.integer(Int64)` / `.real(Double)`.
 3. **Generated naming policy** (Phase 3–4): match existing hand-written names, or accept
    grammar-derived names and update the `Convenience/` layer.
-4. ~~**Where generated parsers live**~~ — decided: first `SQLiteParser/Generated`; now `SQLiteSyntax/Generated/Parsing`, with the parser folded into the one library.
+4. ~~**Where generated parsers live**~~ — decided: first `SQLiteParser/Generated`; now `SQLiteSyntax/Generated/Parser`, with the parser folded into the one library.
 5. ~~**Grammar authority for validation**~~ — decided: the diagrams, plus targeted `grammarPatches`
    for parse.y syntax that matters in practice (see `CORPUS.md`); rarer legacy forms are
    documented, not supported.
