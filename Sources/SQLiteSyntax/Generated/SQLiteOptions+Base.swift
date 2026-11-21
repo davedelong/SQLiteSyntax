@@ -8,7 +8,7 @@ extension SQLiteOption {
     static let enableUpdateDeleteLimit = SQLiteOption(name: "ENABLE_UPDATE_DELETE_LIMIT")
 
     /// `SQLITE_OMIT_ALTERTABLE`.
-    static let omitAltertable = SQLiteOption(name: "OMIT_ALTERTABLE")
+    static let omitAlterTable = SQLiteOption(name: "OMIT_ALTERTABLE")
 
     /// `SQLITE_OMIT_ANALYZE`.
     static let omitAnalyze = SQLiteOption(name: "OMIT_ANALYZE")
@@ -23,7 +23,7 @@ extension SQLiteOption {
     static let omitCompoundSelect = SQLiteOption(name: "OMIT_COMPOUND_SELECT")
 
     /// `SQLITE_OMIT_CTE`.
-    static let omitCte = SQLiteOption(name: "OMIT_CTE")
+    static let omitCTE = SQLiteOption(name: "OMIT_CTE")
 
     /// `SQLITE_OMIT_EXPLAIN`.
     static let omitExplain = SQLiteOption(name: "OMIT_EXPLAIN")
@@ -41,7 +41,7 @@ extension SQLiteOption {
     static let omitSubquery = SQLiteOption(name: "OMIT_SUBQUERY")
 
     /// `SQLITE_OMIT_TEMPDB`.
-    static let omitTempdb = SQLiteOption(name: "OMIT_TEMPDB")
+    static let omitTempDB = SQLiteOption(name: "OMIT_TEMPDB")
 
     /// `SQLITE_OMIT_TRIGGER`.
     static let omitTrigger = SQLiteOption(name: "OMIT_TRIGGER")
@@ -53,8 +53,8 @@ extension SQLiteOption {
     static let omitView = SQLiteOption(name: "OMIT_VIEW")
 
     /// `SQLITE_OMIT_VIRTUALTABLE`.
-    static let omitVirtualtable = SQLiteOption(name: "OMIT_VIRTUALTABLE")
+    static let omitVirtualTable = SQLiteOption(name: "OMIT_VIRTUALTABLE")
 
     /// `SQLITE_OMIT_WINDOWFUNC`.
-    static let omitWindowfunc = SQLiteOption(name: "OMIT_WINDOWFUNC")
+    static let omitWindowFunc = SQLiteOption(name: "OMIT_WINDOWFUNC")
 }

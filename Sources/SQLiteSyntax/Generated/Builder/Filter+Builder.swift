@@ -3,7 +3,7 @@
 extension Filter {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.require(SQLiteVersion(3, 25, 0), for: self)
-        try builder.disallow(.omitWindowfunc, for: self)
+        try builder.disallow(.omitWindowFunc, for: self)
         builder.add("FILTER", "(", "WHERE")
         try builder.add(`where`)
         builder.add(")")
