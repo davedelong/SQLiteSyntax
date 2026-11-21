@@ -42,7 +42,7 @@ public struct SQLiteOption: Hashable, Sendable {
     /// `"OMIT_CTE"`, `"ENABLE_FTS5"`) and, for options with one, its value (`"THREADSAFE"`, `"2"`). Options
     /// compare by name alone.
     public init(name: String, value: String? = nil) {
-        self.name = name.hasPrefix("SQLITE_") ? String(name.dropFirst(7)) : name
+        self.name = name.removingPrefix("SQLITE_")
         self.value = value
     }
 

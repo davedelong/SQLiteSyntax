@@ -11,4 +11,9 @@ extension String {
 
     var containsNull: Bool { utf8.contains(0) }
 
+    func removingPrefix(_ prefix: String) -> String {
+        guard hasPrefix(prefix) else { return self }
+        return String(self.dropFirst(prefix.count))
+    }
+
 }

@@ -51,6 +51,7 @@ struct CorpusTests {
             do { try body() } catch { result.error = error }
             finished.signal()
         }
+        thread.qualityOfService = .userInitiated
         thread.stackSize = 64 << 20
         thread.start()
         finished.wait()
