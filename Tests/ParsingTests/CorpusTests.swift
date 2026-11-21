@@ -40,8 +40,9 @@ struct CorpusTests {
     /// Runs `body` on a thread with a 64 MB stack, waiting for it to finish.
     ///
     /// Swift Testing runs tests on the cooperative thread pool, whose threads have 512 KB stacks. The
-    /// corpus includes fuzzed statements with subqueries nested dozens deep, and parsing those overflows
-    /// 512 KB in a debug build.
+    /// corpus includes fuzzed statements with subqueries nested dozens deep, which a debug build can't
+    /// parse in 512 KB: the parser would reject them as too deeply nested (see `StackGuard`), and the
+    /// results would depend on the build.
     static func onLargeStack(_ body: @escaping @Sendable () throws -> Void) throws {
         final class Result: @unchecked Sendable { var error: (any Error)? }
         let result = Result()

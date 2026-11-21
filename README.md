@@ -29,6 +29,15 @@ Hand-written `Expression` syntax isn't checked yet, for example `->` and `IS DIS
 arrived without a new keyword is checked against the earlier release that introduced its keywords, or isn't
 checked at all. See SQLiteSyntaxGenerator's README.
 
+## Deeply nested SQL
+
+Parsing and building are recursive. Rather than overflow the thread's stack on deeply nested SQL, they
+stop when less than 128 KB of stack is left: parsing throws a `ParseError` ("SQL is nested too deeply to
+parse") and building throws `SyntaxError.nestedTooDeeply`. How deep they get depends on the thread: on a
+512 KB stack (Swift concurrency's threads), a release build handles about 570 nested parentheses or 100
+nested subqueries, and a debug build about 38 and 16. The main thread's 8 MB stack allows about 16 times
+as much. To handle deeper SQL, parse on a thread with a larger stack.
+
 ## Layout
 
 One library, `SQLiteSyntax`:

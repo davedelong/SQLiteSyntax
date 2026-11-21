@@ -91,4 +91,36 @@ struct PublicAPITests {
     func binaryOperatorsParseAsTheyPrint(_ op: BinaryOperator) throws {
         #expect(try BinaryOperator(parsing: op.sql()) == op)
     }
+
+    /// Swift Testing runs this on a cooperative thread (512 KB stack), where this much nesting would
+    /// overflow the stack if the parser didn't stop first.
+    @Test func deepNestingThrowsInsteadOfCrashing() throws {
+        let parentheses = String(repeating: "(", count: 20_000) + "1" + String(repeating: ")", count: 20_000)
+        let subqueries = String(repeating: "(SELECT ", count: 5_000) + "1" + String(repeating: ")", count: 5_000)
+        for sql in [parentheses, subqueries] {
+            #expect {
+                _ = try SQLStatementList(parsing: "SELECT " + sql)
+            } throws: { error in
+                (error as? ParseError)?.message == "SQL is nested too deeply to parse"
+            }
+        }
+        // Moderate nesting still parses. (On a 512 KB stack a debug build manages about 38 levels of
+        // parentheses and 16 of subqueries; a release build about 570 and 100.)
+        let nested = String(repeating: "(", count: 10) + "1" + String(repeating: ")", count: 10)
+        #expect(try Expression(parsing: nested).sql().filter { $0 != " " } == nested)
+    }
+
+    /// Values made in code can be nested more deeply than the parser allows; building them throws
+    /// instead of overflowing the stack.
+    @Test func deeplyNestedValuesThrowWhenBuilt() throws {
+        var expression = Expression.literalValue(.integer(1))
+        for _ in 0..<3_000 { expression = .unaryOperator(.negate, expression) }
+        do {
+            _ = try expression.sql()
+            Issue.record("building should have thrown nestedTooDeeply")
+        } catch .nestedTooDeeply {
+        } catch {
+            Issue.record("expected nestedTooDeeply")   // not printed: a description could be as deep as the value
+        }
+    }
 }

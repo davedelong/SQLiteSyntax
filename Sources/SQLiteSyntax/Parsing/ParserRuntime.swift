@@ -11,6 +11,8 @@ final class ParserState {
     struct Key: Hashable { var type: ObjectIdentifier; var position: Int }
     var memo: [Key: (value: Any, end: Int)?] = [:]
     var furthestError: ParseError?
+    /// Set when the stack ran low. Parsing then fails with this error, whatever backtracking finds.
+    var stackExhausted: ParseError?
 
     func record(_ error: ParseError) {
         if furthestError == nil || error.offset > furthestError!.offset { furthestError = error }
@@ -25,7 +27,13 @@ extension Parser {
     /// furthest problem seen, which is usually more useful than "expected end of input".
     static func parseAll<T>(_ sql: String, _ body: (inout Parser) throws(ParseError) -> T) throws(ParseError) -> T {
         var p = try Parser(sql)
-        let value = try body(&p)
+        let value: T
+        do {
+            value = try body(&p)
+        } catch {
+            throw p.state.stackExhausted ?? error
+        }
+        if let exhausted = p.state.stackExhausted { throw exhausted }
         _ = p.accept(symbol: ";")
         guard p.isAtEnd else {
             if let furthest = p.state.furthestError, furthest.offset > p.current.range.lowerBound { throw furthest }
@@ -107,6 +115,7 @@ extension Parser {
 
     /// Caches a type's parse result at this position, so alternatives sharing a prefix don't re-parse it.
     mutating func memoized<T>(_ type: T.Type, _ body: (inout Parser) throws(ParseError) -> T) throws(ParseError) -> T {
+        try ensureStackSpace()
         let key = ParserState.Key(type: ObjectIdentifier(type), position: position)
         if let cached = state.memo[key] {
             guard let (value, end) = cached else { throw state.furthestError ?? unexpected(expected: "valid syntax") }
@@ -122,6 +131,16 @@ extension Parser {
             state.record(error)
             throw error
         }
+    }
+
+    /// Throws if this thread's stack is nearly used up (see `StackGuard`), and from then on for the rest
+    /// of the parse. Every recursive path goes through `memoized` or `parseExpression`, which call this.
+    func ensureStackSpace() throws(ParseError) {
+        if let exhausted = state.stackExhausted { throw exhausted }
+        guard !StackGuard.hasRoom else { return }
+        let e = error("SQL is nested too deeply to parse")
+        state.stackExhausted = e
+        throw e
     }
 
     // MARK: Lists

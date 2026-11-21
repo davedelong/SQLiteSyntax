@@ -94,6 +94,8 @@ public struct SyntaxBuilder {
     /// Validates and adds a syntax value; nothing if it's nil.
     mutating func add(_ part: (any Syntax)?) throws(SyntaxError) {
         guard let part else { return }
+        // Every nested part is built through here, so this keeps deep nesting from overflowing the stack.
+        guard StackGuard.hasRoom else { throw SyntaxError.nestedTooDeeply }
         try part.validate()
         try part.build(using: &self)
     }
@@ -139,4 +141,7 @@ public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
     /// The syntax needs a later SQLite release than the one being built for.
     case unsupported(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
+    /// The syntax is nested too deeply to build with the stack this thread has left. (It doesn't carry
+    /// the syntax: describing a value that deep would overflow the stack too.)
+    case nestedTooDeeply
 }

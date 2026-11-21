@@ -6,6 +6,7 @@ extension Parser {
     // MARK: Precedence climbing
 
     mutating func parseExpression(_ minimum: Int = 0) throws(ParseError) -> Expr {
+        try ensureStackSpace()
         var left = try parsePrefix()
         while true {
             let token = current
