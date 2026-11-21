@@ -35,7 +35,7 @@ One library, `SQLiteSyntax`:
 
 | Folder | What it is |
 |---|---|
-| `Generated/` | Produced by the generator, three files per type: `Base/X.swift` (the type), `Builder/X+Builder.swift` (its `build(using:)`) and `Parser/X+Parser.swift` (its `parse(_:)`; every top-level type gets `init(parsing:)`). |
+| `Generated/` | Produced by the generator, three files per type: `Base/X.swift` (the type), `Builder/X+Builder.swift` (its `build(using:)`) and `Parser/X+Parser.swift` (its `parse(_:)`, which `Syntax` requires; every `Syntax` type gets `init(parsing:)` from it). |
 | `Core/` | Hand-written: expressions, literals, names, versions, and `SyntaxBuilder`. |
 | `Convenience/` | Hand-written builder API and literal conformances. |
 | `Parsing/` | Hand-written parsing: the tokenizer, the expression parser (precedence climbing), and the runtime the generated parsers use. |

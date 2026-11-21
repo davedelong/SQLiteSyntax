@@ -139,6 +139,9 @@ subqueries. 42 statements of every kind round-trip (`StatementParserTests`). Ori
 Done: every top-level generated type has a public `init(parsing:)` (e.g. `SQLStatementList(parsing:)`,
 `SelectStatement(parsing:)`, `ColumnConstraint(parsing:)`); a trailing `;` is allowed; leftover input
 reports the furthest problem seen. `Expression(parsing:)` uses the same entry point.
+Later, `parse(_:)` became a `Syntax` requirement (replacing the internal `SQLParsable`), so every
+`Syntax` type, generated or hand-written, nested or not, gets `init(parsing:)` from one extension.
+`UnaryOperator` stopped being `Syntax`, since it's only ever printed with its operand.
 `SQLStatementList.allStatements` skips empty statements. Covered by `PublicAPITests` (non-@testable).
 Original notes:
 

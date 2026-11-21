@@ -22,6 +22,11 @@ public struct Name<T>: Syntax {
     public init(_ value: String) where T: NamedStructure {
         self.value = value
     }
+
+    /// For the parser, which reads names of every kind.
+    init(parsed value: String) {
+        self.value = value
+    }
     
     public func validate() throws(SyntaxError) {
         // check validity

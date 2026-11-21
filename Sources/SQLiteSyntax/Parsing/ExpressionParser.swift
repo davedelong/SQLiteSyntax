@@ -1,16 +1,6 @@
 import Foundation
 typealias Expr = SQLiteSyntax.Expression
 
-extension SQLiteSyntax.Expression {
-
-    /// Parses SQL text containing a single SQLite expression, e.g. `a + 1 BETWEEN 0 AND 10`.
-    ///
-    /// Not yet supported: `WITHIN GROUP`, and `ESCAPE` on GLOB (which `Expression` cannot represent).
-    public init(parsing sql: String) throws(ParseError) {
-        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
-    }
-}
-
 extension Parser {
 
     // MARK: Precedence climbing

@@ -14,7 +14,10 @@ public protocol Syntax: Sendable {
     /// This is called automatically as part of building.
     func validate() throws(SyntaxError)
     func build(using builder: inout SyntaxBuilder) throws(SyntaxError)
-    
+
+    /// Reads one value at the parser's position. Use `init(parsing:)` to parse a string.
+    static func parse(_ parser: inout Parser) throws(ParseError) -> Self
+
 }
 
 extension Syntax {

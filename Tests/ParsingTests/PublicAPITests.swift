@@ -68,4 +68,27 @@ struct PublicAPITests {
         #expect(throws: ParseError.self) { try SelectStatement(parsing: "SELECT a FROM t; SELECT b") }
         #expect(throws: ParseError.self) { try SQLStatement(parsing: "CREATE TABLE") }
     }
+
+    @Test func everySyntaxTypeParses() throws {
+        // Hand-written types, and a nested generated type, all get init(parsing:) from Syntax.
+        #expect(try List<Name<Column>>(parsing: "a, \"b c\", key").map(\.value) == ["a", "b c", "key"])
+        #expect(try Name<Table>(parsing: "[my table]").value == "my table")
+        #expect(try BindParameter(parsing: "?3").sql() == "?3")
+        #expect(try BindParameter(parsing: ":name").sql() == ":name")
+        #expect(try SortDirection(parsing: "desc").sql() == "DESC")
+        #expect(try LiteralValue(parsing: "X'0aff'").sql() == "X'0AFF'")
+        #expect(try SelectStatement.CompoundsElement(parsing: "UNION ALL SELECT 1").sql() == "UNION ALL SELECT 1")
+        #expect(throws: ParseError.self) { try List<Name<Column>>(parsing: "") }
+        #expect(throws: ParseError.self) { try BindParameter(parsing: "a") }
+    }
+
+    @Test(arguments: [
+        BinaryOperator.concat, .extractJSON, .extractValue, .multiply, .divide, .modulo, .add, .subtract,
+        .bitwiseAnd, .bitwiseOr, .leftShift, .rightShift, .lessThan, .greaterThan, .lessThanOrEqual,
+        .greaterThanOrEqual, .equals, .notEquals, .is, .isNot, .isDistinctFrom, .isNotDistinctFrom, .in, .notIn,
+        .match, .notMatch, .like, .notLike, .regexp, .notRegexp, .glob, .notGlob, .and, .or,
+    ])
+    func binaryOperatorsParseAsTheyPrint(_ op: BinaryOperator) throws {
+        #expect(try BinaryOperator(parsing: op.sql()) == op)
+    }
 }

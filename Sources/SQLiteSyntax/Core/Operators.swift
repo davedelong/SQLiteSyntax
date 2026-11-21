@@ -7,7 +7,9 @@
 
 import Foundation
 
-public enum UnaryOperator: Syntax {
+/// An operator with one operand. Not `Syntax` by itself: it's printed together with its operand, as
+/// part of `Expression.unaryOperator`.
+public enum UnaryOperator: Sendable {
     case bitwiseNot
     case plus
     case negate
@@ -16,10 +18,6 @@ public enum UnaryOperator: Syntax {
     case isNull
     case notNull
     case not
-    
-    public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
-        fatalError()
-    }
     
     /// Prints the operator with its operand, parenthesized if it binds less tightly than the operator.
     internal func build(using builder: inout SyntaxBuilder, operand: Expression) throws(SyntaxError) {

@@ -1,6 +1,8 @@
-/// A syntax type that can be read from tokens. Generated types conform in `Generated/`.
-protocol SQLParsable {
-    static func parse(_ p: inout Parser) throws(ParseError) -> Self
+extension Syntax {
+    /// Parses SQL text that consists of exactly one of this syntax (a trailing `;` is allowed).
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try Self.parse(&p) }
+    }
 }
 
 /// Which keywords may stand for a name at a given place (parse.y token classes).
@@ -186,26 +188,76 @@ extension Parser {
 
 // MARK: Hand-written types
 
-extension Name where T: NamedStructure {
-    static func parse(_ p: inout Parser, class nameClass: NameClass = .name, excluding: Set<String> = []) throws(ParseError) -> Name<T> {
-        Name<T>(value: try p.parseName(class: nameClass, excluding: excluding))
+extension Name {
+    /// A name in the `nm` class: an identifier, a string, or a keyword SQLite allows as a name.
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        try parse(&p, class: .name, excluding: [])
+    }
+
+    static func parse(_ p: inout Parser, class nameClass: NameClass, excluding: Set<String> = []) throws(ParseError) -> Self {
+        Name(parsed: try p.parseName(class: nameClass, excluding: excluding))
     }
 }
 
-extension Name where T == Any {
-    static func parse(_ p: inout Parser, class nameClass: NameClass = .name, excluding: Set<String> = []) throws(ParseError) -> Name<T> {
-        Name<Any>(value: try p.parseName(class: nameClass, excluding: excluding))
+extension List {
+    /// One or more items separated by commas.
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> Element in try Element.parse(&p) })
     }
 }
 
-extension SQLiteSyntax.Expression: SQLParsable {
-    static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+extension BindParameter {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        let token = p.current
+        guard case .variable = token.kind else {
+            let e = p.unexpected(expected: "a bind parameter")
+            p.state.record(e)
+            throw e
+        }
+        _ = p.advance()
+        return try p.bindParameter(token.string, token: token)
+    }
+}
+
+extension BinaryOperator {
+    /// The operator as `build(using:)` prints it, e.g. `||`, `IS NOT DISTINCT FROM`, `NOT LIKE`.
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        if let (_, op) = p.binaryOperator(p.current) {
+            _ = p.advance()
+            return op
+        }
+        if p.accept(keyword: "AND") { return .and }
+        if p.accept(keyword: "OR") { return .or }
+        if p.accept(keyword: "IS") {
+            let negated = p.accept(keyword: "NOT")
+            if p.accept(keywords: "DISTINCT", "FROM") { return negated ? .isNotDistinctFrom : .isDistinctFrom }
+            return negated ? .isNot : .is
+        }
+        let negated = p.accept(keyword: "NOT")
+        let pairs: [(String, BinaryOperator, BinaryOperator)] = [
+            ("IN", .in, .notIn), ("MATCH", .match, .notMatch), ("LIKE", .like, .notLike),
+            ("REGEXP", .regexp, .notRegexp), ("GLOB", .glob, .notGlob),
+        ]
+        for (keyword, plain, negative) in pairs where p.accept(keyword: keyword) {
+            return negated ? negative : plain
+        }
+        let e = p.unexpected(expected: "a binary operator")
+        p.state.record(e)
+        throw e
+    }
+}
+
+extension SQLiteSyntax.Expression {
+    /// An expression, e.g. `a + 1 BETWEEN 0 AND 10`.
+    ///
+    /// Not yet supported: `WITHIN GROUP`, and `ESCAPE` on GLOB (which `Expression` cannot represent).
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
     }
 }
 
-extension LiteralValue: SQLParsable {
-    static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+extension LiteralValue {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         let token = p.current
         switch token.kind {
             case .number: _ = p.advance(); return try p.numericLiteral(token.string, token: token)
@@ -225,8 +277,8 @@ extension LiteralValue: SQLParsable {
     }
 }
 
-extension NumericLiteral: SQLParsable {
-    static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+extension NumericLiteral {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         let token = p.current
         guard case .number = token.kind else {
             let e = p.unexpected(expected: "a number")
@@ -238,17 +290,17 @@ extension NumericLiteral: SQLParsable {
     }
 }
 
-extension SortDirection: SQLParsable {
-    static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+extension SortDirection {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         if p.accept(keyword: "ASC") { return .ascending }
         try p.expect(keyword: "DESC")
         return .descending
     }
 }
 
-extension ModuleArgument: SQLParsable {
+extension ModuleArgument {
     /// Any tokens up to a `,` or `)` outside parentheses, kept as written.
-    static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         let start = p.current.range.lowerBound
         var depth = 0
         var end = start

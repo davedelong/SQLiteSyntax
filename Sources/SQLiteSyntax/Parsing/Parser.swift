@@ -20,7 +20,10 @@ public struct ParseError: Error, CustomStringConvertible, Equatable, Sendable {
 }
 
 /// A cursor over tokens, with backtracking.
-struct Parser {
+///
+/// It's public only because `Syntax.parse(_:)` mentions it; it has no public API. Parse strings with
+/// `init(parsing:)`.
+public struct Parser {
     let source: String
     let tokens: [Token]
     var position = 0
