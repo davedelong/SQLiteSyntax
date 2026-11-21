@@ -47,6 +47,7 @@ struct VersionRequirementTests {
     func buildingRequiresTheReleaseThatIntroducedTheSyntax(_ sql: String, _ required: SQLiteVersion) throws {
         let statement = try SQLStatement(parsing: sql)
         #expect(throws: Never.self) { try statement.sql(sqliteVersion: required) }
+        #expect(statement.minimumRequiredVersion == required)
         #expect(throws: Never.self) { try statement.sql(sqliteVersion: nil) }   // nil: nothing is checked
         // By default, the check is for the linked SQLite.
         if required <= .linked {

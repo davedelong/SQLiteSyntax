@@ -22,6 +22,21 @@ struct PublicAPITests {
         #expect(SQLiteVersion.generatedAgainst >= SQLiteVersion(3, 52, 0))   // the newest syntax it dates
     }
 
+    @Test func minimumRequiredVersionCountsThePartsThatArePresent() throws {
+        #expect(try SQLStatement(parsing: "DELETE FROM t").minimumRequiredVersion == SQLiteVersion(3, 0, 0))
+        #expect(try SQLStatement(parsing: "DELETE FROM t RETURNING *").minimumRequiredVersion == SQLiteVersion(3, 35, 0))
+        // The latest part wins, wherever it is nested.
+        let select = try SelectStatement(parsing: "SELECT a -> '$' FROM t WHERE b IS NOT DISTINCT FROM c ORDER BY a NULLS LAST")
+        #expect(select.minimumRequiredVersion == SQLiteVersion(3, 39, 0))
+        #expect(try Expression(parsing: "a -> '$'").minimumRequiredVersion == SQLiteVersion(3, 38, 0))
+        // Values made in code, even ones that don't validate (a FROM list needs at least one table).
+        var statement = try UpdateStatement(parsing: "UPDATE t SET a = 1")
+        #expect(statement.minimumRequiredVersion == SQLiteVersion(3, 0, 0))
+        statement.from = .tables([])
+        #expect(statement.minimumRequiredVersion == SQLiteVersion(3, 33, 0))
+        #expect(throws: SyntaxError.self) { try statement.sql(sqliteVersion: nil) }
+    }
+
     @Test func nullIsExplicit() throws {
         let value: Expression? = nil                      // Swift nil, not SQL NULL
         #expect(value.map { _ in true } == nil)

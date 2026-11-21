@@ -18,6 +18,10 @@ public protocol Syntax: Sendable {
     /// Reads one value at the parser's position. Use `init(parsing:)` to parse a string.
     static func parse(_ parser: inout Parser) throws(ParseError) -> Self
 
+    /// The earliest SQLite release that can run this syntax: the latest release that introduced any part of
+    /// it that is present (an optional clause counts only when it is set). 3.0.0 if nothing needs a later one.
+    var minimumRequiredVersion: SQLiteVersion { get }
+
 }
 
 extension Syntax {
@@ -30,6 +34,15 @@ extension Syntax {
     }
 
     public func validate() throws(SyntaxError) { }
+
+    /// Builds the syntax without checking a release, recording the releases its parts require. Validation
+    /// is skipped, so an incomplete value still reports what its present parts need.
+    public var minimumRequiredVersion: SQLiteVersion {
+        var builder = SyntaxBuilder(sqliteVersion: nil)
+        builder.validates = false
+        try? build(using: &builder)
+        return builder.minimumRequiredVersion
+    }
     
     /// The SQL for this syntax.
     ///
@@ -59,12 +72,20 @@ public struct SyntaxBuilder {
     /// this process links (`SQLiteVersion.linked`); nil checks nothing.
     public var sqliteVersion: SQLiteVersion?
 
+    /// The latest release required by anything built so far; 3.0.0 if nothing needed a later one.
+    public private(set) var minimumRequiredVersion = SQLiteVersion(3, 0, 0)
+
+    /// Whether parts are validated as they are added (off when only collecting requirements).
+    var validates = true
+
     public init(sqliteVersion: SQLiteVersion? = .linked) {
         self.sqliteVersion = sqliteVersion
     }
 
-    /// Throws `SyntaxError.unsupported` if `version` is later than the release being built for.
-    public func require(_ version: SQLiteVersion, for syntax: any Syntax) throws(SyntaxError) {
+    /// Records that the syntax being built needs `version`, and throws `SyntaxError.unsupported` if that's
+    /// later than the release being built for.
+    public mutating func require(_ version: SQLiteVersion, for syntax: any Syntax) throws(SyntaxError) {
+        minimumRequiredVersion = max(minimumRequiredVersion, version)
         if let sqliteVersion, sqliteVersion < version {
             throw SyntaxError.unsupported(syntax, requires: version, sqliteVersion: sqliteVersion)
         }
@@ -97,7 +118,7 @@ public struct SyntaxBuilder {
         guard let part else { return }
         // Every nested part is built through here, so this keeps deep nesting from overflowing the stack.
         guard StackGuard.hasRoom else { throw SyntaxError.nestedTooDeeply }
-        try part.validate()
+        if validates { try part.validate() }
         try part.build(using: &self)
     }
 

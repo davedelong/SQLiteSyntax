@@ -23,6 +23,9 @@ let older = try statement.sql(sqliteVersion: SQLiteVersion(3, 31, 0))   // for a
 let unchecked = try statement.sql(sqliteVersion: nil)                    // no check
 ```
 
+Every syntax value also reports the earliest release that can run it, counting only the parts that are
+present: `try SQLStatement(parsing: "DELETE FROM t RETURNING *").minimumRequiredVersion` is 3.35.0.
+
 `SQLiteVersion.generatedAgainst` is the SQLite release the package was generated against (its source
 checkout's `VERSION`). The parser knows syntax up to that release; syntax added later is rejected or
 misread, so a linked SQLite newer than it may accept SQL the parser doesn't.
