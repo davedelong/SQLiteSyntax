@@ -7,16 +7,12 @@
 
 import Foundation
 
-/// An operator with one operand. Not `Syntax` by itself: it's printed together with its operand, as
-/// part of `Expression.unaryOperator`.
+/// A prefix operator. Not `Syntax` by itself: it's printed together with its operand, as part of
+/// `Expression.unaryOperator`. (`COLLATE`, `ISNULL` and `NOTNULL` have their own `Expression` cases.)
 public enum UnaryOperator: Sendable {
     case bitwiseNot
     case plus
     case negate
-    case collate(Name<Collation>)
-    case escape(Name<Any>)
-    case isNull
-    case notNull
     case not
     
     /// Prints the operator with its operand, parenthesized if it binds less tightly than the operator.
@@ -31,20 +27,6 @@ public enum UnaryOperator: Sendable {
             case .negate:
                 builder.add("-")
                 try builder.addOperand(operand, minimum: precedence)
-            case .collate(let name):
-                try builder.addOperand(operand, minimum: precedence)
-                builder.add("COLLATE")
-                try builder.add(name)
-            case .escape(let name):
-                try builder.addOperand(operand, minimum: precedence)
-                builder.add("ESCAPE")
-                try builder.add(name)
-            case .isNull:
-                try builder.addOperand(operand, minimum: precedence)
-                builder.add("IS", "NULL")
-            case .notNull:
-                try builder.addOperand(operand, minimum: precedence)
-                builder.add("NOT", "NULL")
             case .not:
                 builder.add("NOT")
                 try builder.addOperand(operand, minimum: precedence)
@@ -52,6 +34,9 @@ public enum UnaryOperator: Sendable {
     }
 }
 
+/// An operator between two operands, printed between them. Operators with their own form in `Expression`
+/// aren't here: `IS [NOT] [DISTINCT FROM]` is `.equals`, `[NOT] IN` is `.inExpression`, `.inStatement`,
+/// `.inTable` or `.inTableFunction`, and `[NOT] LIKE`, `GLOB`, `REGEXP` and `MATCH` have a case each.
 public enum BinaryOperator: Syntax {
     case concat
     case extractJSON
@@ -71,27 +56,12 @@ public enum BinaryOperator: Syntax {
     case greaterThanOrEqual
     case equals
     case notEquals
-    case `is`
-    case isNot
-    case isDistinctFrom
-    case isNotDistinctFrom
-    case `in`
-    case notIn
-    case match
-    case notMatch
-    case like
-    case notLike
-    case regexp
-    case notRegexp
-    case glob
-    case notGlob
     case and
     case or
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         switch self {
             case .extractJSON, .extractValue: try builder.require(SQLiteVersion(3, 38, 0), for: self)
-            case .isDistinctFrom, .isNotDistinctFrom: try builder.require(SQLiteVersion(3, 39, 0), for: self)
             default: break
         }
         switch self {
@@ -113,26 +83,12 @@ public enum BinaryOperator: Syntax {
             case .greaterThanOrEqual: builder.add(">=")
             case .equals: builder.add("==")
             case .notEquals: builder.add("!=")
-            case .is: builder.add("IS")
-            case .isNot: builder.add("IS", "NOT")
-            case .isDistinctFrom: builder.add("IS", "DISTINCT", "FROM")
-            case .isNotDistinctFrom: builder.add("IS", "NOT", "DISTINCT", "FROM")
-            case .in: builder.add("IN")
-            case .notIn: builder.add("NOT", "IN")
-            case .match: builder.add("MATCH")
-            case .notMatch: builder.add("NOT", "MATCH")
-            case .like: builder.add("LIKE")
-            case .notLike: builder.add("NOT", "LIKE")
-            case .regexp: builder.add("REGEXP")
-            case .notRegexp: builder.add("NOT", "REGEXP")
-            case .glob: builder.add("GLOB")
-            case .notGlob: builder.add("NOT", "GLOB")
             case .and: builder.add("AND")
             case .or: builder.add("OR")
         }
     }
 
-    /// The operator as `build(using:)` prints it, e.g. `||`, `IS NOT DISTINCT FROM`, `NOT LIKE`.
+    /// The operator as `build(using:)` prints it, e.g. `||`, `->>`, `AND`.
     public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         if let (_, op) = p.binaryOperator(p.current) {
             _ = p.advance()
@@ -140,19 +96,6 @@ public enum BinaryOperator: Syntax {
         }
         if p.accept(keyword: "AND") { return .and }
         if p.accept(keyword: "OR") { return .or }
-        if p.accept(keyword: "IS") {
-            let negated = p.accept(keyword: "NOT")
-            if p.accept(keywords: "DISTINCT", "FROM") { return negated ? .isNotDistinctFrom : .isDistinctFrom }
-            return negated ? .isNot : .is
-        }
-        let negated = p.accept(keyword: "NOT")
-        let pairs: [(String, BinaryOperator, BinaryOperator)] = [
-            ("IN", .in, .notIn), ("MATCH", .match, .notMatch), ("LIKE", .like, .notLike),
-            ("REGEXP", .regexp, .notRegexp), ("GLOB", .glob, .notGlob),
-        ]
-        for (keyword, plain, negative) in pairs where p.accept(keyword: keyword) {
-            return negated ? negative : plain
-        }
         let e = p.unexpected(expected: "a binary operator")
         p.state.record(e)
         throw e

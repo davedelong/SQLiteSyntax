@@ -76,7 +76,6 @@ struct SeededRandom {
     static let binaryOperators: [BinaryOperator] = [
         .or, .and, .equals, .notEquals, .lessThan, .greaterThan, .lessThanOrEqual, .greaterThanOrEqual,
         .bitwiseAnd, .bitwiseOr, .leftShift, .rightShift, .add, .subtract, .multiply, .divide, .modulo, .concat,
-        .is, .isNot, .isDistinctFrom, .isNotDistinctFrom,
     ]
 
     mutating func expression(depth: Int) -> Expr {

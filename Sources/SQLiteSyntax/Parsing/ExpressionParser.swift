@@ -365,18 +365,6 @@ extension Parser {
         return .real(value)
     }
 
-    func number(_ text: String, token: Token) throws(ParseError) -> Decimal {
-        let digits = text.replacingOccurrences(of: "_", with: "")
-        if digits.hasPrefix("0x") || digits.hasPrefix("0X") {
-            guard let value = UInt64(digits.dropFirst(2), radix: 16) else { throw error("hex literal too large", at: token) }
-            return Decimal(Int64(bitPattern: value))   // SQLite reads hex literals as 64-bit two's complement
-        }
-        guard let value = Decimal(string: digits.hasPrefix(".") ? "0" + digits : digits, locale: Locale(identifier: "en_US_POSIX")) else {
-            throw error("malformed number", at: token)
-        }
-        return value
-    }
-
     func blob(_ hex: String) -> Data {
         var data = Data()
         var index = hex.startIndex

@@ -42,18 +42,27 @@ import SQLiteSyntax
         #expect(try Name<Column>(parsing: try name.sql()).value == name.value)
     }
 
-    @Test func numericLiteralsHaveNoSignAndAreNumbers() throws {
-        #expect(throws: SyntaxError.self) { try SignedNumber(sign: .minus, numericLiteral: NumericLiteral(Decimal(-5))).sql() }
-        #expect(throws: SyntaxError.self) { try SignedNumber(numericLiteral: NumericLiteral(Decimal.nan)).sql() }
+    @Test func numericLiteralsHaveNoSign() throws {
+        #expect(throws: SyntaxError.self) { try SignedNumber(sign: .minus, numericLiteral: .real(-5)).sql() }
+        #expect(throws: SyntaxError.self) { try SignedNumber(numericLiteral: .real(-0.0)).sql() }
+        #expect(throws: SyntaxError.self) { try SignedNumber(numericLiteral: .real(.nan)).sql() }
         #expect(try SignedNumber(sign: .minus, numericLiteral: 5).sql() == "- 5")
-        #expect(try SignedNumber(numericLiteral: 0).sql() == "0")
+        #expect(try SignedNumber(numericLiteral: 0.5).sql() == "0.5")
+        #expect(try SignedNumber(numericLiteral: .real(.infinity)).sql() == "9e999")
+        // A negative integer is written as the hex literal SQLite reads as that value.
+        let negative = try SignedNumber(numericLiteral: .integer(-5)).sql()
+        #expect(negative == "0xFFFFFFFFFFFFFFFB")
+        #expect(Database().evaluate(negative) == Database().evaluate("-5"))
+        #expect(try SignedNumber(parsing: "0x10").sql() == "16")
     }
 
     @Test func columnAndTableNamesAreComplete() throws {
         #expect(throws: SyntaxError.self) { try Expr.columnName("main", nil, "a").sql() }
         #expect(try Expr.columnName("main", "t", "a").sql() == "main.t.a")
-        #expect(throws: SyntaxError.self) { try Expr.inTable(.column("a"), negated: false, "main", nil).sql() }
-        #expect(throws: SyntaxError.self) { try Expr.inTable(.column("a"), negated: false, nil, nil).sql() }
         #expect(try Expr.inTable(.column("a"), negated: true, "main", "t").sql() == "a NOT IN main.t")
+    }
+
+    @Test func matchOperatorUsesTheMatchCase() throws {
+        #expect(try (Expr.column("a") ~= "x").sql() == "a MATCH 'x'")
     }
 }

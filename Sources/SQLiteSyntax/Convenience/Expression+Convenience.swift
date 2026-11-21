@@ -26,7 +26,7 @@ extension Expression {
     }
     
     public static func ~= (lhs: Self, rhs: Self) -> Self {
-        return .binaryOperator(lhs, .match, rhs)
+        return .match(lhs, negated: false, match: rhs)
     }
     
     public static func == (lhs: Self, rhs: Self) -> Self {

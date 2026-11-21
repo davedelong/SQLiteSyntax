@@ -31,7 +31,7 @@ public indirect enum Expression: Syntax {
     case inStatement(Expression, negated: Bool, SelectStatement)
     /// `x [NOT] IN ( a , b … )`; the list may be empty (`x IN ()` is false).
     case inExpression(Expression, negated: Bool, [Expression])
-    case inTable(Expression, negated: Bool, Name<Schema>?, Name<Table>?)
+    case inTable(Expression, negated: Bool, Name<Schema>?, Name<Table>)
     case inTableFunction(Expression, negated: Bool, Name<Schema>?, Name<Function>, [Expression])
     case select(SelectStatement)
     case exists(negated: Bool, SelectStatement)
@@ -45,8 +45,6 @@ public indirect enum Expression: Syntax {
             case .columnName(let schema, let table, _):
                 // `main.a` would read as table `main`, column `a`.
                 try require(schema == nil || table != nil, reason: "A column with a schema name needs a table name")
-            case .inTable(_, _, _, let table):
-                try require(table != nil, reason: "IN needs a table name")
             default:
                 break
         }
@@ -221,9 +219,7 @@ extension BinaryOperator {
         switch self {
             case .or: return ExpressionPrecedence.or
             case .and: return ExpressionPrecedence.and
-            case .equals, .notEquals, .is, .isNot, .isDistinctFrom, .isNotDistinctFrom, .in, .notIn,
-                 .match, .notMatch, .like, .notLike, .regexp, .notRegexp, .glob, .notGlob:
-                return ExpressionPrecedence.equality
+            case .equals, .notEquals: return ExpressionPrecedence.equality
             case .lessThan, .greaterThan, .lessThanOrEqual, .greaterThanOrEqual: return ExpressionPrecedence.comparison
             case .bitwiseAnd, .bitwiseOr, .leftShift, .rightShift: return ExpressionPrecedence.bitwise
             case .add, .subtract: return ExpressionPrecedence.additive
@@ -237,9 +233,6 @@ extension UnaryOperator {
     var precedence: Int {
         switch self {
             case .bitwiseNot, .plus, .negate: return ExpressionPrecedence.unary
-            case .collate: return ExpressionPrecedence.collate
-            case .escape: return ExpressionPrecedence.escape
-            case .isNull, .notNull: return ExpressionPrecedence.equality
             case .not: return ExpressionPrecedence.not
         }
     }

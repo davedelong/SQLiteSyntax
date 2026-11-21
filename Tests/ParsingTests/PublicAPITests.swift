@@ -104,8 +104,7 @@ struct PublicAPITests {
     @Test(arguments: [
         BinaryOperator.concat, .extractJSON, .extractValue, .multiply, .divide, .modulo, .add, .subtract,
         .bitwiseAnd, .bitwiseOr, .leftShift, .rightShift, .lessThan, .greaterThan, .lessThanOrEqual,
-        .greaterThanOrEqual, .equals, .notEquals, .is, .isNot, .isDistinctFrom, .isNotDistinctFrom, .in, .notIn,
-        .match, .notMatch, .like, .notLike, .regexp, .notRegexp, .glob, .notGlob, .and, .or,
+        .greaterThanOrEqual, .equals, .notEquals, .and, .or,
     ])
     func binaryOperatorsParseAsTheyPrint(_ op: BinaryOperator) throws {
         #expect(try BinaryOperator(parsing: op.sql()) == op)
