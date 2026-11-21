@@ -49,7 +49,7 @@ struct VersionRequirementTests {
         let statement = try SQLStatement(parsing: sql)
         #expect(throws: Never.self) { try statement.sql(sqliteVersion: required) }
         #expect(statement.minimumRequiredVersion == required)
-        #expect(throws: Never.self) { try statement.sql(sqliteVersion: nil) }   // nil: nothing is checked
+        #expect(throws: Never.self) { try statement.sql(sqliteVersion: nil, options: nil) }   // nil: nothing is checked
         // By default, the check is for the linked SQLite.
         if required <= .linked {
             #expect(throws: Never.self) { try statement.sql() }
@@ -64,7 +64,7 @@ struct VersionRequirementTests {
         do {
             _ = try statement.sql(sqliteVersion: earlier)
             Issue.record("\(sql) built for \(earlier)")
-        } catch .unsupported(_, let requires, let sqliteVersion) {
+        } catch .unsupportedVersion(_, requires: let requires, sqliteVersion: let sqliteVersion) {
             #expect(requires == required)
             #expect(sqliteVersion == earlier)
         } catch {

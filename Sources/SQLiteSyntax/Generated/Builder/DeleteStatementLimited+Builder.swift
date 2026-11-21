@@ -2,6 +2,7 @@
 
 extension DeleteStatementLimited {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if limiting != nil { try builder.require(SQLiteOption(name: "ENABLE_UPDATE_DELETE_LIMIT", value: nil), for: self) }
         try builder.add(deleteStatement)
         try builder.add(limiting)
     }

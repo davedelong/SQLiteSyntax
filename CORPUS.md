@@ -6,13 +6,15 @@ statements with `sqlite3_complete`, and compares the parser's verdict with SQLit
 SQL, and parsing it again reproduces it.
 
 Syntax newer than the linked SQLite counts as agreement when SQLite rejects it and building it for the
-linked release throws `SyntaxError.unsupported`: the parser knows that SQLite can't run it. That covers
+linked release throws `SyntaxError.unsupportedVersion`: the parser knows that SQLite can't run it. That covers
 54 statements, the 3.52.0 `ALTER TABLE` constraint commands.
 
 Ordered-set aggregates (`percentile(50) WITHIN GROUP (ORDER BY x)`, since 3.47.0) exist only in builds
 compiled with `SQLITE_ENABLE_ORDERED_SET_AGGREGATES`; without it SQLite reads `WITHIN` as a name and fails at
-`GROUP (`. The parser always accepts them, so when the linked SQLite lacks the option, the 19 such
-statements in `percentile.test` count as agreement too.
+`GROUP (`. The parser always accepts them, and building them for the linked SQLite throws
+`SyntaxError.unsupportedOption` when it lacks the option, so the 19 such statements in `percentile.test`
+count as agreement too. (The same check covers `ORDER BY`/`LIMIT` on `UPDATE` and `DELETE`, which need
+`SQLITE_ENABLE_UPDATE_DELETE_LIMIT`; Apple's SQLite has it.)
 
 SQLite's verdict comes from an in-memory database. The tests set up their own schema first, and SQLite
 stops at a missing table before checking the rest of a statement, so when it reports a missing table,

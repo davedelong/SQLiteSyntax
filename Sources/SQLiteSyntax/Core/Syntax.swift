@@ -22,6 +22,10 @@ public protocol Syntax: Sendable {
     /// it that is present (an optional clause counts only when it is set). 3.0.0 if nothing needs a later one.
     var minimumRequiredVersion: SQLiteVersion { get }
 
+    /// The compile-time options SQLite needs to run this syntax, counting only the parts that are present
+    /// (e.g. `ENABLE_UPDATE_DELETE_LIMIT` for `DELETE … LIMIT`). Empty if a default build can run it.
+    var requiredOptions: Set<SQLiteOption> { get }
+
 }
 
 extension Syntax {
@@ -35,23 +39,32 @@ extension Syntax {
 
     public func validate() throws(SyntaxError) { }
 
-    /// Builds the syntax without checking a release, recording the releases its parts require. Validation
-    /// is skipped, so an incomplete value still reports what its present parts need.
-    public var minimumRequiredVersion: SQLiteVersion {
-        var builder = SyntaxBuilder(sqliteVersion: nil)
+    public var minimumRequiredVersion: SQLiteVersion { recordedRequirements.minimumRequiredVersion }
+
+    public var requiredOptions: Set<SQLiteOption> { recordedRequirements.requiredOptions }
+
+    /// Builds the syntax without checking a release or options, recording what its parts require.
+    /// Validation is skipped, so an incomplete value still reports what its present parts need.
+    private var recordedRequirements: SyntaxBuilder {
+        var builder = SyntaxBuilder(sqliteVersion: nil, options: nil)
         builder.validates = false
         try? build(using: &builder)
-        return builder.minimumRequiredVersion
+        return builder
     }
-    
+
     /// The SQL for this syntax.
     ///
-    /// - Parameter sqliteVersion: the SQLite release the SQL is for: by default the SQLite this process
-    ///   links (`SQLiteVersion.linked`). Building throws `SyntaxError.unsupported` if the syntax needs a
-    ///   later release. nil checks nothing.
-    public func sql(sqliteVersion: SQLiteVersion? = .linked) throws(SyntaxError) -> String {
+    /// - Parameters:
+    ///   - sqliteVersion: the SQLite release the SQL is for: by default the SQLite this process links
+    ///     (`SQLiteVersion.linked`). Building throws `SyntaxError.unsupportedVersion` if the syntax needs a later
+    ///     release. nil checks nothing.
+    ///   - options: the compile-time options that SQLite was built with: by default the linked SQLite's
+    ///     (`SQLiteOption.linkedOptions`). Building throws `SyntaxError.unsupportedOption` if the syntax needs
+    ///     one that's missing. nil checks nothing.
+    public func sql(sqliteVersion: SQLiteVersion? = .linked,
+                    options: Set<SQLiteOption>? = SQLiteOption.linkedOptions) throws(SyntaxError) -> String {
         try validate()
-        var builder = SyntaxBuilder(sqliteVersion: sqliteVersion)
+        var builder = SyntaxBuilder(sqliteVersion: sqliteVersion, options: options)
         try self.build(using: &builder)
         return builder.sql
     }
@@ -72,11 +85,14 @@ public struct SyntaxBuilder {
     /// this process links (`SQLiteVersion.linked`); nil checks nothing.
     public var sqliteVersion: SQLiteVersion?
 
+    /// The compile-time options SQLite was built with; syntax that needs another fails to build. By default
+    /// the linked SQLite's (`SQLiteOption.linkedOptions`); nil checks nothing.
     public var options: Set<SQLiteOption>?
 
     /// The latest release required by anything built so far; 3.0.0 if nothing needed a later one.
     public private(set) var minimumRequiredVersion = SQLiteVersion(3, 0, 0)
 
+    /// The compile-time options required by anything built so far.
     public private(set) var requiredOptions = Set<SQLiteOption>()
 
     /// Whether parts are validated as they are added (off when only collecting requirements).
@@ -87,21 +103,21 @@ public struct SyntaxBuilder {
         self.options = options
     }
 
-    /// Records that the syntax being built needs `version`, and throws `SyntaxError.unsupported` if that's
+    /// Records that the syntax being built needs `version`, and throws `SyntaxError.unsupportedVersion` if that's
     /// later than the release being built for.
     public mutating func require(_ version: SQLiteVersion, for syntax: any Syntax) throws(SyntaxError) {
         minimumRequiredVersion = max(minimumRequiredVersion, version)
         if let sqliteVersion, sqliteVersion < version {
-            throw SyntaxError.unsupported(syntax, requires: version, sqliteVersion: sqliteVersion)
+            throw SyntaxError.unsupportedVersion(syntax, requires: version, sqliteVersion: sqliteVersion)
         }
     }
 
-    /// Records that the syntax being built needs `option`, and throws `SyntaxError.unsupported` if that's
-    /// later than the release being built for.
+    /// Records that the syntax being built needs `option`, and throws `SyntaxError.unsupportedOption` if the
+    /// options being built for don't include it.
     public mutating func require(_ option: SQLiteOption, for syntax: any Syntax) throws(SyntaxError) {
         requiredOptions.insert(option)
         if let options, options.contains(option) == false {
-            throw SyntaxError.unsupported(syntax, requires: option, current: options)
+            throw SyntaxError.unsupportedOption(syntax, requires: option, current: options)
         }
     }
 
@@ -176,9 +192,9 @@ public struct SyntaxBuilder {
 public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
     /// The syntax needs a later SQLite release than the one being built for.
-    case unsupported(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
+    case unsupportedVersion(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
     /// The syntax needs different SQLite options than the ones currently available.
-    case unsupported(any Syntax, requires: SQLiteOption, current: Set<SQLiteOption>)
+    case unsupportedOption(any Syntax, requires: SQLiteOption, current: Set<SQLiteOption>)
     /// The syntax is nested too deeply to build with the stack this thread has left. (It doesn't carry
     /// the syntax: describing a value that deep would overflow the stack too.)
     case nestedTooDeeply

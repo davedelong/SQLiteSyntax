@@ -3,6 +3,7 @@
 /// `update-stmt-limited ::= update-stmt [ [ order-by-clause ] limit-clause ]`
 public struct UpdateStatementLimited: Syntax {
     public var updateStatement: UpdateStatement
+    /// Needs SQLite compiled with `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`.
     public var limiting: Limiting? = nil
 
     public init(updateStatement: UpdateStatement, limiting: Limiting? = nil) {

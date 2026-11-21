@@ -65,8 +65,7 @@ struct CorpusTests {
         var outcomes: [Outcome] = []
         var roundTripFailures: [Outcome] = []
         var newerThanLinked = 0   // SQLite rejects, the parser accepts, but building for the linked release refuses
-        var needsOrderedSets = 0  // SQLite rejects WITHIN GROUP because it was built without ordered-set aggregates
-        let linkedHasOrderedSets = sqlite3_compileoption_used("ENABLE_ORDERED_SET_AGGREGATES") != 0
+        var needsOptions: [String: Int] = [:]   // SQLite rejects syntax that needs a compile-time option it lacks
         for file in files {
             guard let text = (try? String(contentsOf: file, encoding: .utf8)) ?? (try? String(contentsOf: file, encoding: .isoLatin1)) else { continue }
             for script in Self.sqlScripts(in: text) {
@@ -81,21 +80,22 @@ struct CorpusTests {
                         parser = .accepted
                         // Syntax newer than the linked SQLite: building for its release refuses, so the parser
                         // agrees that this SQLite can't run it.
-                        if sqlite == .rejected, case .failure(.unsupported) = Result(catching: { () throws(SyntaxError) in
-                            try parsed.sql(sqliteVersion: .linked)
+                        if sqlite == .rejected, case .failure(.unsupportedVersion) = Result(catching: { () throws(SyntaxError) in
+                            try parsed.sql(sqliteVersion: .linked, options: nil)
                         }) {
                             parser = .rejected
                             newerThanLinked += 1
                         }
-                        // WITHIN GROUP needs SQLITE_ENABLE_ORDERED_SET_AGGREGATES; without it SQLite reads WITHIN
-                        // as a name and fails at `GROUP (`. (The built SQL spells the clause out this way.)
-                        if sqlite == .rejected, parser == .accepted, !linkedHasOrderedSets,
-                           (try? parsed.sql(sqliteVersion: nil))?.contains(" WITHIN GROUP ( ORDER BY ") == true {
+                        // Syntax that needs a compile-time option the linked SQLite lacks (WITHIN GROUP without
+                        // SQLITE_ENABLE_ORDERED_SET_AGGREGATES): building with its options refuses too.
+                        if sqlite == .rejected, parser == .accepted, case .failure(.unsupportedOption(_, requires: let option, current: _)) = Result(catching: { () throws(SyntaxError) in
+                            try parsed.sql(sqliteVersion: nil, options: SQLiteOption.linkedOptions)
+                        }) {
                             parser = .rejected
-                            needsOrderedSets += 1
+                            needsOptions[option.name, default: 0] += 1
                         }
                         if sqlite == .accepted {
-                            let output = try parsed.sql(sqliteVersion: nil)
+                            let output = try parsed.sql(sqliteVersion: nil, options: nil)
                             // The linked SQLite accepted it, so building for its version (the default) must not object.
                             if case .failure(let error) = Result(catching: { () throws(SyntaxError) in try parsed.sql() }) {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
@@ -103,7 +103,7 @@ struct CorpusTests {
                             } else if Self.sqliteVerdict(output) != .accepted {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
                                                                  detail: "SQLite rejects output: \(output)"))
-                            } else if (try? SQLStatement(parsing: output).sql(sqliteVersion: nil)) != output {
+                            } else if (try? SQLStatement(parsing: output).sql(sqliteVersion: nil, options: nil)) != output {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
                                                                  detail: "re-parse differs: \(output)"))
                             }
@@ -131,7 +131,7 @@ struct CorpusTests {
             SQLite rejects, parser accepts: \(falseAcceptances.count)
             round-trip failures: \(roundTripFailures.count)
             agree because the syntax is newer than the linked SQLite \(String(cString: sqlite3_libversion())): \(newerThanLinked)
-            agree because the linked SQLite lacks ordered-set aggregates (WITHIN GROUP): \(needsOrderedSets)
+            agree because the linked SQLite lacks a compile-time option: \(needsOptions.values.reduce(0, +))\(needsOptions.sorted { $0.key < $1.key }.map { " (\($0.key): \($0.value))" }.joined())
             """
         print(summary)
         print(Self.details("SQLite accepts, parser rejects", falseRejections))

@@ -20,9 +20,10 @@ import SQLiteSyntax
             Issue.record("parsed as \(expression)")
             return
         }
-        let output = try expression.sql(sqliteVersion: nil)
-        #expect(try Expr(parsing: output).sql(sqliteVersion: nil) == output)
+        let output = try expression.sql(sqliteVersion: nil, options: nil)
+        #expect(try Expr(parsing: output).sql(sqliteVersion: nil, options: nil) == output)
         #expect(expression.minimumRequiredVersion == SQLiteVersion(3, 47, 0))
+        #expect(expression.requiredOptions == [.orderedSetAggregates])
         if Self.linkedHasThem {
             #expect(Database().prepareError("SELECT \(output) FROM t") == nil)
         }
@@ -30,8 +31,24 @@ import SQLiteSyntax
 
     @Test func buildsTheExpectedSQL() throws {
         let expression = Expr.orderedSetAggregate("percentile_cont", arguments: [0.5], withinGroup: .column("a"))
-        #expect(try expression.sql(sqliteVersion: nil) == "percentile_cont ( 0.5 ) WITHIN GROUP ( ORDER BY a )")
-        #expect(throws: SyntaxError.self) { try expression.sql(sqliteVersion: SQLiteVersion(3, 46, 0)) }
+        #expect(try expression.sql(sqliteVersion: nil, options: nil) == "percentile_cont ( 0.5 ) WITHIN GROUP ( ORDER BY a )")
+        #expect(throws: SyntaxError.self) { try expression.sql(sqliteVersion: SQLiteVersion(3, 46, 0), options: nil) }
+        // Building for SQLite without ordered-set aggregates refuses; with them, it builds.
+        do {
+            _ = try expression.sql(sqliteVersion: nil, options: [])
+            Issue.record("built without ordered-set aggregates")
+        } catch .unsupportedOption(_, requires: let option, current: _) {
+            #expect(option == .orderedSetAggregates)
+        } catch {
+            Issue.record("unexpected \(error)")
+        }
+        #expect(throws: Never.self) { try expression.sql(sqliteVersion: nil, options: [.orderedSetAggregates]) }
+        // By default the linked SQLite's options decide.
+        if Self.linkedHasThem {
+            #expect(throws: Never.self) { try expression.sql() }
+        } else {
+            #expect(throws: SyntaxError.self) { try expression.sql() }
+        }
     }
 
     @Test(arguments: [

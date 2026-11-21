@@ -3,6 +3,7 @@
 /// `delete-stmt-limited ::= delete-stmt [ [ order-by-clause ] limit-clause ]`
 public struct DeleteStatementLimited: Syntax {
     public var deleteStatement: DeleteStatement
+    /// Needs SQLite compiled with `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`.
     public var limiting: Limiting? = nil
 
     public init(deleteStatement: DeleteStatement, limiting: Limiting? = nil) {
