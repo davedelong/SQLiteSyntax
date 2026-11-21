@@ -33,9 +33,10 @@ extension Syntax {
     
     /// The SQL for this syntax.
     ///
-    /// - Parameter sqliteVersion: the SQLite release the SQL is for. Building throws
-    ///   `SyntaxError.unsupported` if the syntax needs a later release. nil (the default) checks nothing.
-    public func sql(sqliteVersion: SQLiteVersion? = nil) throws(SyntaxError) -> String {
+    /// - Parameter sqliteVersion: the SQLite release the SQL is for: by default the SQLite this process
+    ///   links (`SQLiteVersion.linked`). Building throws `SyntaxError.unsupported` if the syntax needs a
+    ///   later release. nil checks nothing.
+    public func sql(sqliteVersion: SQLiteVersion? = .linked) throws(SyntaxError) -> String {
         try validate()
         var builder = SyntaxBuilder(sqliteVersion: sqliteVersion)
         try self.build(using: &builder)
@@ -54,11 +55,11 @@ public struct SyntaxBuilder {
     
     private var terms: Array<String> = []
 
-    /// The SQLite release being built for; syntax introduced after it fails to build.
-    /// nil means the release is unknown, and nothing is checked.
+    /// The SQLite release being built for; syntax introduced after it fails to build. By default the SQLite
+    /// this process links (`SQLiteVersion.linked`); nil checks nothing.
     public var sqliteVersion: SQLiteVersion?
 
-    public init(sqliteVersion: SQLiteVersion? = nil) {
+    public init(sqliteVersion: SQLiteVersion? = .linked) {
         self.sqliteVersion = sqliteVersion
     }
 

@@ -80,23 +80,21 @@ struct CorpusTests {
                         // Syntax newer than the linked SQLite: building for its release refuses, so the parser
                         // agrees that this SQLite can't run it.
                         if sqlite == .rejected, case .failure(.unsupported) = Result(catching: { () throws(SyntaxError) in
-                            try parsed.sql(sqliteVersion: SQLiteVersion(number: sqlite3_libversion_number()))
+                            try parsed.sql(sqliteVersion: .linked)
                         }) {
                             parser = .rejected
                             newerThanLinked += 1
                         }
                         if sqlite == .accepted {
-                            let output = try parsed.sql()
-                            // The linked SQLite accepted it, so building for its version must not object.
-                            if case .failure(let error) = Result(catching: { () throws(SyntaxError) in
-                                try parsed.sql(sqliteVersion: SQLiteVersion(number: sqlite3_libversion_number()))
-                            }) {
+                            let output = try parsed.sql(sqliteVersion: nil)
+                            // The linked SQLite accepted it, so building for its version (the default) must not object.
+                            if case .failure(let error) = Result(catching: { () throws(SyntaxError) in try parsed.sql() }) {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
                                                                  detail: "version check: \(error)"))
                             } else if Self.sqliteVerdict(output) != .accepted {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
                                                                  detail: "SQLite rejects output: \(output)"))
-                            } else if (try? SQLStatement(parsing: output).sql()) != output {
+                            } else if (try? SQLStatement(parsing: output).sql(sqliteVersion: nil)) != output {
                                 roundTripFailures.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser,
                                                                  detail: "re-parse differs: \(output)"))
                             }

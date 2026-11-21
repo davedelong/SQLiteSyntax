@@ -1,8 +1,14 @@
+import SQLite3
+
 /// A SQLite release, e.g. `3.35.0`.
 ///
 /// Give one to `SyntaxBuilder` (or `sql(sqliteVersion:)`) to have building fail for syntax that release
-/// can't parse. Get the running library's version with `SQLiteVersion(number: sqlite3_libversion_number())`.
+/// can't parse. Get the running library's version with `SQLiteVersion.linked`.
 public struct SQLiteVersion: Comparable, Hashable, Sendable, CustomStringConvertible {
+
+    /// The SQLite this process links (`sqlite3_libversion_number()`): the release `sql()` builds for by default.
+    public static let linked = SQLiteVersion(number: sqlite3_libversion_number())
+
     public var major: Int
     public var minor: Int
     public var patch: Int

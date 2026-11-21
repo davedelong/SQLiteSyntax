@@ -47,7 +47,13 @@ struct VersionRequirementTests {
     func buildingRequiresTheReleaseThatIntroducedTheSyntax(_ sql: String, _ required: SQLiteVersion) throws {
         let statement = try SQLStatement(parsing: sql)
         #expect(throws: Never.self) { try statement.sql(sqliteVersion: required) }
-        #expect(throws: Never.self) { try statement.sql() }   // no release given: nothing is checked
+        #expect(throws: Never.self) { try statement.sql(sqliteVersion: nil) }   // nil: nothing is checked
+        // By default, the check is for the linked SQLite.
+        if required <= .linked {
+            #expect(throws: Never.self) { try statement.sql() }
+        } else {
+            #expect(throws: SyntaxError.self) { try statement.sql() }
+        }
         // Nothing the package knows is newer than the release it was generated against.
         #expect(required <= .generatedAgainst)
         #expect(throws: Never.self) { try statement.sql(sqliteVersion: .generatedAgainst) }
@@ -76,7 +82,6 @@ struct VersionRequirementTests {
     /// Everything the linked SQLite accepts builds for that SQLite's own version.
     @Test(arguments: StatementParserTests.statements)
     func statementsSQLiteAcceptsBuildForItsVersion(_ sql: String) throws {
-        let linked = SQLiteVersion(number: sqlite3_libversion_number())
-        #expect(throws: Never.self) { try SQLStatement(parsing: sql).sql(sqliteVersion: linked) }
+        #expect(throws: Never.self) { try SQLStatement(parsing: sql).sql(sqliteVersion: .linked) }
     }
 }

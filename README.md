@@ -14,13 +14,13 @@ let expression = try Expression(parsing: "price * (1 + tax)")
 
 ## Building for a SQLite release
 
-Pass the SQLite release you're targeting to get an error, not SQL that release can't parse:
+Building SQL checks that the SQLite release you're targeting can parse it, and throws
+`SyntaxError.unsupported` if not. By default that's the SQLite this process links, `SQLiteVersion.linked`:
 
 ```swift
-import SQLite3
-
-let running = SQLiteVersion(number: sqlite3_libversion_number())
-let sql = try statement.sql(sqliteVersion: running)   // throws SyntaxError.unsupported if too new
+let sql = try statement.sql()                                            // for the linked SQLite
+let older = try statement.sql(sqliteVersion: SQLiteVersion(3, 31, 0))   // for another release
+let unchecked = try statement.sql(sqliteVersion: nil)                    // no check
 ```
 
 `SQLiteVersion.generatedAgainst` is the SQLite release the package was generated against (its source
@@ -30,8 +30,7 @@ misread, so a linked SQLite newer than it may accept SQL the parser doesn't.
 Each generated type, case and optional part knows the release that introduced it (the doc comments say
 "Since SQLite x.y.z"): mostly worked out from when its keywords appeared, with hand-set dates where that
 would be too early (`ROLLBACK TO`, `UPDATE … FROM`, the 3.52.0 `ALTER TABLE` constraint commands). The
-hand-written expressions check theirs: `->`/`->>`, `IS [NOT] DISTINCT FROM`, `FILTER`. Without a release
-(`sql()`), nothing is checked. One gap: an alias on a table inside a trigger body needs 3.52.0 there, but
+hand-written expressions check theirs: `->`/`->>`, `IS [NOT] DISTINCT FROM`, `FILTER`. One gap: an alias on a table inside a trigger body needs 3.52.0 there, but
 is checked as 3.24.0. See SQLiteSyntaxGenerator's README.
 
 ## Deeply nested SQL
@@ -54,8 +53,8 @@ One library, `SQLiteSyntax`:
 | `Convenience/` | Hand-written builder API and literal conformances. |
 | `Parsing/` | Hand-written parsing: the tokenizer, the expression parser (precedence climbing), and the runtime the generated parsers use. |
 
-The package has no dependencies. The library embeds SQLite's keyword and precedence tables, so it doesn't
-need the SQLite library at runtime. The tests link the system SQLite to compare against it.
+The package has no package dependencies. The library embeds SQLite's keyword and precedence tables, and
+links the system SQLite only for `SQLiteVersion.linked`. The tests also use it to compare against SQLite.
 
 ## Generated code
 
