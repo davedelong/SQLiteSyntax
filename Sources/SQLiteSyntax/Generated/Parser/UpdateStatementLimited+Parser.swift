@@ -23,10 +23,7 @@ extension UpdateStatementLimited.Limiting {
                 },
                 { (p: inout Parser) throws -> UpdateStatementLimited.Limiting in
                     let orderBy = try OrderBy.parse(&p)
-                    let limit = p.attempt { (p: inout Parser) throws(ParseError) -> Limit in
-                        let value = try Limit.parse(&p)
-                        return value
-                    }
+                    let limit = try Limit.parse(&p)
                     return .orderBy(orderBy: orderBy, limit: limit)
                 },
             ]

@@ -16,6 +16,7 @@ public enum FunctionArguments: Syntax {
             default:
                 break
         }
+        try checkRestrictions()
     }
 
     /// `( 'DISTINCT' | 'ALL' )`

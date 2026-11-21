@@ -16,9 +16,7 @@ extension UpdateStatementLimited.Limiting {
                 try builder.add(limit)
             case .orderBy(let orderBy, let limit):
                 try builder.add(orderBy)
-                if let limit {
-                    try builder.add(limit)
-                }
+                try builder.add(limit)
         }
     }
 }

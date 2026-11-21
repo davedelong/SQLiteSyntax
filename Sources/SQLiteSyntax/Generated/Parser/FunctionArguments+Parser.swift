@@ -3,6 +3,7 @@
 extension FunctionArguments {
     public static func parse(_ p: inout Parser) throws(ParseError) -> FunctionArguments {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> FunctionArguments in
+            let start = p.position
             let alternatives: [(inout Parser) throws -> FunctionArguments] = [
                 { (p: inout Parser) throws -> FunctionArguments in
                     try p.expect(texts: ["*"])
@@ -26,7 +27,7 @@ extension FunctionArguments {
                 },
             ]
             let value = try p.longest(alternatives)
-            return value
+            return try p.checked(value, from: start)
         }
     }
 }

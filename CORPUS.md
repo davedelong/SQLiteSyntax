@@ -12,6 +12,11 @@ column) and prepares the statement again. Only syntax errors, errors raised by p
 actions, and a few errors that no schema can avoid (`count(DISTINCT)`, `ORDER BY` without `LIMIT` on
 `DELETE`/`UPDATE`, `RETURNING t.*`) count as rejections.
 
+Some of these rules sit outside SQLite's grammar diagrams. The parser enforces them with hand-written
+checks (`Core/Restrictions.swift`, codegen.json `restrictions`), which also run when building SQL:
+statements in a trigger body can't have `WITH`, `RETURNING`, `INSERT … DEFAULT VALUES` or
+`INDEXED BY`/`NOT INDEXED` (parse.y `trigger_cmd`), and `DISTINCT` takes exactly one argument.
+
     SQLITE_CORPUS=1 swift test -c release --filter CorpusTests
 
 ## Result (SQLite 3.51.0 linked; docs as of 2026-11)
@@ -19,9 +24,9 @@ actions, and a few errors that no schema can avoid (`count(DISTINCT)`, `ORDER BY
 | | Statements |
 |---|---:|
 | Distinct statements | 47,745 |
-| Agree | 47,659 (99.82%) |
+| Agree | 47,668 (99.84%) |
 | SQLite accepts, parser rejects | 17 |
-| SQLite rejects, parser accepts | 69 |
+| SQLite rejects, parser accepts | 60 |
 | Round-trip failures | 0 |
 
 ## Syntax added from parse.y (`codegen.json` `grammarPatches`)
@@ -41,6 +46,7 @@ extracted `sqlite.ebnf` stays faithful to the diagrams):
 - a name after `TRANSACTION` in `BEGIN`, `COMMIT`/`END` and `ROLLBACK`: `BEGIN TRANSACTION 'foo'`
 - a sign before any literal in `DEFAULT`: `DEFAULT -'hello'`
 - `ORDER BY` with no arguments in a function call: `count(ORDER BY a)`
+- (narrowing) `LIMIT` is required after `ORDER BY` in `UPDATE`, as the `DELETE` diagram already has it
 
 Hand-written parsing follows parse.y the same way: `CAST(x AS )` with an empty type, string literals
 as parts of a column name (`'t'.'c'`), empty module arguments beside a comma (`fts4(a, )`), and
@@ -49,16 +55,14 @@ tokenize.c's rule for what counts as a name when deciding whether they are keywo
 
 ## Remaining disagreements
 
-### Parser accepts, SQLite rejects (69)
+### Parser accepts, SQLite rejects (60)
 
 | Count | Reason | Assessment |
 |---:|---|---|
 | 53 | `ALTER TABLE … ADD [CONSTRAINT name] CHECK`, `DROP CONSTRAINT`, `ALTER COLUMN … SET/DROP NOT NULL`: in the 2025-11 docs, newer than the linked SQLite 3.51.0 | Correct per the docs |
-| 6 | Trigger bodies: parse.y's grammar for statements inside a trigger is narrower than for standalone ones. It rejects `UPDATE t AS alias`, `INSERT … DEFAULT VALUES`, and `INDEXED BY`/`NOT INDEXED` on `UPDATE`/`DELETE` there; the diagram reuses the full statements | Parser too lenient; not fixed yet |
-| 3 | `UPDATE … ORDER BY` without `LIMIT`: SQLite always rejects it ("ORDER BY without LIMIT on UPDATE"). The `update-stmt-limited` diagram allows it (the `DELETE` diagram doesn't) | Parser too lenient; not fixed yet |
+| 1 | `UPDATE t AS alias` in a trigger body: allowed by the current parse.y (`xfullname`), not by the linked 3.51.0 | Correct per current SQLite |
 | 2 | 50+ levels of nested subqueries/functions exceed SQLite's parser stack | Implementation limit, not syntax |
 | 2 | `RANGE BETWEEN UNBOUNDED FOLLOWING …`: `UNBOUNDED` is read as a column name | Known limit of the keyword-fallback approximation in the hand-written expression parser |
-| 1 | `string_agg(DISTINCT a, b)`: SQLite allows `DISTINCT` only with exactly one argument | Parser too lenient; not fixed yet |
 | 1 | `PRAGMA compile_options(NULL)`: the diagram's `signed-literal` admits NULL, parse.y does not | Diagram vs parse.y |
 | 1 | `-0x08000000000000000`: SQLite rejects the 17-digit hex literal | Edge case |
 
@@ -70,6 +74,5 @@ tokenize.c's rule for what counts as a name when deciding whether they are keywo
 | 5 | Join keywords in any order or combination: `OUTER LEFT NATURAL JOIN`, `LEFT RIGHT JOIN` (= `FULL`), `NATURAL LEFT FULL JOIN`. parse.y accepts `JOIN_KW [nm [nm]] JOIN` and sqlite3JoinType() accepts any consistent set of keywords | SQLite accepts them; not supported yet |
 | 1 | An oversized hex literal in a trigger body: SQLite only compiles the body when the trigger runs, so `CREATE TRIGGER` succeeds | Parser is stricter; the trigger could never run |
 
-No remaining disagreement is unexplained. The parser is too lenient in trigger bodies, `UPDATE … ORDER
-BY` without `LIMIT` and multi-argument `DISTINCT`, and one known approximation remains: keyword
-fallback in frame bounds (`RANGE BETWEEN UNBOUNDED FOLLOWING`).
+No remaining disagreement is unexplained. One known approximation remains: keyword fallback in frame
+bounds (`RANGE BETWEEN UNBOUNDED FOLLOWING`).

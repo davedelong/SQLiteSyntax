@@ -29,6 +29,10 @@ public struct CreateTriggerStatement: Syntax {
         self.statements = statements
     }
 
+    public func validate() throws(SyntaxError) {
+        try checkRestrictions()
+    }
+
     /// `( 'TEMP' | 'TEMPORARY' )`
     public enum Create: Syntax, CaseIterable {
         /// `'TEMP'`

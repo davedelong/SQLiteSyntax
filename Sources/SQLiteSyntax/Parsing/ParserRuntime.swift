@@ -11,6 +11,9 @@ final class ParserState {
     struct Key: Hashable { var type: ObjectIdentifier; var position: Int }
     var memo: [Key: (value: Any, end: Int)?] = [:]
     var furthestError: ParseError?
+    /// The last restriction failure (`Parser.checked`) and where the rejected value ended. If parsing
+    /// fails and gets no further, this is the more useful error to report.
+    var restriction: (error: ParseError, end: Int)?
     /// Set when the stack ran low. Parsing then fails with this error, whatever backtracking finds.
     var stackExhausted: ParseError?
 
@@ -31,11 +34,18 @@ extension Parser {
         do {
             value = try body(&p)
         } catch {
-            throw p.state.stackExhausted ?? error
+            if let exhausted = p.state.stackExhausted { throw exhausted }
+            if let restriction = p.state.restriction, restriction.end >= error.offset { throw restriction.error }
+            throw error
         }
         if let exhausted = p.state.stackExhausted { throw exhausted }
         _ = p.accept(symbol: ";")
         guard p.isAtEnd else {
+            // A value rejected by its restrictions, reaching at least as far as anything else, explains best.
+            if let restriction = p.state.restriction,
+               restriction.end >= max(p.current.range.lowerBound, p.state.furthestError?.offset ?? 0) {
+                throw restriction.error
+            }
             if let furthest = p.state.furthestError, furthest.offset > p.current.range.lowerBound { throw furthest }
             throw p.unexpected(expected: "end of input")
         }
@@ -131,6 +141,21 @@ extension Parser {
             state.record(error)
             throw error
         }
+    }
+
+    /// Returns a parsed value if it passes its type's hand-written restrictions (codegen.json
+    /// `restrictions`); otherwise throws, pointing at where the value starts.
+    func checked<T: Syntax>(_ value: T, from start: Int) throws(ParseError) -> T {
+        do {
+            try value.validate()
+        } catch {
+            let reason: String
+            if case .invalidSyntax(_, let r) = error { reason = r } else { reason = "invalid syntax" }
+            let e = self.error(reason, at: tokens[start])
+            state.restriction = (e, current.range.lowerBound)
+            throw e
+        }
+        return value
     }
 
     /// Throws if this thread's stack is nearly used up (see `StackGuard`), and from then on for the rest

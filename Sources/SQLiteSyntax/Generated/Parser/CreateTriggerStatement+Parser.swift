@@ -3,6 +3,7 @@
 extension CreateTriggerStatement {
     public static func parse(_ p: inout Parser) throws(ParseError) -> CreateTriggerStatement {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) -> CreateTriggerStatement in
+            let start = p.position
             try p.expect(texts: ["CREATE"])
             let create = p.attempt { (p: inout Parser) throws(ParseError) -> Create in
                 let value = try Create.parse(&p)
@@ -37,7 +38,7 @@ extension CreateTriggerStatement {
             try p.expect(texts: [";"])
             let statements = p.repeated(separator: []) { (p: inout Parser) throws(ParseError) -> StatementsElement in try StatementsElement.parse(&p) }
             try p.expect(texts: ["END"])
-            return CreateTriggerStatement(create: create, ifNotExists: ifNotExists, schemaName: schemaName, triggerName: triggerName, timing: timing, event: event, tableSchemaName: tableSchemaName, tableName: tableName, condition: condition, begin: begin, statements: statements)
+            return try p.checked(CreateTriggerStatement(create: create, ifNotExists: ifNotExists, schemaName: schemaName, triggerName: triggerName, timing: timing, event: event, tableSchemaName: tableSchemaName, tableName: tableName, condition: condition, begin: begin, statements: statements), from: start)
         }
     }
 }

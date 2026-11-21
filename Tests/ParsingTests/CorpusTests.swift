@@ -201,6 +201,7 @@ struct CorpusTests {
                       "DISTINCT not allowed on ordered-set aggregate", "Recursion limit",
                       "clause is not allowed on UPDATE or DELETE statements within triggers",
                       "unknown join type", "hex literal too big", "a JOIN clause is required before", "unsupported use of NULLS",
+                      "cannot use RETURNING in a trigger",
                       // Raised after parsing, but whatever the schema: the statement can never prepare.
                       "DISTINCT aggregates must have exactly one argument", "ORDER BY without LIMIT on",
                       "RETURNING may not use"]
