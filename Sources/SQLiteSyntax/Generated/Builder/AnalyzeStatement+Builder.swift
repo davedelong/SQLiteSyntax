@@ -3,6 +3,7 @@
 extension AnalyzeStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.require(SQLiteVersion(3, 2, 3), for: self)
+        try builder.disallow(SQLiteOption(name: "OMIT_ANALYZE", value: nil), for: self)
         builder.add("ANALYZE")
         if let analyze {
             try builder.add(analyze)

@@ -2,6 +2,7 @@
 
 extension CreateViewStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_VIEW", value: nil), for: self)
         if ifNotExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("CREATE")
         if let create {
@@ -24,6 +25,7 @@ extension CreateViewStatement {
 
 extension CreateViewStatement.Create {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_TEMPDB", value: nil), for: self)
         switch self {
             case .temp:
                 builder.add("TEMP")

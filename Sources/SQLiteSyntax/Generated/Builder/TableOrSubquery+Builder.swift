@@ -33,6 +33,7 @@ extension TableOrSubquery {
 
 extension TableOrSubquery.Parenthesized {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_SUBQUERY", value: nil), for: self)
         switch self {
             case .joined(let source, let tableAlias):
                 try builder.add(source)

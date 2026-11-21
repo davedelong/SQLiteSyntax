@@ -3,6 +3,8 @@
 /// `alter-table-stmt ::= 'ALTER' 'TABLE' [ schema-name '.' ] table-name ( 'ADD' ( [ 'COLUMN' ] column-def | [ 'CONSTRAINT' constraint-name ] 'CHECK' '(' expr ')' [ conflict-clause ] ) | 'ALTER' [ 'COLUMN' ] column-name ( 'DROP' 'NOT' 'NULL' | 'SET' 'NOT' 'NULL' [ conflict-clause ] ) | 'DROP' ( 'CONSTRAINT' constraint-name | [ 'COLUMN' ] column-name ) | 'RENAME' ( 'TO' new-table-name | [ 'COLUMN' ] column-name 'TO' new-column-name ) )`
 ///
 /// Since SQLite 3.1.0.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_ALTERTABLE`.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_VIRTUALTABLE`.
 public struct AlterTableStatement: Syntax {
     public var schemaName: Name<Schema>? = nil
     public var tableName: Name<Table>

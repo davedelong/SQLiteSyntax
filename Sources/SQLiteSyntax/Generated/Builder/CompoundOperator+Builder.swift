@@ -2,6 +2,7 @@
 
 extension CompoundOperator {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_COMPOUND_SELECT", value: nil), for: self)
         switch self {
             case .except:
                 builder.add("EXCEPT")

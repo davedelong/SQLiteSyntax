@@ -2,6 +2,7 @@
 
 /// `sql-stmt ::= [ 'EXPLAIN' [ 'QUERY' 'PLAN' ] ] ( alter-table-stmt | analyze-stmt | attach-stmt | begin-stmt | commit-stmt | create-index-stmt | create-table-stmt | create-trigger-stmt | create-view-stmt | create-virtual-table-stmt | delete-stmt | delete-stmt-limited | detach-stmt | drop-index-stmt | drop-table-stmt | drop-trigger-stmt | drop-view-stmt | insert-stmt | pragma-stmt | reindex-stmt | release-stmt | rollback-stmt | savepoint-stmt | select-stmt | update-stmt | update-stmt-limited | vacuum-stmt )`
 public struct SQLStatement: Syntax {
+    /// Not available when SQLite is compiled with `SQLITE_OMIT_EXPLAIN`.
     public var explain: Explain? = nil
     public var statement: Statement
 

@@ -2,6 +2,7 @@
 
 extension PragmaStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_PRAGMA", value: nil), for: self)
         builder.add("PRAGMA")
         if let schemaName {
             try builder.add(schemaName)

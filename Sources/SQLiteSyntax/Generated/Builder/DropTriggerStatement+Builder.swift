@@ -2,6 +2,7 @@
 
 extension DropTriggerStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_TRIGGER", value: nil), for: self)
         if ifExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("DROP", "TRIGGER")
         if ifExists { builder.add("IF", "EXISTS") }

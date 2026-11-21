@@ -3,6 +3,7 @@
 extension ReindexStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.require(SQLiteVersion(3, 1, 0), for: self)
+        try builder.disallow(SQLiteOption(name: "OMIT_REINDEX", value: nil), for: self)
         builder.add("REINDEX")
         if let reindex {
             try builder.add(reindex)

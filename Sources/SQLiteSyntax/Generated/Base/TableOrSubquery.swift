@@ -10,6 +10,8 @@ public indirect enum TableOrSubquery: Syntax {
     case tableName(schemaName: Name<Schema>? = nil, tableName: Name<Table>, suffix: Suffix? = nil)
 
     /// `( ( join-clause | table-or-subquery { ',' table-or-subquery } ) ')' [ [ 'AS' ] table-alias ] | select-stmt ')' | select-stmt ')' [ 'AS' ] table-alias )`
+    ///
+    /// Not available when SQLite is compiled with `SQLITE_OMIT_SUBQUERY`.
     public indirect enum Parenthesized: Syntax {
         /// `( join-clause | table-or-subquery { ',' table-or-subquery } ) ')' [ [ 'AS' ] table-alias ]`
         case joined(source: Source, tableAlias: TableAlias? = nil)

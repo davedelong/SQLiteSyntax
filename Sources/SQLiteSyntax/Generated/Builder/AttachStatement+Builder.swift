@@ -2,6 +2,7 @@
 
 extension AttachStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_ATTACH", value: nil), for: self)
         builder.add("ATTACH")
         if database { builder.add("DATABASE") }
         try builder.add(expression)

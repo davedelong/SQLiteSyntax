@@ -3,6 +3,7 @@
 /// `filter-clause ::= 'FILTER' '(' 'WHERE' expr ')'`
 ///
 /// Since SQLite 3.25.0.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_WINDOWFUNC`.
 public struct Filter: Syntax {
     public var `where`: Expression
 

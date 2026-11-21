@@ -3,6 +3,7 @@
 extension CreateVirtualTableStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.require(SQLiteVersion(3, 3, 7), for: self)
+        try builder.disallow(SQLiteOption(name: "OMIT_VIRTUALTABLE", value: nil), for: self)
         builder.add("CREATE", "VIRTUAL", "TABLE")
         if ifNotExists { builder.add("IF", "NOT", "EXISTS") }
         if let schemaName {

@@ -5,6 +5,7 @@ extension SelectCore {
         switch self {
             case .select(let selection, let resultColumns, let source, let groupBy, let having, let window):
                 if window != nil { try builder.require(SQLiteVersion(3, 25, 0), for: self) }
+                if window != nil { try builder.disallow(SQLiteOption(name: "OMIT_WINDOWFUNC", value: nil), for: self) }
                 builder.add("SELECT")
                 if let selection {
                     try builder.add(selection)

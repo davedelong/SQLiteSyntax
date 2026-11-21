@@ -35,6 +35,7 @@ public struct ColumnConstraint: Syntax {
         /// `[ 'GENERATED' 'ALWAYS' ] 'AS' '(' expr ')' [ ( 'STORED' | 'VIRTUAL' ) ]`
         ///
         /// Since SQLite 3.31.0.
+        /// Not available when SQLite is compiled with `SQLITE_OMIT_GENERATED_COLUMNS`.
         ///
         /// - `generatedAlways`: since SQLite 3.31.0.
         case generated(generatedAlways: Bool = false, expression: Expression, storage: Storage? = nil)

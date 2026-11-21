@@ -2,6 +2,7 @@
 
 extension SQLStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        if explain != nil { try builder.disallow(SQLiteOption(name: "OMIT_EXPLAIN", value: nil), for: self) }
         try builder.add(explain)
         try builder.add(statement)
     }

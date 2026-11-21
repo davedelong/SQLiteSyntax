@@ -60,6 +60,15 @@ public indirect enum Expression: Syntax {
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        // parse.y leaves these out with SQLITE_OMIT_SUBQUERY (all forms of IN included) and SQLITE_OMIT_CAST.
+        switch self {
+            case .select, .exists, .inStatement, .inExpression, .inTable, .inTableFunction:
+                try builder.disallow(.omitSubquery, for: self)
+            case .cast:
+                try builder.disallow(.omitCast, for: self)
+            default:
+                break
+        }
         switch self {
             case .literalValue(let v):
                 try builder.add(v)
@@ -262,4 +271,11 @@ extension SyntaxBuilder {
             try add(operand)
         }
     }
+}
+
+extension SQLiteOption {
+    /// `SQLITE_OMIT_SUBQUERY`: no subqueries, `EXISTS` or `IN`.
+    static let omitSubquery = SQLiteOption(name: "OMIT_SUBQUERY", value: nil)
+    /// `SQLITE_OMIT_CAST`: no `CAST`.
+    static let omitCast = SQLiteOption(name: "OMIT_CAST", value: nil)
 }

@@ -3,6 +3,7 @@
 /// `reindex-stmt ::= 'REINDEX' [ ( 'EXPRESSIONS' | [ schema-name '.' ] ( index-name | table-name ) | collation-name ) ]`
 ///
 /// Since SQLite 3.1.0.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_REINDEX`.
 public struct ReindexStatement: Syntax {
     public var reindex: Reindex? = nil
 

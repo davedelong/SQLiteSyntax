@@ -26,6 +26,10 @@ public protocol Syntax: Sendable {
     /// (e.g. `ENABLE_UPDATE_DELETE_LIMIT` for `DELETE … LIMIT`). Empty if a default build can run it.
     var requiredOptions: Set<SQLiteOption> { get }
 
+    /// The compile-time options that leave out part of this syntax (`OMIT_…`), counting only the parts that
+    /// are present: SQLite built with any of them can't run it. Empty if every build can.
+    var disallowedOptions: Set<SQLiteOption> { get }
+
 }
 
 extension Syntax {
@@ -42,6 +46,8 @@ extension Syntax {
     public var minimumRequiredVersion: SQLiteVersion { recordedRequirements.minimumRequiredVersion }
 
     public var requiredOptions: Set<SQLiteOption> { recordedRequirements.requiredOptions }
+
+    public var disallowedOptions: Set<SQLiteOption> { recordedRequirements.disallowedOptions }
 
     /// Builds the syntax without checking a release or options, recording what its parts require.
     /// Validation is skipped, so an incomplete value still reports what its present parts need.
@@ -60,7 +66,7 @@ extension Syntax {
     ///     release. nil checks nothing.
     ///   - options: the compile-time options that SQLite was built with: by default the linked SQLite's
     ///     (`SQLiteOption.linkedOptions`). Building throws `SyntaxError.unsupportedOption` if the syntax needs
-    ///     one that's missing. nil checks nothing.
+    ///     one that's missing, or one of them leaves it out (`OMIT_…`). nil checks nothing.
     public func sql(sqliteVersion: SQLiteVersion? = .linked,
                     options: Set<SQLiteOption>? = SQLiteOption.linkedOptions) throws(SyntaxError) -> String {
         try validate()
@@ -95,6 +101,9 @@ public struct SyntaxBuilder {
     /// The compile-time options required by anything built so far.
     public private(set) var requiredOptions = Set<SQLiteOption>()
 
+    /// The compile-time options that must not be set (`OMIT_…`) for anything built so far.
+    public private(set) var disallowedOptions = Set<SQLiteOption>()
+
     /// Whether parts are validated as they are added (off when only collecting requirements).
     var validates = true
 
@@ -117,6 +126,15 @@ public struct SyntaxBuilder {
     public mutating func require(_ option: SQLiteOption, for syntax: any Syntax) throws(SyntaxError) {
         requiredOptions.insert(option)
         if let options, options.contains(option) == false {
+            throw SyntaxError.unsupportedOption(syntax, requires: option, current: options)
+        }
+    }
+
+    /// Records that the syntax being built is left out by `option` (an `OMIT_…` option), and throws
+    /// `SyntaxError.unsupportedOption` if the options being built for include it.
+    public mutating func disallow(_ option: SQLiteOption, for syntax: any Syntax) throws(SyntaxError) {
+        disallowedOptions.insert(option)
+        if let options, options.contains(option) == true {
             throw SyntaxError.unsupportedOption(syntax, requires: option, current: options)
         }
     }

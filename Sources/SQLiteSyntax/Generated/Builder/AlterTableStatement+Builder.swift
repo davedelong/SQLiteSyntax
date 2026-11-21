@@ -3,6 +3,8 @@
 extension AlterTableStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.require(SQLiteVersion(3, 1, 0), for: self)
+        try builder.disallow(SQLiteOption(name: "OMIT_ALTERTABLE", value: nil), for: self)
+        try builder.disallow(SQLiteOption(name: "OMIT_VIRTUALTABLE", value: nil), for: self)
         builder.add("ALTER", "TABLE")
         if let schemaName {
             try builder.add(schemaName)

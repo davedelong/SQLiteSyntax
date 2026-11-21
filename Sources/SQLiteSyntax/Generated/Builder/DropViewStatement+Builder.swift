@@ -2,6 +2,7 @@
 
 extension DropViewStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_VIEW", value: nil), for: self)
         if ifExists { try builder.require(SQLiteVersion(3, 3, 0), for: self) }
         builder.add("DROP", "VIEW")
         if ifExists { builder.add("IF", "EXISTS") }

@@ -3,6 +3,7 @@
 /// `analyze-stmt ::= 'ANALYZE' [ ( index-or-table-name | schema-name [ '.' table-or-index-name ] ) ]`
 ///
 /// Since SQLite 3.2.3.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_ANALYZE`.
 public struct AnalyzeStatement: Syntax {
     public var analyze: Analyze? = nil
 

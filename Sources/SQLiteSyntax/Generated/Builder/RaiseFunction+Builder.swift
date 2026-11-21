@@ -2,6 +2,7 @@
 
 extension RaiseFunction {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_TRIGGER", value: nil), for: self)
         builder.add("RAISE", "(")
         switch self {
             case .ignore:

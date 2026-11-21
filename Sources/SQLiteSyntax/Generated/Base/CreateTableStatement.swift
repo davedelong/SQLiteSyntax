@@ -18,6 +18,8 @@ public struct CreateTableStatement: Syntax {
     }
 
     /// `( 'TEMP' | 'TEMPORARY' )`
+    ///
+    /// Not available when SQLite is compiled with `SQLITE_OMIT_TEMPDB`.
     public enum Create: Syntax, CaseIterable {
         /// `'TEMP'`
         case temp

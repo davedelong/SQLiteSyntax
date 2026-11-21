@@ -3,6 +3,7 @@
 /// `with-prefix ::= 'WITH' [ 'RECURSIVE' ] common-table-expression { ',' common-table-expression }`
 ///
 /// Since SQLite 3.8.3.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_CTE`.
 public struct With: Syntax {
     public var recursive: Bool = false
     public var commonTableExpressions: List<CommonTableExpression>

@@ -3,6 +3,7 @@
 /// `create-virtual-table-stmt ::= 'CREATE' 'VIRTUAL' 'TABLE' [ 'IF' 'NOT' 'EXISTS' ] [ schema-name '.' ] table-name 'USING' module-name [ '(' [ module-argument { ',' module-argument } ] ')' ]`
 ///
 /// Since SQLite 3.3.7.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_VIRTUALTABLE`.
 public struct CreateVirtualTableStatement: Syntax {
     public var ifNotExists: Bool = false
     public var schemaName: Name<Schema>? = nil

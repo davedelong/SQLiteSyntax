@@ -2,6 +2,8 @@
 
 extension VacuumStatement {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        try builder.disallow(SQLiteOption(name: "OMIT_VACUUM", value: nil), for: self)
+        try builder.disallow(SQLiteOption(name: "OMIT_ATTACH", value: nil), for: self)
         builder.add("VACUUM")
         if let schemaName {
             try builder.add(schemaName)

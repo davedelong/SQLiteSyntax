@@ -3,6 +3,7 @@
 /// `over-clause ::= 'OVER' ( window-defn | window-name )`
 ///
 /// Since SQLite 3.25.0.
+/// Not available when SQLite is compiled with `SQLITE_OMIT_WINDOWFUNC`.
 public enum Over: Syntax {
     /// `window-defn`
     case windowDefinition(WindowDefinition)
