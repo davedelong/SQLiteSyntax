@@ -100,7 +100,7 @@ public indirect enum Expression: Syntax {
                 try builder.add(over)
             case .orderedSetAggregate(let name, let arguments, let orderBy, let filter, let over):
                 try builder.require(SQLiteVersion(3, 47, 0), for: self)
-                try builder.require(.orderedSetAggregates, for: self)
+                try builder.require(.enableOrderedSetAggregates, for: self)
                 try builder.add(name)
                 builder.add("(")
                 try builder.addList(arguments, delimiter: ",")

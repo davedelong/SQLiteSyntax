@@ -23,7 +23,7 @@ import SQLiteSyntax
         let output = try expression.sql(sqliteVersion: nil, options: nil)
         #expect(try Expr(parsing: output).sql(sqliteVersion: nil, options: nil) == output)
         #expect(expression.minimumRequiredVersion == SQLiteVersion(3, 47, 0))
-        #expect(expression.requiredOptions == [.orderedSetAggregates])
+        #expect(expression.requiredOptions == [.enableOrderedSetAggregates])
         if Self.linkedHasThem {
             #expect(Database().prepareError("SELECT \(output) FROM t") == nil)
         }
@@ -38,11 +38,11 @@ import SQLiteSyntax
             _ = try expression.sql(sqliteVersion: nil, options: [])
             Issue.record("built without ordered-set aggregates")
         } catch .unsupportedOption(_, requires: let option, current: _) {
-            #expect(option == .orderedSetAggregates)
+            #expect(option == .enableOrderedSetAggregates)
         } catch {
             Issue.record("unexpected \(error)")
         }
-        #expect(throws: Never.self) { try expression.sql(sqliteVersion: nil, options: [.orderedSetAggregates]) }
+        #expect(throws: Never.self) { try expression.sql(sqliteVersion: nil, options: [.enableOrderedSetAggregates]) }
         // By default the linked SQLite's options decide.
         if Self.linkedHasThem {
             #expect(throws: Never.self) { try expression.sql() }

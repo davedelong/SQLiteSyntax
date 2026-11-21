@@ -2,59 +2,59 @@
 
 extension SQLiteOption {
     /// `SQLITE_ENABLE_ORDERED_SET_AGGREGATES`.
-    static let enableOrderedSetAggregates = SQLiteOption(name: "ENABLE_ORDERED_SET_AGGREGATES")
+    public static let enableOrderedSetAggregates = SQLiteOption(name: "ENABLE_ORDERED_SET_AGGREGATES")
 
     /// `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`.
-    static let enableUpdateDeleteLimit = SQLiteOption(name: "ENABLE_UPDATE_DELETE_LIMIT")
+    public static let enableUpdateDeleteLimit = SQLiteOption(name: "ENABLE_UPDATE_DELETE_LIMIT")
 
     /// `SQLITE_OMIT_ALTERTABLE`.
-    static let omitAlterTable = SQLiteOption(name: "OMIT_ALTERTABLE")
+    public static let omitAlterTable = SQLiteOption(name: "OMIT_ALTERTABLE")
 
     /// `SQLITE_OMIT_ANALYZE`.
-    static let omitAnalyze = SQLiteOption(name: "OMIT_ANALYZE")
+    public static let omitAnalyze = SQLiteOption(name: "OMIT_ANALYZE")
 
     /// `SQLITE_OMIT_ATTACH`.
-    static let omitAttach = SQLiteOption(name: "OMIT_ATTACH")
+    public static let omitAttach = SQLiteOption(name: "OMIT_ATTACH")
 
     /// `SQLITE_OMIT_CAST`.
-    static let omitCast = SQLiteOption(name: "OMIT_CAST")
+    public static let omitCast = SQLiteOption(name: "OMIT_CAST")
 
     /// `SQLITE_OMIT_COMPOUND_SELECT`.
-    static let omitCompoundSelect = SQLiteOption(name: "OMIT_COMPOUND_SELECT")
+    public static let omitCompoundSelect = SQLiteOption(name: "OMIT_COMPOUND_SELECT")
 
     /// `SQLITE_OMIT_CTE`.
-    static let omitCTE = SQLiteOption(name: "OMIT_CTE")
+    public static let omitCTE = SQLiteOption(name: "OMIT_CTE")
 
     /// `SQLITE_OMIT_EXPLAIN`.
-    static let omitExplain = SQLiteOption(name: "OMIT_EXPLAIN")
+    public static let omitExplain = SQLiteOption(name: "OMIT_EXPLAIN")
 
     /// `SQLITE_OMIT_GENERATED_COLUMNS`.
-    static let omitGeneratedColumns = SQLiteOption(name: "OMIT_GENERATED_COLUMNS")
+    public static let omitGeneratedColumns = SQLiteOption(name: "OMIT_GENERATED_COLUMNS")
 
     /// `SQLITE_OMIT_PRAGMA`.
-    static let omitPragma = SQLiteOption(name: "OMIT_PRAGMA")
+    public static let omitPragma = SQLiteOption(name: "OMIT_PRAGMA")
 
     /// `SQLITE_OMIT_REINDEX`.
-    static let omitReindex = SQLiteOption(name: "OMIT_REINDEX")
+    public static let omitReindex = SQLiteOption(name: "OMIT_REINDEX")
 
     /// `SQLITE_OMIT_SUBQUERY`.
-    static let omitSubquery = SQLiteOption(name: "OMIT_SUBQUERY")
+    public static let omitSubquery = SQLiteOption(name: "OMIT_SUBQUERY")
 
     /// `SQLITE_OMIT_TEMPDB`.
-    static let omitTempDB = SQLiteOption(name: "OMIT_TEMPDB")
+    public static let omitTempDB = SQLiteOption(name: "OMIT_TEMPDB")
 
     /// `SQLITE_OMIT_TRIGGER`.
-    static let omitTrigger = SQLiteOption(name: "OMIT_TRIGGER")
+    public static let omitTrigger = SQLiteOption(name: "OMIT_TRIGGER")
 
     /// `SQLITE_OMIT_VACUUM`.
-    static let omitVacuum = SQLiteOption(name: "OMIT_VACUUM")
+    public static let omitVacuum = SQLiteOption(name: "OMIT_VACUUM")
 
     /// `SQLITE_OMIT_VIEW`.
-    static let omitView = SQLiteOption(name: "OMIT_VIEW")
+    public static let omitView = SQLiteOption(name: "OMIT_VIEW")
 
     /// `SQLITE_OMIT_VIRTUALTABLE`.
-    static let omitVirtualTable = SQLiteOption(name: "OMIT_VIRTUALTABLE")
+    public static let omitVirtualTable = SQLiteOption(name: "OMIT_VIRTUALTABLE")
 
     /// `SQLITE_OMIT_WINDOWFUNC`.
-    static let omitWindowFunc = SQLiteOption(name: "OMIT_WINDOWFUNC")
+    public static let omitWindowFunc = SQLiteOption(name: "OMIT_WINDOWFUNC")
 }

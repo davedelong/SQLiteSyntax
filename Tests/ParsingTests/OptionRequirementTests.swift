@@ -7,13 +7,13 @@ import SQLiteSyntax
 @Suite struct OptionRequirementTests {
 
     @Test(arguments: [
-        ("DELETE FROM t ORDER BY a LIMIT 1", [SQLiteOption.updateDeleteLimit]),
-        ("DELETE FROM t LIMIT 1 OFFSET 2", [.updateDeleteLimit]),
-        ("UPDATE t SET a = 1 LIMIT 1", [.updateDeleteLimit]),
-        ("UPDATE t SET a = 1 ORDER BY b LIMIT 1", [.updateDeleteLimit]),
+        ("DELETE FROM t ORDER BY a LIMIT 1", [SQLiteOption.enableUpdateDeleteLimit]),
+        ("DELETE FROM t LIMIT 1 OFFSET 2", [.enableUpdateDeleteLimit]),
+        ("UPDATE t SET a = 1 LIMIT 1", [.enableUpdateDeleteLimit]),
+        ("UPDATE t SET a = 1 ORDER BY b LIMIT 1", [.enableUpdateDeleteLimit]),
         ("DELETE FROM t WHERE a = 1", []),
         ("UPDATE t SET a = 1", []),
-        ("SELECT percentile(50) WITHIN GROUP (ORDER BY a) FROM t", [.orderedSetAggregates]),
+        ("SELECT percentile(50) WITHIN GROUP (ORDER BY a) FROM t", [.enableOrderedSetAggregates]),
     ])
     func optionsAreRequiredOnlyWherePresent(_ sql: String, _ required: [SQLiteOption]) throws {
         let statement = try SQLStatement(parsing: sql)
@@ -36,7 +36,7 @@ import SQLiteSyntax
     @Test func defaultsFollowTheLinkedSQLite() throws {
         let statement = try SQLStatement(parsing: "DELETE FROM t ORDER BY a LIMIT 1")
         let linkedHasIt = sqlite3_compileoption_used("ENABLE_UPDATE_DELETE_LIMIT") != 0
-        #expect(SQLiteOption.linkedOptions.contains(.updateDeleteLimit) == linkedHasIt)
+        #expect(SQLiteOption.linkedOptions.contains(.enableUpdateDeleteLimit) == linkedHasIt)
         let output = try statement.sql(sqliteVersion: nil, options: nil)
         if linkedHasIt {
             #expect(throws: Never.self) { try statement.sql() }
@@ -50,7 +50,7 @@ import SQLiteSyntax
     @Test func requirementsAreCollectedTogether() throws {
         let statement = try SQLStatement(parsing: "DELETE FROM t RETURNING a ORDER BY a LIMIT 1")
         #expect(statement.minimumRequiredVersion == SQLiteVersion(3, 35, 0))
-        #expect(statement.requiredOptions == [.updateDeleteLimit])
+        #expect(statement.requiredOptions == [.enableUpdateDeleteLimit])
     }
 
     static func omit(_ name: String) -> SQLiteOption { SQLiteOption(name: "OMIT_" + name) }
@@ -102,7 +102,15 @@ import SQLiteSyntax
     @Test func everyKindOfRequirementIsCollected() throws {
         let statement = try SQLStatement(parsing: "WITH c AS (SELECT 1) DELETE FROM t RETURNING a ORDER BY a LIMIT 1")
         #expect(statement.minimumRequiredVersion == SQLiteVersion(3, 35, 0))
-        #expect(statement.requiredOptions == [.updateDeleteLimit])
+        #expect(statement.requiredOptions == [.enableUpdateDeleteLimit])
         #expect(statement.disallowedOptions == [Self.omit("CTE")])
+    }
+
+    /// The generated conveniences are public, and an option's name may be given with or without `SQLITE_`.
+    @Test func optionsCanBeNamedEitherWay() {
+        #expect(SQLiteOption.omitCTE == SQLiteOption(name: "OMIT_CTE"))
+        #expect(SQLiteOption(name: "SQLITE_OMIT_CTE") == .omitCTE)
+        #expect(SQLiteOption(name: "SQLITE_OMIT_CTE").name == "OMIT_CTE")
+        #expect(SQLiteOption(name: "THREADSAFE", value: "2").intValue == 2)
     }
 }

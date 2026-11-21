@@ -8,11 +8,7 @@
 import SQLite3
 
 public struct SQLiteOption: Hashable, Sendable {
-
-    public static let orderedSetAggregates = SQLiteOption(name: "ENABLE_ORDERED_SET_AGGREGATES", value: nil)
-    public static let updateDeleteLimit = SQLiteOption(name: "ENABLE_UPDATE_DELETE_LIMIT", value: nil)
-
-    // Internal conveniences for every option the syntax checks (`.omitSubquery`, `.enableUpdateDeleteLimit`, …)
+    // Public conveniences for every option the syntax checks (`.omitSubquery`, `.enableUpdateDeleteLimit`, …)
     // are generated into Generated/SQLiteOptions+Base.swift.
 
     public static func ==(lhs: Self, rhs: Self) -> Bool {
@@ -36,6 +32,8 @@ public struct SQLiteOption: Hashable, Sendable {
     }()
 
     public let name: String
+
+    /// The option's value, if any. Ignored in equality and hash checking.
     public let value: String?
 
     public var intValue: Int? { value.flatMap { Int($0) } }
@@ -44,7 +42,7 @@ public struct SQLiteOption: Hashable, Sendable {
     /// `"OMIT_CTE"`, `"ENABLE_FTS5"`) and, for options with one, its value (`"THREADSAFE"`, `"2"`). Options
     /// compare by name alone.
     public init(name: String, value: String? = nil) {
-        self.name = name
+        self.name = name.hasPrefix("SQLITE_") ? String(name.dropFirst(7)) : name
         self.value = value
     }
 
