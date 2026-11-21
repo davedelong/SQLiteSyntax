@@ -394,6 +394,8 @@ extension Parser {
             case "?":
                 guard !name.isEmpty else { return .next }
                 guard let n = Int(name) else { throw error("malformed parameter", at: token) }
+                // As SQLite's sqlite3ExprAssignVarNumber; the upper limit depends on the database, so isn't checked.
+                guard n >= 1 else { throw error("variable number must be at least ?1", at: token) }
                 return .nth(n)
             case ":": return .named(name)
             case "@": return .atNamed(name)
