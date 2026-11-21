@@ -24,4 +24,15 @@ public enum BindParameter: Syntax {
             case .tcl(let s): builder.add("$\(s)")
         }
     }
+
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        let token = p.current
+        guard case .variable = token.kind else {
+            let e = p.unexpected(expected: "a bind parameter")
+            p.state.record(e)
+            throw e
+        }
+        _ = p.advance()
+        return try p.bindParameter(token.string, token: token)
+    }
 }

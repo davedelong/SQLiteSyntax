@@ -126,4 +126,30 @@ public enum BinaryOperator: Syntax {
             case .or: builder.add("OR")
         }
     }
+
+    /// The operator as `build(using:)` prints it, e.g. `||`, `IS NOT DISTINCT FROM`, `NOT LIKE`.
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        if let (_, op) = p.binaryOperator(p.current) {
+            _ = p.advance()
+            return op
+        }
+        if p.accept(keyword: "AND") { return .and }
+        if p.accept(keyword: "OR") { return .or }
+        if p.accept(keyword: "IS") {
+            let negated = p.accept(keyword: "NOT")
+            if p.accept(keywords: "DISTINCT", "FROM") { return negated ? .isNotDistinctFrom : .isDistinctFrom }
+            return negated ? .isNot : .is
+        }
+        let negated = p.accept(keyword: "NOT")
+        let pairs: [(String, BinaryOperator, BinaryOperator)] = [
+            ("IN", .in, .notIn), ("MATCH", .match, .notMatch), ("LIKE", .like, .notLike),
+            ("REGEXP", .regexp, .notRegexp), ("GLOB", .glob, .notGlob),
+        ]
+        for (keyword, plain, negative) in pairs where p.accept(keyword: keyword) {
+            return negated ? negative : plain
+        }
+        let e = p.unexpected(expected: "a binary operator")
+        p.state.record(e)
+        throw e
+    }
 }

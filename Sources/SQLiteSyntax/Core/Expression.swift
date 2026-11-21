@@ -182,6 +182,13 @@ public indirect enum Expression: Syntax {
                 try builder.add(r)
         }
     }
+
+    /// An expression, e.g. `a + 1 BETWEEN 0 AND 10`.
+    ///
+    /// Not yet supported: `WITHIN GROUP`, and `ESCAPE` on GLOB (which `Expression` cannot represent).
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
+    }
 }
 
 extension Expression {

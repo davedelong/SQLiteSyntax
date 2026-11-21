@@ -29,6 +29,11 @@ public struct List<Element: Syntax>: Syntax {
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         try builder.addList(items, delimiter: ",")
     }
+
+    /// One or more items separated by commas.
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        List(try p.separated(by: [","]) { (p: inout Parser) throws(ParseError) -> Element in try Element.parse(&p) })
+    }
 }
 
 extension List: ExpressibleByArrayLiteral {

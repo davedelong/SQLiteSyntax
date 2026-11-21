@@ -21,7 +21,14 @@ public protocol Syntax: Sendable {
 }
 
 extension Syntax {
-    
+
+    /// Parses SQL text that consists of exactly one of this syntax (a trailing `;` is allowed).
+    public init(parsing sql: String) throws(ParseError) {
+        self = try Parser.parseAll(sql) { (p: inout Parser) throws(ParseError) in try
+            Self.parse(&p)
+        }
+    }
+
     public func validate() throws(SyntaxError) { }
     
     /// The SQL for this syntax.
@@ -40,7 +47,7 @@ extension Syntax {
             throw SyntaxError.invalidSyntax(self, reason: reason)
         }
     }
-    
+
 }
 
 public struct SyntaxBuilder {

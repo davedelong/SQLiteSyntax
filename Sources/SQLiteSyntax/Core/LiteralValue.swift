@@ -46,5 +46,24 @@ public enum LiteralValue: Syntax {
                 builder.add("CURRENT_TIMESTAMP")
         }
     }
+
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        let token = p.current
+        switch token.kind {
+            case .number: _ = p.advance(); return try p.numericLiteral(token.string, token: token)
+            case .string: _ = p.advance(); return .string(token.string)
+            case .blob: _ = p.advance(); return .blob(p.blob(token.string))
+            case .keyword where token.string == "NULL": _ = p.advance(); return .null
+            case .keyword where token.string == "CURRENT_DATE": _ = p.advance(); return .currentDate
+            case .keyword where token.string == "CURRENT_TIME": _ = p.advance(); return .currentTime
+            case .keyword where token.string == "CURRENT_TIMESTAMP": _ = p.advance(); return .currentTimestamp
+            case .identifier(quoted: false) where token.string.uppercased() == "TRUE": _ = p.advance(); return .true
+            case .identifier(quoted: false) where token.string.uppercased() == "FALSE": _ = p.advance(); return .false
+            default:
+                let e = p.unexpected(expected: "a literal value")
+                p.state.record(e)
+                throw e
+        }
+    }
     
 }

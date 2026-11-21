@@ -17,4 +17,10 @@ public enum SortDirection: Syntax {
             case .descending: builder.add("DESC")
         }
     }
+
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        if p.accept(keyword: "ASC") { return .ascending }
+        try p.expect(keyword: "DESC")
+        return .descending
+    }
 }

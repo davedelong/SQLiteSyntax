@@ -48,6 +48,15 @@ public struct Name<T>: Syntax {
             builder.add(value)
         }
     }
+
+    /// A name in the `nm` class: an identifier, a string, or a keyword SQLite allows as a name.
+    public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
+        try parse(&p, class: .name, excluding: [])
+    }
+
+    static func parse(_ p: inout Parser, class nameClass: NameClass, excluding: Set<String> = []) throws(ParseError) -> Self {
+        Name(parsed: try p.parseName(class: nameClass, excluding: excluding))
+    }
     
 }
 
