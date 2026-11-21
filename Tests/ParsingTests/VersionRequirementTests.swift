@@ -13,6 +13,7 @@ struct VersionRequirementTests {
         #expect(SQLiteVersion("3.9") == SQLiteVersion(3, 9, 0))
         #expect(SQLiteVersion(3, 9, 0) < SQLiteVersion(3, 10, 0))
         #expect(SQLiteVersion("3") == nil && SQLiteVersion("3.x") == nil && SQLiteVersion("3.1.2.3") == nil && SQLiteVersion("3.-1") == nil)
+        #expect(SQLiteVersion("3.1000") == nil && SQLiteVersion("3.1.1000") == nil && SQLiteVersion("3.999.999") != nil)
         #expect(SQLiteVersion(3, 8, 3).description == "3.8.3")
     }
 

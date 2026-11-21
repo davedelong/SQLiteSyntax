@@ -22,6 +22,14 @@ public enum LiteralValue: Syntax {
     case currentDate
     case currentTimestamp
     
+    /// SQLite reads SQL text only up to a NUL, so a string containing one would cut the statement short.
+    /// (Use `.blob` for binary data.)
+    public func validate() throws(SyntaxError) {
+        if case .string(let s) = self {
+            try require(!s.utf8.contains(0), reason: "A string literal cannot contain a NUL character; use a blob")
+        }
+    }
+
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add(text)
     }

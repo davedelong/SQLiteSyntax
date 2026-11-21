@@ -13,7 +13,11 @@ public struct SQLiteVersion: Comparable, Hashable, Sendable, CustomStringConvert
     public var minor: Int
     public var patch: Int
 
+    /// - Precondition: `major` is at least 0, and `minor` and `patch` are 0 through 999 (SQLite's version
+    ///   number packs each into three digits, and comparisons use that number).
     public init(_ major: Int, _ minor: Int, _ patch: Int = 0) {
+        precondition(major >= 0 && (0...999).contains(minor) && (0...999).contains(patch),
+                     "SQLiteVersion \(major).\(minor).\(patch) is out of range: minor and patch must be 0 through 999")
         self.major = major
         self.minor = minor
         self.patch = patch
@@ -27,9 +31,11 @@ public struct SQLiteVersion: Comparable, Hashable, Sendable, CustomStringConvert
     }
 
     /// From text such as `3.35.0` (`sqlite3_libversion()`, `SELECT sqlite_version()`); a missing patch is 0.
+    /// nil if it isn't two or three numbers, or a part is out of range.
     public init?(_ text: String) {
         let parts = text.split(separator: ".", omittingEmptySubsequences: false).map { Int($0) }
-        guard (2...3).contains(parts.count), parts.allSatisfy({ $0 != nil && $0! >= 0 }) else { return nil }
+        guard (2...3).contains(parts.count), parts.allSatisfy({ $0 != nil && $0! >= 0 }),
+              parts.dropFirst().allSatisfy({ $0! <= 999 }) else { return nil }
         self.init(parts[0]!, parts[1]!, parts.count == 3 ? parts[2]! : 0)
     }
 

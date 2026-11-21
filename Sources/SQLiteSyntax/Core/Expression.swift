@@ -41,7 +41,12 @@ public indirect enum Expression: Syntax {
     public func validate() throws(SyntaxError) {
         switch self {
             case .when(_, let whens, else: _):
-                try require(whens.count > 0, reason: "A CASE WHEN expression must have at least one when-then clausee")
+                try require(whens.count > 0, reason: "A CASE WHEN expression must have at least one when-then clause")
+            case .columnName(let schema, let table, _):
+                // `main.a` would read as table `main`, column `a`.
+                try require(schema == nil || table != nil, reason: "A column with a schema name needs a table name")
+            case .inTable(_, _, _, let table):
+                try require(table != nil, reason: "IN needs a table name")
             default:
                 break
         }

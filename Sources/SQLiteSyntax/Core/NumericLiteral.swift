@@ -13,6 +13,12 @@ public struct NumericLiteral: Syntax, ExpressibleByIntegerLiteral, ExpressibleBy
     public init(integerLiteral value: Int) { self.value = Decimal(value) }
     public init(floatLiteral value: Double) { self.value = Decimal(value) }
 
+    /// A numeric literal has no sign (`signed-number` adds one) and is a finite number.
+    public func validate() throws(SyntaxError) {
+        try require(!value.isNaN, reason: "A numeric literal must be a number")
+        try require(value >= 0, reason: "A numeric literal cannot be negative; give SignedNumber a sign instead")
+    }
+
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
         builder.add(value.description)
     }

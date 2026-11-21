@@ -28,8 +28,9 @@ public struct Name<T>: Syntax {
         self.value = value
     }
     
+    /// SQLite reads SQL text only up to a NUL, so a name containing one would cut the statement short.
     public func validate() throws(SyntaxError) {
-        // check validity
+        try require(!value.utf8.contains(0), reason: "A name cannot contain a NUL character")
     }
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
@@ -92,6 +93,8 @@ extension Character {
         if self == "'" { return true }
         
         if isWhitespace { return true }
+        // Control characters (U+0000-U+001F, U+007F-U+009F) aren't identifier characters.
+        if unicodeScalars.contains(where: { $0.properties.generalCategory == .control }) { return true }
         if isPunctuation { return true }
         if isSymbol { return true }
         
