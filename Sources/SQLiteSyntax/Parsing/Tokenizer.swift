@@ -135,6 +135,18 @@ struct Tokenizer {
                 tokens[i].string = String(decoding: bytes[tokens[i].range], as: UTF8.self)
             }
         }
+        // parse.y frame_bound_s/frame_bound_e: at the start of a frame bound, UNBOUNDED is always the
+        // keyword (lemon shifts it rather than falling back to a name), so `UNBOUNDED FOLLOWING` there is an
+        // error, not a column named unbounded. A bound starts after ROWS/RANGE/GROUPS, after the BETWEEN
+        // that follows them, and after the AND that ends the first bound.
+        let frameUnits: Set<String> = ["ROWS", "RANGE", "GROUPS"], boundEnds: Set<String> = ["PRECEDING", "FOLLOWING", "ROW"]
+        func keyword(_ i: Int) -> String { i >= 0 ? tokens[i].keyword ?? "" : "" }
+        for i in tokens.indices where tokens[i].isKeyword("UNBOUNDED") {
+            let startsBound = frameUnits.contains(keyword(i - 1))                          // ROWS UNBOUNDED
+                || keyword(i - 1) == "BETWEEN" && frameUnits.contains(keyword(i - 2))       // ROWS BETWEEN UNBOUNDED
+                || keyword(i - 1) == "AND" && boundEnds.contains(keyword(i - 2))            // … PRECEDING AND UNBOUNDED
+            if startsBound { tokens[i].usableAsName = false }
+        }
         return tokens
     }
 

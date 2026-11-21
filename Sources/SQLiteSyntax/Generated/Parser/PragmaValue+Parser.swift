@@ -21,10 +21,6 @@ extension PragmaValue {
                     return .`default`
                 },
                 { (p: inout Parser) throws -> PragmaValue in
-                    let signedLiteral = try LiteralValue.parse(&p)
-                    return .signedLiteral(signedLiteral)
-                },
-                { (p: inout Parser) throws -> PragmaValue in
                     let signedNumber = try SignedNumber.parse(&p)
                     return .signedNumber(signedNumber)
                 },

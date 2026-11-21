@@ -179,12 +179,22 @@ extension Parser {
                 if case .number = current.kind {
                     let token = advance()
                     switch try numericLiteral(token.string, token: token) {
+                        // expr.c codeInteger: a hex literal reads as Int64.min (0x8000000000000000), and negating it
+                        // directly is out of range.
+                        case .integer(.min) where token.string.lowercased().hasPrefix("0x"):
+                            throw error("hex literal too big: -\(token.string)", at: token)
                         case .integer(let i) where i != .min && i != 0: return .literalValue(.integer(-i))   // no integer -0
                         case .real(let d): return .literalValue(.real(-d))
                         case let other: return .unaryOperator(.negate, .literalValue(other))
                     }
                 }
-                return .unaryOperator(.negate, try parseExpression(ExpressionPrecedence.unary))
+                // SQLite drops parentheses, so -(0x8000000000000000) is negating the hex literal directly too.
+                let operandStart = position
+                let operand = try parseExpression(ExpressionPrecedence.unary)
+                if let hex = hexMinimum(operand, from: operandStart) {
+                    throw error("hex literal too big: -\(hex.string)", at: hex)
+                }
+                return .unaryOperator(.negate, operand)
             case .symbol where token.string == "+":
                 _ = advance(); return .unaryOperator(.plus, try parseExpression(ExpressionPrecedence.unary))
             case .symbol where token.string == "~":
@@ -218,10 +228,21 @@ extension Parser {
         }
     }
 
+    /// The hex literal token, if `operand` (parsed from `start`) is nothing but a hex literal that reads
+    /// as Int64.min, perhaps in parentheses.
+    func hexMinimum(_ operand: Expr, from start: Int) -> Token? {
+        var inner = operand
+        while case .expressionList(let list) = inner, list.count == 1 { inner = list[0] }
+        guard case .literalValue(.integer(.min)) = inner else { return nil }
+        var k = start
+        while tokens[k].isSymbol("(") { k += 1 }
+        return tokens[k].string.lowercased().hasPrefix("0x") ? tokens[k] : nil
+    }
+
     func isName(_ token: Token) -> Bool {
         switch token.kind {
             case .identifier: return true
-            case .keyword: return Keywords.usableAsName(token.string)
+            case .keyword: return token.usableAsName && Keywords.usableAsName(token.string)
             default: return false
         }
     }
@@ -231,7 +252,7 @@ extension Parser {
         let token = current
         switch token.kind {
             case .identifier: _ = advance(); return token.string
-            case .keyword where Keywords.usableAsName(token.string): _ = advance(); return Self.sourceText(of: token, in: source)
+            case .keyword where token.usableAsName && Keywords.usableAsName(token.string): _ = advance(); return Self.sourceText(of: token, in: source)
             case .string where allowString: _ = advance(); return token.string
             default: throw unexpected(expected: "a name")
         }

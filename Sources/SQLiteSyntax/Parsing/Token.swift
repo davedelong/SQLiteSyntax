@@ -25,6 +25,10 @@ struct Token: Equatable, Sendable {
 
     var string: String
 
+    /// False for a keyword that SQLite's parser always takes as the keyword at this point, though it
+    /// can be a name elsewhere: `UNBOUNDED` at the start of a window frame bound.
+    var usableAsName = true
+
     init(kind: Kind, string: String, range: Range<Int>) {
         self.kind = kind
         self.string = string

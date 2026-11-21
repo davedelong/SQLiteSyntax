@@ -11,8 +11,6 @@ extension PragmaValue {
                 builder.add("DELETE")
             case .`default`:
                 builder.add("DEFAULT")
-            case .signedLiteral(let signedLiteral):
-                try builder.add(signedLiteral)
             case .signedNumber(let signedNumber):
                 try builder.add(signedNumber)
         }

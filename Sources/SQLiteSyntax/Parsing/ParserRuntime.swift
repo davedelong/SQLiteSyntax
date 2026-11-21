@@ -214,7 +214,7 @@ extension Parser {
                 _ = advance(); return token.string
             case .string:
                 _ = advance(); return token.string
-            case .keyword where Keywords.usableAsName(token.string, class: nameClass) && !excluding.contains(token.string):
+            case .keyword where token.usableAsName && Keywords.usableAsName(token.string, class: nameClass) && !excluding.contains(token.string):
                 _ = advance(); return Self.sourceText(of: token, in: source)
             default:
                 break
