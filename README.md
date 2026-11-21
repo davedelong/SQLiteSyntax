@@ -30,6 +30,10 @@ present: `try SQLStatement(parsing: "DELETE FROM t RETURNING *").minimumRequired
 checkout's `VERSION`). The parser knows syntax up to that release; syntax added later is rejected or
 misread, so a linked SQLite newer than it may accept SQL the parser doesn't.
 
+The parser reads ordered-set aggregates (`percentile_cont(0.5) WITHIN GROUP (ORDER BY x)`,
+`Expression.orderedSetAggregate`) whatever the build, but SQLite accepts them only when compiled with
+`SQLITE_ENABLE_ORDERED_SET_AGGREGATES`, which Apple's SQLite isn't. Elsewhere `WITHIN` is an ordinary name.
+
 Each generated type, case and optional part knows the release that introduced it (the doc comments say
 "Since SQLite x.y.z"): mostly worked out from when its keywords appeared, with hand-set dates where that
 would be too early (`ROLLBACK TO`, `UPDATE … FROM`, the 3.52.0 `ALTER TABLE` constraint commands). The

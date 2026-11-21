@@ -16,14 +16,23 @@ public indirect enum Expression: Syntax {
     case binaryOperator(Expression, BinaryOperator, Expression)
     /// `name ( arguments ) [ filter ] [ over ]`; `nil` arguments is `name ( )`.
     case function(Name<Function>, FunctionArguments?, FilterClause?, OverClause?)
+    /// An ordered-set aggregate, `name ( arguments ) WITHIN GROUP ( ORDER BY withinGroup ) [ filter ] [ over ]`,
+    /// e.g. `percentile_cont(0.5) WITHIN GROUP (ORDER BY x)`. The arguments may be empty.
+    ///
+    /// Since SQLite 3.47.0, and only in builds compiled with `SQLITE_ENABLE_ORDERED_SET_AGGREGATES`.
+    case orderedSetAggregate(Name<Function>, arguments: [Expression], withinGroup: Expression, filter: FilterClause? = nil, over: OverClause? = nil)
     case expressionList(List<Expression>)
     /// `CAST(x AS type)`; the type may be empty, `CAST(x AS )`, as parse.y allows.
     case cast(Expression, as: TypeName?)
     case collate(Expression, Name<Collation>)
     case like(Expression, negated: Bool, like: Expression, escape: Expression?)
-    case glob(Expression, negated: Bool, glob: Expression)
-    case regexp(Expression, negated: Bool, regexp: Expression)
-    case match(Expression, negated: Bool, match: Expression)
+    /// `x [NOT] GLOB pattern [ESCAPE e]`. SQLite passes the escape to the `glob` function as a third
+    /// argument, so `ESCAPE` needs an application-defined three-argument `glob`.
+    case glob(Expression, negated: Bool, glob: Expression, escape: Expression? = nil)
+    /// `x [NOT] REGEXP pattern [ESCAPE e]`; as with GLOB, the escape is a third argument to `regexp`.
+    case regexp(Expression, negated: Bool, regexp: Expression, escape: Expression? = nil)
+    /// `x [NOT] MATCH pattern [ESCAPE e]`; as with GLOB, the escape is a third argument to `match`.
+    case match(Expression, negated: Bool, match: Expression, escape: Expression? = nil)
     case isNull(Expression)
     case notNull(Expression)
     case equals(Expression, negated: Bool, distinct: Bool, from: Expression)
@@ -80,6 +89,16 @@ public indirect enum Expression: Syntax {
                 builder.add(")")
                 try builder.add(filter)
                 try builder.add(over)
+            case .orderedSetAggregate(let name, let arguments, let orderBy, let filter, let over):
+                try builder.require(SQLiteVersion(3, 47, 0), for: self)
+                try builder.add(name)
+                builder.add("(")
+                try builder.addList(arguments, delimiter: ",")
+                builder.add(")", "WITHIN", "GROUP", "(", "ORDER", "BY")
+                try builder.add(orderBy)
+                builder.add(")")
+                try builder.add(filter)
+                try builder.add(over)
             case .expressionList(let list):
                 try builder.add(group: list)
             case .cast(let val, as: let type):
@@ -92,30 +111,14 @@ public indirect enum Expression: Syntax {
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.collate)
                 builder.add("COLLATE")
                 try builder.add(name);
-            case .like(let expr, negated: let negated, like: let like, escape: let escape):
-                try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
-                if negated { builder.add("NOT") }
-                builder.add("LIKE")
-                try builder.addOperand(like, minimum: ExpressionPrecedence.equality + 1)
-                if let escape {
-                    builder.add("ESCAPE")
-                    try builder.addOperand(escape, minimum: ExpressionPrecedence.escape)
-                }
-            case .glob(let expr, negated: let negated, glob: let glob):
-                try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
-                if negated { builder.add("NOT") }
-                builder.add("GLOB")
-                try builder.addOperand(glob, minimum: ExpressionPrecedence.equality + 1)
-            case .regexp(let expr, negated: let negated, regexp: let regexp):
-                try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
-                if negated { builder.add("NOT") }
-                builder.add("REGEXP")
-                try builder.addOperand(regexp, minimum: ExpressionPrecedence.equality + 1)
-            case .match(let expr, negated: let negated, match: let match):
-                try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
-                if negated { builder.add("NOT") }
-                builder.add("MATCH")
-                try builder.addOperand(match, minimum: ExpressionPrecedence.equality + 1)
+            case .like(let expr, negated: let negated, like: let pattern, escape: let escape):
+                try builder.addPatternMatch("LIKE", expr, negated: negated, pattern: pattern, escape: escape)
+            case .glob(let expr, negated: let negated, glob: let pattern, escape: let escape):
+                try builder.addPatternMatch("GLOB", expr, negated: negated, pattern: pattern, escape: escape)
+            case .regexp(let expr, negated: let negated, regexp: let pattern, escape: let escape):
+                try builder.addPatternMatch("REGEXP", expr, negated: negated, pattern: pattern, escape: escape)
+            case .match(let expr, negated: let negated, match: let pattern, escape: let escape):
+                try builder.addPatternMatch("MATCH", expr, negated: negated, pattern: pattern, escape: escape)
             case .isNull(let expr):
                 try builder.addOperand(expr, minimum: ExpressionPrecedence.equality)
                 builder.add("ISNULL")
@@ -192,7 +195,6 @@ public indirect enum Expression: Syntax {
 
     /// An expression, e.g. `a + 1 BETWEEN 0 AND 10`.
     ///
-    /// Not yet supported: `WITHIN GROUP`, and `ESCAPE` on GLOB (which `Expression` cannot represent).
     public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
     }
@@ -239,6 +241,18 @@ extension UnaryOperator {
 }
 
 extension SyntaxBuilder {
+    /// `x [NOT] LIKE|GLOB|REGEXP|MATCH pattern [ESCAPE e]`.
+    mutating func addPatternMatch(_ keyword: String, _ expr: Expression, negated: Bool, pattern: Expression, escape: Expression?) throws(SyntaxError) {
+        try addOperand(expr, minimum: ExpressionPrecedence.equality)
+        if negated { add("NOT") }
+        add(keyword)
+        try addOperand(pattern, minimum: ExpressionPrecedence.equality + 1)
+        if let escape {
+            add("ESCAPE")
+            try addOperand(escape, minimum: ExpressionPrecedence.escape)
+        }
+    }
+
     /// Adds an operand, parenthesized if it binds more loosely than `minimum`.
     mutating func addOperand(_ operand: Expression, minimum: Int) throws(SyntaxError) {
         if operand.precedence < minimum {

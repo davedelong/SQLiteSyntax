@@ -96,14 +96,13 @@ extension Parser {
                 let pattern = try parseExpression(ExpressionPrecedence.equality + 1)
                 var escape: Expr? = nil
                 if accept(keyword: "ESCAPE") {
-                    guard op == "LIKE" else { throw error("ESCAPE is only supported after LIKE", at: previous) }
                     escape = try parseExpression(ExpressionPrecedence.escape)
                 }
                 switch op {
                     case "LIKE": return .like(left, negated: negated, like: pattern, escape: escape)
-                    case "GLOB": return .glob(left, negated: negated, glob: pattern)
-                    case "REGEXP": return .regexp(left, negated: negated, regexp: pattern)
-                    default: return .match(left, negated: negated, match: pattern)
+                    case "GLOB": return .glob(left, negated: negated, glob: pattern, escape: escape)
+                    case "REGEXP": return .regexp(left, negated: negated, regexp: pattern, escape: escape)
+                    default: return .match(left, negated: negated, match: pattern, escape: escape)
                 }
         }
     }
@@ -301,10 +300,39 @@ extension Parser {
         // nil arguments: f()
         let arguments = current.isSymbol(")") ? nil : try FunctionArguments.parse(&self)
         try expect(symbol: ")")
-        if current.isKeyword("WITHIN") { throw error("WITHIN GROUP is not supported yet") }
+        // WITHIN is a keyword only in builds with ordered-set aggregates; elsewhere it's a name. But a name
+        // is never followed by `GROUP (`, so reading that as WITHIN GROUP can't misread valid SQL.
+        if case .identifier(quoted: false) = current.kind, current.string.uppercased() == "WITHIN",
+           peek().isKeyword("GROUP"), peek(2).isSymbol("(") {
+            return try parseOrderedSetAggregate(name: name, arguments: arguments)
+        }
         let filter = current.isKeyword("FILTER") && peek().isSymbol("(") ? try FilterClause.parse(&self) : nil
         let over = current.isKeyword("OVER") ? try OverClause.parse(&self) : nil
         return .function(Name<Function>(value: name), arguments, filter, over)
+    }
+
+    /// `… ) WITHIN GROUP ( ORDER BY expr ) [filter] [over]`, after a function's arguments (parse.y allows
+    /// `[ALL] expr, …` or nothing before it; SQLite rejects DISTINCT itself).
+    mutating func parseOrderedSetAggregate(name: String, arguments: FunctionArguments?) throws(ParseError) -> Expr {
+        let within = current
+        var list: [Expr] = []
+        switch arguments {
+            case nil: break
+            case .arguments(.distinct?, _, _)?:
+                throw error("DISTINCT not allowed on ordered-set aggregate \(name)()", at: within)
+            case .arguments(_, let expressions, nil)?: list = Array(expressions)
+            default: throw error("only plain arguments may come before WITHIN GROUP", at: within)
+        }
+        _ = advance()
+        try expect(keyword: "GROUP")
+        try expect(symbol: "(")
+        try expect(keyword: "ORDER")
+        try expect(keyword: "BY")
+        let orderBy = try parseExpression()
+        try expect(symbol: ")")
+        let filter = current.isKeyword("FILTER") && peek().isSymbol("(") ? try FilterClause.parse(&self) : nil
+        let over = current.isKeyword("OVER") ? try OverClause.parse(&self) : nil
+        return .orderedSetAggregate(Name<Function>(value: name), arguments: list, withinGroup: orderBy, filter: filter, over: over)
     }
 
     mutating func parseParenthesizedSelect() throws(ParseError) -> SelectStatement {

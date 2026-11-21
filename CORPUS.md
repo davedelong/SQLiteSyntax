@@ -9,6 +9,11 @@ Syntax newer than the linked SQLite counts as agreement when SQLite rejects it a
 linked release throws `SyntaxError.unsupported`: the parser knows that SQLite can't run it. That covers
 54 statements, the 3.52.0 `ALTER TABLE` constraint commands.
 
+Ordered-set aggregates (`percentile(50) WITHIN GROUP (ORDER BY x)`, since 3.47.0) exist only in builds
+compiled with `SQLITE_ENABLE_ORDERED_SET_AGGREGATES`; without it SQLite reads `WITHIN` as a name and fails at
+`GROUP (`. The parser always accepts them, so when the linked SQLite lacks the option, the 19 such
+statements in `percentile.test` count as agreement too.
+
 SQLite's verdict comes from an in-memory database. The tests set up their own schema first, and SQLite
 stops at a missing table before checking the rest of a statement, so when it reports a missing table,
 database or column, the test creates it (a one-column table, an attached in-memory database, or a new

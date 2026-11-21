@@ -65,6 +65,8 @@ struct CorpusTests {
         var outcomes: [Outcome] = []
         var roundTripFailures: [Outcome] = []
         var newerThanLinked = 0   // SQLite rejects, the parser accepts, but building for the linked release refuses
+        var needsOrderedSets = 0  // SQLite rejects WITHIN GROUP because it was built without ordered-set aggregates
+        let linkedHasOrderedSets = sqlite3_compileoption_used("ENABLE_ORDERED_SET_AGGREGATES") != 0
         for file in files {
             guard let text = (try? String(contentsOf: file, encoding: .utf8)) ?? (try? String(contentsOf: file, encoding: .isoLatin1)) else { continue }
             for script in Self.sqlScripts(in: text) {
@@ -84,6 +86,13 @@ struct CorpusTests {
                         }) {
                             parser = .rejected
                             newerThanLinked += 1
+                        }
+                        // WITHIN GROUP needs SQLITE_ENABLE_ORDERED_SET_AGGREGATES; without it SQLite reads WITHIN
+                        // as a name and fails at `GROUP (`. (The built SQL spells the clause out this way.)
+                        if sqlite == .rejected, parser == .accepted, !linkedHasOrderedSets,
+                           (try? parsed.sql(sqliteVersion: nil))?.contains(" WITHIN GROUP ( ORDER BY ") == true {
+                            parser = .rejected
+                            needsOrderedSets += 1
                         }
                         if sqlite == .accepted {
                             let output = try parsed.sql(sqliteVersion: nil)
@@ -122,6 +131,7 @@ struct CorpusTests {
             SQLite rejects, parser accepts: \(falseAcceptances.count)
             round-trip failures: \(roundTripFailures.count)
             agree because the syntax is newer than the linked SQLite \(String(cString: sqlite3_libversion())): \(newerThanLinked)
+            agree because the linked SQLite lacks ordered-set aggregates (WITHIN GROUP): \(needsOrderedSets)
             """
         print(summary)
         print(Self.details("SQLite accepts, parser rejects", falseRejections))

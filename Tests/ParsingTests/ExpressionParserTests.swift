@@ -100,8 +100,8 @@ struct ExpressionParserTests {
         }
     }
 
-    @Test(arguments: ["percentile(a) WITHIN GROUP (ORDER BY a)", "a GLOB b ESCAPE c", "#1"])
-    func unsupportedForms(_ text: String) {
-        #expect(throws: ParseError.self) { try Expr(parsing: text) }
+    /// `#1` parameters exist only in SQLite's own internal parsing.
+    @Test func internalParametersAreRejected() {
+        #expect(throws: ParseError.self) { try Expr(parsing: "#1") }
     }
 }

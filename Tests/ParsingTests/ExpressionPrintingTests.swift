@@ -92,7 +92,7 @@ struct SeededRandom {
                 return .between(expression(depth: d), negated: bool(), lower: expression(depth: d), upper: expression(depth: d))
             case 7:
                 return bool() ? .like(expression(depth: d), negated: bool(), like: expression(depth: d), escape: nil)
-                              : .glob(expression(depth: d), negated: bool(), glob: expression(depth: d))
+                              : .glob(expression(depth: d), negated: bool(), glob: expression(depth: d), escape: bool() ? expression(depth: d) : nil)
             case 8:
                 return .equals(expression(depth: d), negated: bool(), distinct: bool(), from: expression(depth: d))
             case 9:

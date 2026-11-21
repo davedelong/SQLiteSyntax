@@ -58,6 +58,9 @@ final class Database {
 func parenthesized(_ e: Expr) throws -> String {
     func p(_ e: Expr) throws -> String { try parenthesized(e) }
     func not(_ negated: Bool) -> String { negated ? "NOT " : "" }
+    func match(_ x: Expr, _ negated: Bool, _ op: String, _ pattern: Expr, _ escape: Expr?) throws -> String {
+        "(\(try p(x)) \(not(negated))\(op) \(try p(pattern))" + (try escape.map { " ESCAPE \(try p($0))" } ?? "") + ")"
+    }
     switch e {
         case .binaryOperator(let l, let op, let r):
             return "(\(try p(l)) \(try op.sql()) \(try p(r)))"
@@ -68,15 +71,18 @@ func parenthesized(_ e: Expr) throws -> String {
                 case .plus: symbol = "+"
                 case .bitwiseNot: symbol = "~"
                 case .not: symbol = "NOT"
-                default: return try e.sql()
             }
             return "(\(symbol) \(try p(x)))"     // a space, so `- -1` never becomes a `--` comment
         case .between(let x, let negated, let lower, let upper):
             return "(\(try p(x)) \(not(negated))BETWEEN \(try p(lower)) AND \(try p(upper)))"
         case .like(let x, let negated, let pattern, let escape):
-            return "(\(try p(x)) \(not(negated))LIKE \(try p(pattern))" + (try escape.map { " ESCAPE \(try p($0))" } ?? "") + ")"
-        case .glob(let x, let negated, let pattern):
-            return "(\(try p(x)) \(not(negated))GLOB \(try p(pattern)))"
+            return try match(x, negated, "LIKE", pattern, escape)
+        case .glob(let x, let negated, let pattern, let escape):
+            return try match(x, negated, "GLOB", pattern, escape)
+        case .regexp(let x, let negated, let pattern, let escape):
+            return try match(x, negated, "REGEXP", pattern, escape)
+        case .match(let x, let negated, let pattern, let escape):
+            return try match(x, negated, "MATCH", pattern, escape)
         case .equals(let x, let negated, let distinct, let other):
             return "(\(try p(x)) IS \(not(negated))\(distinct ? "DISTINCT FROM " : "")\(try p(other)))"
         case .isNull(let x): return "(\(try p(x)) ISNULL)"
