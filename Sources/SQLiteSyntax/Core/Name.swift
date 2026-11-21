@@ -43,7 +43,8 @@ public struct Name<T>: Syntax {
         needsEscaping = needsEscaping || value.isEmpty || value.first!.isNumber
         
         if needsEscaping {
-            builder.add(Literals.identifier(value))
+            // Quoted with double quotes, a double quote inside written as two. (Single quotes would make a string.)
+            builder.add("\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\"")
         } else {
             builder.add(value)
         }

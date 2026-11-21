@@ -58,9 +58,9 @@ public indirect enum Expression: Syntax {
                 if let t { try builder.add(t); builder.add(".") }
                 try builder.add(c)
             case .unaryOperator(.negate, .literalValue(.integer(let i))) where i >= 0:
-                builder.add("-" + Literals.integer(i))          // prints as the literal it parses back as
+                builder.add("-" + LiteralValue.integer(i).text)          // prints as the literal it parses back as
             case .unaryOperator(.negate, .literalValue(.real(let d))) where d.sign == .plus && !d.isNaN:
-                builder.add("-" + Literals.real(d))
+                builder.add("-" + LiteralValue.real(d).text)
             case .unaryOperator(let o, let e):
                 try o.build(using: &builder, operand: e)
             case .binaryOperator(let left, let op, let right):

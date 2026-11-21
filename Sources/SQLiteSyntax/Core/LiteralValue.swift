@@ -23,27 +23,34 @@ public enum LiteralValue: Syntax {
     case currentTimestamp
     
     public func build(using builder: inout SyntaxBuilder) throws(SyntaxError) {
+        builder.add(text)
+    }
+
+    /// The literal as SQLite source text.
+    var text: String {
         switch self {
             case .integer(let i):
-                builder.add(Literals.integer(i))
+                // SQLite reads minus applied directly to 9223372036854775808 as the smallest INTEGER (expr.c).
+                return String(i)
             case .real(let d):
-                builder.add(Literals.real(d))
+                // Swift's description is the shortest text that reads back as the same Double, and always
+                // contains "." or an exponent ("1.0", "0.1", "1e+16"), so SQLite reads it as REAL.
+                if d.isNaN { return "NULL" }                            // SQLite stores NaN as NULL
+                if d.isInfinite { return d < 0 ? "-9e999" : "9e999" }   // SQLite's spelling of ±Inf
+                return d.description
             case .string(let s):
-                builder.add(Literals.string(s))
+                // Enclosed in single quotes; a single quote inside is written as two. (SQL has no backslash escapes.)
+                return "'" + s.replacingOccurrences(of: "'", with: "''") + "'"
             case .blob(let d):
-                builder.add(Literals.blob(d))
-            case .null:
-                builder.add("NULL")
-            case .true:
-                builder.add("TRUE")
-            case .false:
-                builder.add("FALSE")
-            case .currentTime:
-                builder.add("CURRENT_TIME")
-            case .currentDate:
-                builder.add("CURRENT_DATE")
-            case .currentTimestamp:
-                builder.add("CURRENT_TIMESTAMP")
+                // A string of hexadecimal digits preceded by X, e.g. X'53514C697465'.
+                let hex = d.map { ($0 < 0x10 ? "0" : "") + String($0, radix: 16, uppercase: true) }.joined()
+                return "X'\(hex)'"
+            case .null: return "NULL"
+            case .true: return "TRUE"
+            case .false: return "FALSE"
+            case .currentTime: return "CURRENT_TIME"
+            case .currentDate: return "CURRENT_DATE"
+            case .currentTimestamp: return "CURRENT_TIMESTAMP"
         }
     }
 
