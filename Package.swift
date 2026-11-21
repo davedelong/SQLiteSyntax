@@ -3,8 +3,8 @@
 
 import PackageDescription
 
-// The types in Sources/SQLiteSyntax/Generated and the parsers in Sources/SQLiteParser/Generated are
-// produced by the generator in the sibling SQLiteSyntaxGenerator package; see README.md.
+// The types in Sources/SQLiteSyntax/Generated (and their parsers, in Generated/Parsing) are produced
+// by the generator in the sibling SQLiteSyntaxGenerator package; see README.md.
 let package = Package(
     name: "SQLiteSyntax",
     platforms: [.macOS(.v11), .iOS(.v13), .watchOS(.v7), .tvOS(.v13), .visionOS(.v1)],
@@ -12,9 +12,6 @@ let package = Package(
         .library(
             name: "SQLiteSyntax",
             targets: ["SQLiteSyntax"]),
-        .library(
-            name: "SQLiteParser",
-            targets: ["SQLiteParser"]),
     ],
     targets: [
         .target(
@@ -23,15 +20,9 @@ let package = Package(
             name: "SQLiteSyntaxTests",
             dependencies: ["SQLiteSyntax"]
         ),
-
-        // Parses SQL text into SQLiteSyntax values.
-        .target(
-            name: "SQLiteParser",
-            dependencies: ["SQLiteSyntax"]
-        ),
         .testTarget(
-            name: "SQLiteParserTests",
-            dependencies: ["SQLiteParser", "SQLiteSyntax"]
+            name: "ParsingTests",
+            dependencies: ["SQLiteSyntax"]
         ),
     ]
 )
