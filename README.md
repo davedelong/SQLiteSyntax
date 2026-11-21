@@ -1,7 +1,6 @@
 # SQLiteSyntax
 
-Swift types for SQLite's SQL syntax, generated from SQLite's own language definition, plus a parser
-that turns SQL text back into those types.
+Swift types for SQLite's SQL syntax, generated from SQLite's own language definition, with a parser that turns SQL text back into those types.
 
 ```swift
 import SQLiteSyntax
@@ -14,17 +13,18 @@ let expression = try Expression(parsing: "price * (1 + tax)")
 
 ## Building for a SQLite release
 
-Building SQL checks that the SQLite release you're targeting can parse it, and throws
-`SyntaxError.unsupported` if not. By default that's the SQLite this process links, `SQLiteVersion.linked`:
+By default, the `.sql()` generation of an expression checks the validity of the the expression against the *currently linked* version of SQLite. If the expression contains syntax that is unsupported by the current SQLite version, a `SyntaxError.unsupported` error will be thrown. You may override this behavior by manually specifying a newer SQLite version, or by specifying `nil`:
 
 ```swift
 let sql = try statement.sql()                                            // for the linked SQLite
-let older = try statement.sql(sqliteVersion: SQLiteVersion(3, 31, 0))   // for another release
+let older = try statement.sql(sqliteVersion: SQLiteVersion(3, 31, 0))    // for another release
 let unchecked = try statement.sql(sqliteVersion: nil)                    // no check
 ```
 
-Every syntax value also reports the earliest release that can run it, counting only the parts that are
-present: `try SQLStatement(parsing: "DELETE FROM t RETURNING *").minimumRequiredVersion` is 3.35.0.
+You may also ask an expression which SQLite version it needs to execute:
+```swift
+let requiredVersion = try SQLStatement(parsing: "DELETE FROM t RETURNING *").minimumRequiredVersion    // 3.35.0
+```
 
 `SQLiteVersion.generatedAgainst` is the SQLite release the package was generated against (its source
 checkout's `VERSION`). The parser knows syntax up to that release; syntax added later is rejected or
