@@ -10,6 +10,7 @@ import SQLite3
 public struct SQLiteOption: Hashable, Sendable {
 
     public static let orderedSetAggregates = SQLiteOption(name: "ENABLE_ORDERED_SET_AGGREGATES", value: nil)
+    public static let updateDeleteLimit = SQLiteOption(name: "ENABLE_UPDATE_DELETE_LIMIT", value: nil)
 
     public static func ==(lhs: Self, rhs: Self) -> Bool {
         return lhs.name == rhs.name

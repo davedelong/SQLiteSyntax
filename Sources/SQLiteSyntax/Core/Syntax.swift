@@ -177,7 +177,7 @@ public enum SyntaxError: Error {
     case invalidSyntax(any Syntax, reason: String)
     /// The syntax needs a later SQLite release than the one being built for.
     case unsupported(any Syntax, requires: SQLiteVersion, sqliteVersion: SQLiteVersion)
-    /// The syntax needs a later SQLite release than the one being built for.
+    /// The syntax needs different SQLite options than the ones currently available.
     case unsupported(any Syntax, requires: SQLiteOption, current: Set<SQLiteOption>)
     /// The syntax is nested too deeply to build with the stack this thread has left. (It doesn't carry
     /// the syntax: describing a value that deep would overflow the stack too.)
