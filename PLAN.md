@@ -1,201 +1,70 @@
-# SQLiteSyntax: Remaining Implementation Plan
+# SQLiteSyntax: Status
 
-Goal: the library's syntax types are generated from SQLite's own syntax diagrams, cover the
-whole grammar, and work in both directions — building SQL (`sql()`) and parsing it
-(`init(parsing:)`) — with SQLite itself as the test oracle.
+The goal: syntax types generated from SQLite's own syntax diagrams, covering the whole grammar, working
+in both directions — building SQL (`sql()`) and parsing it (`init(parsing:)`) — with SQLite itself as
+the test oracle. That's done. This page says what exists, how well it agrees with SQLite, what's
+deliberately left out, and the decisions behind it. Detail lives in the READMEs, `CORPUS.md` and the
+commit history.
 
-## Where things stand (2026-11-20)
+## What exists
 
-This table is the starting point of the plan. Phases 0–8 are now done; each phase below says what it changed.
-Since then the parser was folded into the `SQLiteSyntax` target (hand-written parsing in `Parsing/`),
-so there is one library, and each generated type is split into `Generated/Base/X.swift`,
-`Generated/Builder/X+Builder.swift` and `Generated/Parser/X+Parser.swift`. And the generator (`GrammarExtraction`, `SyntaxGeneration`, `sqlite-grammar`, the plugin,
-`Grammar/codegen.json` and `Grammar/sqlite.ebnf`) has moved to the sibling `SQLiteSyntaxGenerator` package.
+| Piece | Where | State |
+|---|---|---|
+| Grammar extraction | `SQLiteSyntaxGenerator` (`GrammarExtraction`, `sqlite-grammar`, `generate-grammar` plugin) | 71 diagrams → `Grammar/sqlite.ebnf`, each rule checked against its diagram. |
+| Type generation | `SQLiteSyntaxGenerator` (`SyntaxGeneration`, `Grammar/codegen.json`) | 62 rules plus 5 helper rules (`extraRules`) → `Generated/` here, with no warnings. Also generates the precedence and keyword tables from `src/parse.y` and `tool/mkkeywordhash.c`. |
+| Generated types | `Sources/SQLiteSyntax/Generated/` | Three files per type: `Base/` (the type), `Builder/` (`build(using:)`), `Parser/` (`parse(_:)`). Each type, case and optional part knows the release that introduced it. |
+| Hand-written types | `Core/` | `Expression`, `LiteralValue`, `NumericLiteral`, `BindParameter`, `Name`, `List`, `ModuleArgument`, the operators, `SortDirection`, `SQLiteVersion`, `Syntax`/`SyntaxBuilder`, and the restriction checks (`Restrictions.swift`). |
+| Parsing | `Internals/` | Tokenizer (following `sqlite3GetToken`), precedence-climbing expression parser, and the packrat runtime the generated parsers use. |
+| Builder API | `Convenience/` | Operators, literal conformances, `Table.Create`, `Select.star(from:)` and friends. |
 
-| Piece | State |
-|---|---|
-| Grammar extraction (`GrammarExtraction`, `sqlite-grammar`, `generate-grammar` plugin) | Done. 71 diagrams → `Grammar/sqlite.ebnf`, each rule verified equal to its diagram, written/read with Gramophone, round-trip checked. |
-| Type generation (`SyntaxGeneration`, `Grammar/codegen.json`) | Prototype. 10 rules generated into `Sources/SQLiteSyntax/Generated` (internal `Generated` namespace). All 66 rules (SELECT family included) generate and compile in a scratch run; reference cycles are broken with `indirect enum`. |
-| Expression parser (`SQLiteParser`) | Prototype. Full expression grammar except subqueries and `WITHIN GROUP`; agrees with SQLite on all tested inputs and all 147 keywords. |
-| Hand-written fixes | Done: `FILTER … WHERE`, `t.a` dots, blob zero-padding, identifier quoting, operator parentheses. |
-| Known issues | None. |
-| Uncommitted | Everything since "first pass at generating an ebnf". |
+Every `Syntax` value can:
 
-## Phase 0 — Commit (now)
+- **build SQL** for a target release (`sql(sqliteVersion:)`, by default the linked SQLite), throwing
+  `SyntaxError.unsupported` for syntax that release can't run and `invalidSyntax` for values SQLite
+  would misread (raw text that isn't one token, NUL characters, incomplete names, …);
+- **parse** with `init(parsing:)`;
+- report its **`minimumRequiredVersion`**.
 
-- Commit the current work on `grammar-extraction`, including `Package.resolved`.
-- Decide later (before tagging a release) whether the tooling moves to its own package; the
-  Gramophone/Flexer branch dependencies block versioned consumers. See "Open decisions".
+## Agreement with SQLite
 
-## Phase 1 — Literal fidelity ✅ done
+On SQLite's own test suite (47,745 distinct statements, SQLite 3.51.0 linked): **99.99% agreement, 0
+round-trip failures.** The 4 disagreements are all explained in `CORPUS.md`: parser-stack limits, one
+trigger alias valid only from 3.52.0, and one oversized hex literal in a trigger body. Syntax newer than
+the linked SQLite (54 statements) and `WITHIN GROUP` without ordered-set aggregates (19) count as
+agreement.
 
-Done: `LiteralValue.number(Decimal)` was replaced by `.integer(Int64)` and `.real(Double)`; the
-parser follows SQLite's INTEGER/REAL rules (including hex and `-9223372036854775808`), and
-`numericLiteralsKeepTheirType` checks results against SQLite. Original notes:
+## Deliberately not done
 
-`LiteralValue.number(Decimal)` cannot distinguish `1`, `1.0`, `1e3`, so REAL literals become
-INTEGER and results change (`1.0 / 2` → `1 / 2` = 0).
+- **Errors about meaning, not syntax.** SQLite reports these when preparing, and the library doesn't
+  repeat them: `RAISE()` outside a trigger, function argument counts, the `?N` upper limit, unknown
+  tables or columns.
+- **Rare legacy syntax** that parse.y accepts but the diagrams don't draw is supported only where it
+  matters in practice (`grammarPatches`); the rest is documented in `CORPUS.md`.
+- **Build-option syntax.** The keyword tables follow SQLite's default build, so `WITHIN` is a name.
+  `WITHIN GROUP` is still parsed, since a name can't be followed by `GROUP (`.
 
-- Change `LiteralValue` to keep the kind: e.g. `.integer(Int64)` and `.real(Double)`, or keep
-  `.number` but store the literal's spelling (`.numeric(String)`) so hex and exponents survive.
-  Public API change; update `Convenience/LiteralValue+Convenience.swift` and literal conformances
-  (`ExpressibleByIntegerLiteral` → integer, `ExpressibleByFloatLiteral` → real).
-- Parser: produce the new cases.
-- Done when: `realLiteralsKeepTheirType` passes without `withKnownIssue`.
+## Decisions
 
-## Phase 2 — Generator: recursive types ✅ done
+1. **Packages**: the generator lives in the sibling `SQLiteSyntaxGenerator`; this package has no
+   dependencies.
+2. **Literals**: typed. `LiteralValue.integer(Int64)` / `.real(Double)`, and `NumericLiteral` the same,
+   following SQLite's INTEGER/REAL rules.
+3. **Naming**: names come from the grammar, rewritten by `nameWords` rules in codegen.json (drop
+   "Clause", "SQL" in capitals, "Def" → "Definition"). `names` overrides cover what the grammar can't
+   name well (placeholders like `option`, misleading names) and the few places a shorter name reads
+   better (`.with`, `ColumnDefinition.name`, `OrderBy.terms`). The generator warns about overrides
+   that match nothing.
+4. **Where parsers live**: generated next to each type in `Generated/Parser`, in the one library.
+5. **Grammar authority**: the diagrams, plus targeted `grammarPatches` from parse.y and hand-written
+   restrictions for rules SQLite enforces outside its grammar.
+6. **One representation per form**: each piece of SQL has one shape in the types. Operators with their
+   own `Expression` case (`IS`, `IN`, `LIKE`, `COLLATE`, …) aren't also `BinaryOperator`/`UnaryOperator`
+   cases, and unused generated types (the function-invocation diagrams, `recursive-cte`, `with-clause`)
+   aren't generated.
 
-Done: `SyntaxGeneration/Recursion.swift` finds cycles of inline references (Tarjan SCCs; lists and
-arrays don't count) and marks every enum on a cycle `indirect`. A struct-only cycle boxes one field
-at a time with the generated `@Indirect` property wrapper (a one-case `indirect enum`) until none
-remain. For SQLite's grammar, five enums become indirect (`TableOrSubquery`, `SelectStatement.Option`
-and its nested `From` chain) and no fields need boxing. All 66 rules compile; SELECT statements built
-with them (subquery, CTE, compound, VALUES) are accepted by SQLite (scratch run).
-`SyntaxGenerationTests/RecursionTests` covers both strategies. Original notes:
+## Keeping it current
 
-The SELECT rules reference each other (`select-stmt` → `table-or-subquery` → `select-stmt`)
-as plain structs; Swift needs indirection, and today the compiler crashes instead of erroring.
-
-- Build the reference graph of generated rules; find strongly connected components.
-- Within a cycle: emit enums as `indirect enum`; for struct fields that point into the cycle,
-  store through a generated copy-on-write `Box`/property wrapper (keeps value semantics and
-  the memberwise API).
-- Done when: generating all 66 non-hand-written rules (the scratch config) compiles and the
-  `GeneratedSyntaxTests` pattern passes for the SELECT family.
-
-## Phase 3 — Generator: complete the configuration ✅ done
-
-Done: all 67 diagram rules (everything except the hand-written `expr`, `literal-value`,
-`numeric-literal`, and `comment-syntax`) plus 5 helper rules generate into `Generated/` and compile
-with zero warnings (`ConfigurationTests`). New generator features: rule recognition (a fragment with
-exactly another rule's syntax references that rule, e.g. select-stmt → select-core,
-`( col, … )` → column-name-list), helper rules in `codegen.json` (`extraRules`: `Limit`,
-`OrderBy`, `With`, `ValuesClause`, `IndexHint`), and better default names (nearest keywords,
-first value, acronyms). Original notes:
-
-From the full scratch run: ~84 unmapped-token warnings, 78 fallback names, 4 duplicate members.
-
-- `tokens`: map every lexical token (`table-name` → `Name<Table>`, `schema-name` → `Name<Schema>`,
-  `alias`/`column-alias`/`table-alias`, `signed-literal`, `module-argument`, `filename`, …).
-- `names`: add overrides, matching existing hand-written names where they exist to minimise
-  churn (e.g. `FrameSpec.Unit` → `Target`).
-- Review each generated shape against its hand-written counterpart; add generator rules
-  (not overrides) where the same fix recurs.
-- Done when: a full generation run prints no warnings.
-
-## Phase 4 — Migrate to generated types ✅ done
-
-Done: generated types are public, top-level, with public memberwise initialisers (`codegen.json`
-`"namespace": ""`, `"public": true`). 60 hand-written types were deleted; `Core/` keeps only
-`Expression`, `LiteralValue`, `BindParameter`, `Name`, `List`, `Group`, operators, `SortDirection`,
-`Syntax`, and the token types `NumericLiteral`/`ModuleArgument`. `Expression` now uses the generated
-`FunctionArguments`, `FilterClause`, `OverClause`, `TypeName`, `RaiseFunction`, `SelectStatement`.
-The `Convenience/` layer keeps its API (`Table.Create`, `Select.star(from:)`, `ColumnDefinition.primaryKey`…)
-and the original tests pass with unchanged SQL. Generator: `{ sep x }` becomes `[X]` (separator before
-each item). Original notes:
-
-- Make generated types public with public memberwise initialisers; drop the `Generated`
-  namespace as each type replaces its hand-written original.
-- Order: leaf rules first (conflict-clause, ordering-term, frame-spec, join-operator, …),
-  then clauses, then statements. One rule per change; delete the hand-written file each time.
-- Keep hand-written: `Expression`, `LiteralValue`, `BindParameter`, `Name`, `List`, operators,
-  and the `Convenience/` layer (adapted to the new types).
-- Point `Expression`'s references (`SelectStatement`, `OverClause`, `FrameSpec`, …) at the
-  generated types.
-- Tests per migrated rule: exact SQL, and `sqlite3_prepare` acceptance in context (the
-  `GeneratedSyntaxTests` pattern). Consider generating sample values from the grammar
-  (the extractor can already enumerate sentences) to cover every case automatically.
-- Done when: `Core/` contains only the intentionally hand-written types; all tests pass.
-
-## Phase 5 — Generate parsers ✅ done
-
-Done: the generator emits `parse(_:)` for every generated type into `Sources/SQLiteParser/Generated/`
-(`--parser-output`), from the same templates as `build(using:)`. Runtime (`ParserRuntime.swift`):
-longest-match choice with (type, position) memoisation and furthest-error reporting; fixed tokens
-also match unreserved words (ROWID, STRICT); names use parse.y's `nm`/`ids` classes and exclude
-keywords that can come next (computed FIRST sets), approximating SQLite's keyword fallback; the
-tokenizer applies SQLite's context rules for WINDOW/OVER/FILTER. The expression parser uses the
-generated parsers for function arguments, FILTER, OVER, CAST types and RAISE, and now supports
-subqueries. 42 statements of every kind round-trip (`StatementParserTests`). Original notes:
-
-- Generator emits a parse function next to each `build(using:)`, from the same template:
-  fixed tokens → expect; stored value → parse that type; flag → accept keywords;
-  optional → try and rewind; list → separated items; enum → try cases.
-- Emit them into `Sources/SQLiteParser/Generated/` (keeps parsing out of the core library;
-  requires the public initialisers from Phase 4).
-- Parser runtime: memoise (type, position) results (packrat) since alternatives often share
-  long prefixes (`expr PRECEDING | expr FOLLOWING`); keep the farthest-failure error with the
-  set of expected tokens.
-- Names: extend `Keywords` from the single `idj` rule to parse.y's name classes per position
-  (`nm` = ID|INDEXED|JOIN_KW|STRING, `ids`, `id`), so e.g. aliases reject reserved words.
-- Replace the hand-written sub-parsers in `ExpressionParser` (window, frame, ordering term,
-  type name, raise) with the generated ones; keep the precedence parser for `expr` itself.
-- Subqueries now work: remove the "not supported yet" errors.
-- Done when: `Expression(parsing:)` handles `(SELECT …)`, `EXISTS`, `IN (SELECT …)`, and
-  statements parse via generated types.
-
-## Phase 6 — Statement-level API ✅ done
-
-Done: every top-level generated type has a public `init(parsing:)` (e.g. `SQLStatementList(parsing:)`,
-`SelectStatement(parsing:)`, `ColumnConstraint(parsing:)`); a trailing `;` is allowed; leftover input
-reports the furthest problem seen. `Expression(parsing:)` uses the same entry point.
-Later, `parse(_:)` became a `Syntax` requirement (replacing the internal `SQLParsable`), so every
-`Syntax` type, generated or hand-written, nested or not, gets `init(parsing:)` from one extension.
-`UnaryOperator` stopped being `Syntax`, since it's only ever printed with its operand.
-`SQLStatementList.allStatements` skips empty statements. Covered by `PublicAPITests` (non-@testable).
-Original notes:
-
-- `SQLStatement(parsing:)` and a statement-list parser (`;`-separated, `EXPLAIN [QUERY PLAN]`).
-- Consistent error type and positions across expression and statement parsing.
-
-## Phase 7 — Corpus agreement testing ✅ done
-
-Done: `CorpusTests` (opt-in) checks 47,745 statements from SQLite's test suite: 99.81% agreement,
-0 round-trip failures. Every remaining disagreement is classified in `CORPUS.md`. Fixes it
-drove: grammar patches for parse.y syntax missing from the diagrams (`codegen.json` `grammarPatches`),
-required names may be keywords (`CREATE TRIGGER after …`), `AS name` allows JOIN_KW names, empty
-`IN ()`, negative numeric literals round-trip, `Int64.min` spelled plainly. Original notes:
-
-- Extract SQL from SQLite's test suite (`sqlite/test/*.test`: `execsql {…}`, `catchsql {…}`),
-  de-duplicate, and run each through our parser and `sqlite3_prepare` against a permissive
-  schema (only syntax errors count).
-- Known so far: SQLite rejects `ORDER BY`/`LIMIT` after a `VALUES` clause (explicit check in
-  parse.y), although the select-stmt diagram allows it.
-- Classify every disagreement: diagram vs parse.y differences (e.g. legacy `NULL` column
-  constraint, `DEFAULT identifier`) to document or support; bugs to fix.
-- Also round-trip each accepted statement: parse → `sql()` → SQLite accepts → parse again equal.
-- Done when: all disagreements are classified and the bug list is empty.
-
-## Phase 8 — Hardening and cleanup ✅ done
-
-- Precedence and keyword tables have a single source: `sqlite-grammar --sqlite-source ../sqlite`
-  (passed by the plugin when the checkout exists) reads `src/parse.y` and `tool/mkkeywordhash.c`
-  and writes `SQLiteSyntax/Generated/SQLiteTables.swift` (`package` access):
-  `ExpressionPrecedence` and `SQLiteKeywords` (all keywords, `%fallback ID`, `JOIN_KW`,
-  `LIKE_KW`, `CTIME_KW`; default build, so ordered-set `WITHIN` is excluded). The printer, name
-  quoting and the parser all use it; the duplicate parser table is gone.
-- Portability: neither library reads keywords from the system SQLite at runtime any more.
-- `ExpressibleByNilLiteral` removed from `Expression` and `LiteralValue`; SQL NULL is `.null`.
-- `sql()` validates the top-level value (children were already validated while building).
-- Generated `validate()` binds only the fields it checks and omits an unreachable `default`.
-- `README.md`: regeneration workflow, `codegen.json` keys, migrating a rule.
-
-## Open decisions
-
-1. ~~**Tooling package split**~~ — done: the generator lives in the sibling `SQLiteSyntaxGenerator`
-   package, so this package has no dependencies.
-2. ~~**`LiteralValue` shape**~~ — decided: typed `.integer(Int64)` / `.real(Double)`.
-3. ~~**Generated naming policy**~~ — decided: names come from the grammar, rewritten by `nameWords`
-   rules in codegen.json (drop "Clause", "SQL" in capitals, "Def" → "Definition"); `names` overrides
-   cover what the grammar can't name well (placeholders like `option`, misleading names) and the few
-   places a shorter name reads better (`.with`, `ColumnDefinition.name`, `OrderBy.terms`). The
-   generator warns about overrides that match nothing.
-4. ~~**Where generated parsers live**~~ — decided: first `SQLiteParser/Generated`; now `SQLiteSyntax/Generated/Parser`, with the parser folded into the one library.
-5. ~~**Grammar authority for validation**~~ — decided: the diagrams, plus targeted `grammarPatches`
-   for parse.y syntax that matters in practice (see `CORPUS.md`); rarer legacy forms are
-   documented, not supported.
-
-## Rough total
-
-About 3–4 weeks of focused work: Phases 1–4 (~1.5–2 weeks) make the generated types the
-library; Phases 5–7 (~1.5 weeks) make them parse and prove agreement with SQLite.
+When SQLite adds syntax: update the `../sqlite` and docs checkouts, regenerate (see
+`SQLiteSyntaxGenerator/README.md`), fix any generator warnings, and run the corpus test
+(`SQLITE_CORPUS=1 swift test -c release --filter CorpusTests`). Classify any new disagreement in
+`CORPUS.md`.

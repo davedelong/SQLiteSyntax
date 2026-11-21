@@ -58,7 +58,7 @@ One library, `SQLiteSyntax`:
 | `Generated/` | Produced by the generator, three files per type: `Base/X.swift` (the type), `Builder/X+Builder.swift` (its `build(using:)`) and `Parser/X+Parser.swift` (its `parse(_:)`, which `Syntax` requires; every `Syntax` type gets `init(parsing:)` from it). |
 | `Core/` | Hand-written: expressions, literals, names, versions, and `SyntaxBuilder`. |
 | `Convenience/` | Hand-written builder API and literal conformances. |
-| `Parsing/` | Hand-written parsing: the tokenizer, the expression parser (precedence climbing), and the runtime the generated parsers use. |
+| `Internals/` | Hand-written parsing: the tokenizer, the expression parser (precedence climbing), and the runtime the generated parsers use. |
 
 The package has no package dependencies. The library embeds SQLite's keyword and precedence tables, and
 links the system SQLite only for `SQLiteVersion.linked`. The tests also use it to compare against SQLite.
