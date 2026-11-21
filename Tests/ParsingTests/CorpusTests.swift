@@ -34,6 +34,29 @@ struct CorpusTests {
 
     @Test(.enabled(if: enabled, "set SQLITE_CORPUS=1 and provide ../sqlite"))
     func agreesWithSQLiteOnItsTestSuite() throws {
+        try Self.onLargeStack(Self.compareWithSQLite)
+    }
+
+    /// Runs `body` on a thread with a 64 MB stack, waiting for it to finish.
+    ///
+    /// Swift Testing runs tests on the cooperative thread pool, whose threads have 512 KB stacks. The
+    /// corpus includes fuzzed statements with subqueries nested dozens deep, and parsing those overflows
+    /// 512 KB in a debug build.
+    static func onLargeStack(_ body: @escaping @Sendable () throws -> Void) throws {
+        final class Result: @unchecked Sendable { var error: (any Error)? }
+        let result = Result()
+        let finished = DispatchSemaphore(value: 0)
+        let thread = Thread {
+            do { try body() } catch { result.error = error }
+            finished.signal()
+        }
+        thread.stackSize = 64 << 20
+        thread.start()
+        finished.wait()
+        if let error = result.error { throw error }
+    }
+
+    static func compareWithSQLite() throws {
         let files = try FileManager.default.contentsOfDirectory(at: Self.testDirectory, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "test" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
