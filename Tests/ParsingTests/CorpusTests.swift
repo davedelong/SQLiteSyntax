@@ -93,9 +93,13 @@ struct CorpusTests {
                             }
                         }
                     } catch let error as ParseError {
-                        detail = error.description + " || sqlite: " + Self.sqliteMessage(statement)
+                        let message = Self.sqliteMessage(statement)
+                        detail = "parser: \(error) || sqlite: " + (message.isEmpty ? "prepares" : message)
                     } catch {
-                        detail = "\(error)"   // building SQL failed
+                        detail = "build: \(error)"   // building SQL failed
+                    }
+                    if sqlite == .rejected && parser == .accepted {
+                        detail = "sqlite: " + Self.sqliteMessage(statement)
                     }
                     outcomes.append(Outcome(file: file.lastPathComponent, sql: statement, sqlite: sqlite, parser: parser, detail: detail))
                 }
@@ -112,6 +116,9 @@ struct CorpusTests {
             round-trip failures: \(roundTripFailures.count)
             """
         print(summary)
+        print(Self.details("SQLite accepts, parser rejects", falseRejections))
+        print(Self.details("SQLite rejects, parser accepts", falseAcceptances))
+        print(Self.details("Round-trip failures", roundTripFailures))
 
         let reportPath = ProcessInfo.processInfo.environment["SQLITE_CORPUS_REPORT"]
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("sqlite-corpus-report.tsv").path
@@ -120,6 +127,19 @@ struct CorpusTests {
             .map { kind, o in [kind, o.file, o.detail, o.sql].map { $0.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ") }.joined(separator: "\t") }
         try (["kind\tfile\tdetail\tsql"] + rows).joined(separator: "\n").write(toFile: reportPath, atomically: true, encoding: .utf8)
         print("report: \(reportPath)")
+    }
+
+    /// One entry per outcome: its file and statement, then each side's message on its own line.
+    /// Statements longer than 300 characters are cut short; the report file has them in full.
+    static func details(_ title: String, _ outcomes: [Outcome]) -> String {
+        guard !outcomes.isEmpty else { return "" }
+        let entries = outcomes.map { o in
+            let flat = o.sql.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            let sql = flat.count > 300 ? flat.prefix(300) + "…" : flat
+            let messages = o.detail.components(separatedBy: " || ").map { "      " + $0 }
+            return (["  [\(o.file)] \(sql)"] + messages).joined(separator: "\n")
+        }
+        return "\n\(title) (\(outcomes.count)):\n" + entries.joined(separator: "\n")
     }
 
     // MARK: SQLite's verdict
