@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Syntax: Sendable {
+public protocol Syntax: Hashable, Sendable {
     
     /// Validate that the syntax is correct and has everything it needs.
     ///

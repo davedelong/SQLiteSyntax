@@ -348,12 +348,12 @@ extension Parser {
         try expect(keyword: "CASE")
         var base: Expr? = nil
         if !current.isKeyword("WHEN") { base = try parseExpression() }
-        var branches: [(when: Expr, then: Expr)] = []
+        var branches: [Expr.Branch] = []
         repeat {
             try expect(keyword: "WHEN")
             let condition = try parseExpression()
             try expect(keyword: "THEN")
-            branches.append((condition, try parseExpression()))
+            branches.append(Expr.Branch(when: condition, then: try parseExpression()))
         } while current.isKeyword("WHEN")
         var otherwise: Expr? = nil
         if accept(keyword: "ELSE") { otherwise = try parseExpression() }

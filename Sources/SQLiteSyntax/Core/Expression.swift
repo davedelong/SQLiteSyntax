@@ -44,7 +44,7 @@ public indirect enum Expression: Syntax {
     case inTableFunction(Expression, negated: Bool, Name<Schema>?, Name<Function>, [Expression])
     case select(SelectStatement)
     case exists(negated: Bool, SelectStatement)
-    case when(Expression?, Array<(when: Expression, then: Expression)>, else: Expression?)
+    case when(Expression?, [Branch], else: Expression?)
     case raise(RaiseFunction)
     
     public func validate() throws(SyntaxError) {
@@ -187,11 +187,11 @@ public indirect enum Expression: Syntax {
             case .when(let expr, let whenThens, else: let `else`):
                 builder.add("CASE")
                 try builder.add(expr)
-                for (when, then) in whenThens {
+                for branch in whenThens {
                     builder.add("WHEN")
-                    try builder.add(when)
+                    try builder.add(branch.when)
                     builder.add("THEN")
-                    try builder.add(then)
+                    try builder.add(branch.then)
                 }
                 if let `else` {
                     builder.add("ELSE")
@@ -207,6 +207,20 @@ public indirect enum Expression: Syntax {
     ///
     public static func parse(_ p: inout Parser) throws(ParseError) -> Self {
         try p.memoized(Self.self) { (p: inout Parser) throws(ParseError) in try p.parseExpression() }
+    }
+}
+
+extension Expression {
+
+    /// One `WHEN … THEN …` branch of a `CASE` expression.
+    public struct Branch: Hashable, Sendable {
+        public var when: Expression
+        public var then: Expression
+
+        public init(when: Expression, then: Expression) {
+            self.when = when
+            self.then = then
+        }
     }
 }
 

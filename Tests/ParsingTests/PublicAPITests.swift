@@ -18,6 +18,20 @@ struct PublicAPITests {
         #expect(try Expression(parsing: "CAST(a AS INT)").sql() == "CAST ( a AS INT )")
     }
 
+    @Test func syntaxValuesAreHashable() throws {
+        let sql = "SELECT CASE a WHEN 1 THEN 'x' ELSE 'y' END FROM t JOIN u USING (id) WHERE b IN (1, 2) LIMIT 3"
+        let first = try SQLStatement(parsing: sql)
+        let second = try SQLStatement(parsing: sql)
+        #expect(first == second)
+        #expect(first.hashValue == second.hashValue)
+        #expect(Set([first, second, try SQLStatement(parsing: "SELECT 1")]).count == 2)
+        #expect(try Expression(parsing: "a + 1") != Expression(parsing: "a + 2"))
+        // The `==` that builds SQL is still there, chosen by context.
+        let comparison: Expression = try Expression(parsing: "a") == 1
+        let printed = try comparison.sql()
+        #expect(printed == "a == 1")
+    }
+
     @Test func theGeneratedAgainstReleaseIsPublic() {
         #expect(SQLiteVersion.generatedAgainst >= SQLiteVersion(3, 52, 0))   // the newest syntax it dates
     }

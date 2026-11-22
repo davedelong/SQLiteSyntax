@@ -3,7 +3,7 @@
 /// Stores a value in an indirect enum case, breaking a reference cycle between structs
 /// (which would otherwise have infinite size) while keeping value semantics.
 @propertyWrapper
-public enum Indirect<Value: Sendable>: Sendable {
+public enum Indirect<Value: Hashable & Sendable>: Hashable, Sendable {
     indirect case value(Value)
 
     public init(wrappedValue: Value) { self = .value(wrappedValue) }
