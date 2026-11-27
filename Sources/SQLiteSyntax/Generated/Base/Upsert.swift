@@ -3,11 +3,15 @@
 /// `upsert-clause ::= 'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] ) { 'ON' 'CONFLICT' [ '(' indexed-column { ',' indexed-column } ')' [ 'WHERE' expr ] ] 'DO' ( 'NOTHING' | 'UPDATE' 'SET' ( column-name | column-name-list ) '=' expr { ',' ( column-name | column-name-list ) '=' expr } [ 'WHERE' expr ] ) }`
 ///
 /// Since SQLite 3.24.0.
-public struct Upsert: Syntax {
+public struct Upsert: Syntax, ExpressibleByArrayLiteral {
     public var clauses: List<ClausesElement>
 
     public init(clauses: List<ClausesElement>) {
         self.clauses = clauses
+    }
+
+    public init(arrayLiteral elements: ClausesElement...) {
+        self.clauses = List(elements)
     }
 
     public func validate() throws(SyntaxError) {

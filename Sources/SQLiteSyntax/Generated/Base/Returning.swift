@@ -3,11 +3,15 @@
 /// `returning-clause ::= 'RETURNING' ( '*' | expr [ [ 'AS' ] column-alias ] ) { ',' ( '*' | expr [ [ 'AS' ] column-alias ] ) }`
 ///
 /// Since SQLite 3.35.0.
-public struct Returning: Syntax {
+public struct Returning: Syntax, ExpressibleByArrayLiteral {
     public var returning: List<ReturningElement>
 
     public init(returning: List<ReturningElement>) {
         self.returning = returning
+    }
+
+    public init(arrayLiteral elements: ReturningElement...) {
+        self.returning = List(elements)
     }
 
     public func validate() throws(SyntaxError) {

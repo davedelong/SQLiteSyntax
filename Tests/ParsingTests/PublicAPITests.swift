@@ -18,6 +18,16 @@ struct PublicAPITests {
         #expect(try Expression(parsing: "CAST(a AS INT)").sql() == "CAST ( a AS INT )")
     }
 
+    @Test func typesHoldingOnlyAListAreArrayLiterals() throws {
+        let values: Values = [[1, 2], [3, 4]]
+        #expect(values == Values(values: [Values.ValuesElement(expressions: [1, 2]), Values.ValuesElement(expressions: [3, 4])]))
+        #expect(try values.sql(sqliteVersion: nil) == "VALUES ( 1 , 2 ) , ( 3 , 4 )")
+        let columns: ColumnNameList = ["a", "b"]
+        #expect(try columns.sql(sqliteVersion: nil) == "( a , b )")
+        let orderBy: OrderBy = [try OrderingTerm(parsing: "a DESC"), try OrderingTerm(parsing: "b")]
+        #expect(try orderBy.sql(sqliteVersion: nil) == "ORDER BY a DESC , b")
+    }
+
     @Test func syntaxValuesAreHashable() throws {
         let sql = "SELECT CASE a WHEN 1 THEN 'x' ELSE 'y' END FROM t JOIN u USING (id) WHERE b IN (1, 2) LIMIT 3"
         let first = try SQLStatement(parsing: sql)
